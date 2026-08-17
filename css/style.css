@@ -342,6 +342,40 @@ textarea.field { min-height: 70px; resize: vertical; }
 
 @keyframes spin { to { transform: rotate(360deg); } }
 
+.tabbar {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.tabbar button {
+  flex: 1;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  border-radius: 10px;
+  padding: 11px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.tabbar button.active {
+  background: var(--accent);
+  color: white;
+  border-color: var(--accent);
+}
+
+.link-item {
+  display: block;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  font-size: 14px;
+  color: var(--text);
+}
+
 .filters {
   display: flex;
   gap: 8px;

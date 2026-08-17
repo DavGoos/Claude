@@ -1,7 +1,61 @@
 -- Einmalig im Supabase SQL-Editor ausführen (siehe README.md Schritt 2).
+-- Kann mehrfach ausgeführt werden (z.B. nach einem Update dieses Projekts),
+-- ohne bestehende Daten zu verlieren.
 
 create extension if not exists pgcrypto;
 
+create or replace function set_updated_at()
+returns trigger as $$
+begin
+  new.updated_at = now();
+  return new;
+end;
+$$ language plpgsql;
+
+-- Prozesse: alle Abläufe eines Bereichs, die auf AI-Potenzial geprüft werden.
+create table if not exists processes (
+  id uuid primary key default gen_random_uuid(),
+  created_by uuid not null default auth.uid() references auth.users (id),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  name text not null,
+  department text not null default '',
+  description text not null default '',
+  ai_potential smallint not null default 3 check (ai_potential between 1 and 5),
+  notes text not null default '',
+  status text not null default 'open'
+    check (status in ('open', 'reviewed'))
+);
+
+drop trigger if exists processes_set_updated_at on processes;
+create trigger processes_set_updated_at
+  before update on processes
+  for each row
+  execute function set_updated_at();
+
+alter table processes enable row level security;
+
+drop policy if exists "Processes: select for logged in users" on processes;
+create policy "Processes: select for logged in users"
+  on processes for select
+  using (auth.role() = 'authenticated');
+
+drop policy if exists "Processes: insert for logged in users" on processes;
+create policy "Processes: insert for logged in users"
+  on processes for insert
+  with check (auth.role() = 'authenticated');
+
+drop policy if exists "Processes: update for logged in users" on processes;
+create policy "Processes: update for logged in users"
+  on processes for update
+  using (auth.role() = 'authenticated');
+
+drop policy if exists "Processes: delete for logged in users" on processes;
+create policy "Processes: delete for logged in users"
+  on processes for delete
+  using (auth.role() = 'authenticated');
+
+-- Ideen / AI Use Cases
 create table if not exists ideas (
   id uuid primary key default gen_random_uuid(),
   created_by uuid not null default auth.uid() references auth.users (id),
@@ -18,16 +72,13 @@ create table if not exists ideas (
   risk smallint not null default 3 check (risk between 1 and 5),
   tools text not null default '',
   considerations text not null default '',
-  initial_prompt text not null default ''
+  initial_prompt text not null default '',
+  process_id uuid references processes (id) on delete set null
 );
 
-create or replace function set_updated_at()
-returns trigger as $$
-begin
-  new.updated_at = now();
-  return new;
-end;
-$$ language plpgsql;
+-- Für Projekte, die die ideas-Tabelle schon vor der Prozess-Verknüpfung
+-- angelegt hatten: Spalte nachträglich ergänzen.
+alter table ideas add column if not exists process_id uuid references processes (id) on delete set null;
 
 drop trigger if exists ideas_set_updated_at on ideas;
 create trigger ideas_set_updated_at
@@ -36,8 +87,8 @@ create trigger ideas_set_updated_at
   execute function set_updated_at();
 
 -- Row Level Security: jedes eingeloggte Team-Mitglied sieht/bearbeitet
--- die gemeinsame Ideen-Sammlung. Für mehrere getrennte Teams müsste
--- man später eine "team_id"-Spalte + passende Policies ergänzen.
+-- die gemeinsame Ideen- und Prozess-Sammlung. Für mehrere getrennte Teams
+-- müsste man später eine "team_id"-Spalte + passende Policies ergänzen.
 alter table ideas enable row level security;
 
 drop policy if exists "Ideas: select for logged in users" on ideas;

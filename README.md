@@ -1,8 +1,9 @@
 # AI Use-Case Sammlung
 
-Eine kleine App, um AI-Ideen sekundenschnell zu erfassen und später mit
-KI-Unterstützung zu bewerten und auszuarbeiten. Läuft als Web-App, die man
-sich aufs Handy holt wie eine normale App (kein App Store nötig).
+Eine kleine App, um AI-Ideen sekundenschnell zu erfassen, sie euren
+Geschäftsprozessen zuzuordnen und später mit KI-Unterstützung zu bewerten
+und auszuarbeiten. Läuft als Web-App, die man sich aufs Handy holt wie eine
+normale App (kein App Store nötig).
 
 Es gibt **keinen eigenen Server**, den ihr betreiben müsst – nur drei fertige
 Bausteine, die einmalig eingerichtet werden:
@@ -98,6 +99,11 @@ Das war der einzige "technische" Schritt – danach läuft alles automatisch.
   passende Tools, wichtige Punkte vorab und einen fertigen Start-Prompt für
   den eigentlichen Projektstart.
 - **Gemeinsam nutzen**: Mehrere Kolleg:innen loggen sich ein und sehen/bearbeiten dieselbe Liste.
+- **Prozesse dokumentieren**: Im Tab "Prozesse" alle Abläufe eures Bereichs
+  erfassen und mit einer AI-Potenzial-Einschätzung versehen.
+- **Use Cases zu Prozessen zuordnen**: Jede Idee kann optional einem Prozess
+  zugeordnet werden; in der Prozess-Detailansicht seht ihr alle dazu bereits
+  erfassten Use Cases.
 
 ## Projektstruktur
 
