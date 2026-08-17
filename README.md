@@ -5,15 +5,16 @@ Geschäftsprozessen zuzuordnen und später mit KI-Unterstützung zu bewerten
 und auszuarbeiten. Läuft als Web-App, die man sich aufs Handy holt wie eine
 normale App (kein App Store nötig).
 
-Es gibt **keinen eigenen Server**, den ihr betreiben müsst – nur drei fertige
+Es gibt **keinen eigenen Server**, den ihr betreiben müsst – nur zwei fertige
 Bausteine, die einmalig eingerichtet werden:
 
-1. **Supabase** (kostenloser Baukasten für Login + Datenbank + kleine Server-Funktion)
-2. **Ein Claude API-Key** (für die KI-Ausarbeitung)
-3. **GitHub Pages** (kostenloses Hosting für diese Web-App)
+1. **Supabase** (kostenloser Baukasten für Login + Datenbank)
+2. **GitHub Pages** (kostenloses Hosting für diese Web-App)
 
-Die Einrichtung dauert einmalig ca. 20–30 Minuten. Danach nutzt ihr die App
-einfach.
+Die Einrichtung dauert einmalig ca. 15–20 Minuten. Danach nutzt ihr die App
+einfach. Für die KI-Ausarbeitung hinterlegt später jede:r Nutzer:in optional
+einen eigenen Claude API-Key direkt in der App (siehe unten) – dafür ist
+keine weitere Einrichtung durch dich nötig.
 
 ---
 
@@ -41,29 +42,7 @@ einfach.
    };
    ```
 
-## Schritt 3: KI-Funktion einrichten
-
-Damit "Mit KI ausarbeiten" funktioniert, braucht Supabase Zugriff auf die
-Claude API. Das läuft über eine kleine, fertig vorbereitete Funktion
-(`supabase/functions/elaborate-idea`), die du einmalig hochlädst.
-
-1. Falls noch nicht vorhanden: [Node.js](https://nodejs.org) installieren (wird nur für den Upload-Befehl benötigt).
-2. Hole dir einen Claude API-Key auf [console.anthropic.com](https://console.anthropic.com) (unter "API Keys", etwas Guthaben aufladen reicht für sehr viele Nutzungen).
-3. Öffne ein Terminal im Projektordner und führe aus:
-
-   ```bash
-   npx supabase login
-   npx supabase link --project-ref DEIN-PROJEKT-REF
-   npx supabase secrets set ANTHROPIC_API_KEY=dein-claude-api-key
-   npx supabase functions deploy elaborate-idea
-   ```
-
-   Den `DEIN-PROJEKT-REF` findest du in Supabase unter "Project Settings ->
-   General" ("Reference ID").
-
-Das war der einzige "technische" Schritt – danach läuft alles automatisch.
-
-## Schritt 4: App online stellen (GitHub Pages)
+## Schritt 3: App online stellen (GitHub Pages)
 
 1. Auf GitHub im Repository: **Settings -> Pages**.
 2. Bei "Source" den Branch auswählen, auf dem dieser Code liegt (aktuell
@@ -71,13 +50,13 @@ Das war der einzige "technische" Schritt – danach läuft alles automatisch.
 3. Speichern. Nach 1–2 Minuten ist die App unter der angezeigten Adresse
    erreichbar (z.B. `https://dein-name.github.io/dein-repo/`).
 
-## Schritt 5: App aufs Handy holen
+## Schritt 4: App aufs Handy holen
 
-1. Öffne den Link aus Schritt 4 im Handy-Browser (Safari bei iPhone, Chrome bei Android).
+1. Öffne den Link aus Schritt 3 im Handy-Browser (Safari bei iPhone, Chrome bei Android).
 2. Tippe auf **"Zum Home-Bildschirm"** (iPhone) bzw. **"App installieren"** (Android).
 3. Fertig – die App hat jetzt ein eigenes Icon auf dem Home-Bildschirm.
 
-## Schritt 6: Login & Kollegen einladen
+## Schritt 5: Login & Kollegen einladen
 
 - Login läuft ohne Passwort: E-Mail eingeben, es kommt ein Link per Mail, draufklicken – fertig.
 - Jede:r, der/die den App-Link kennt und sich per E-Mail einloggt, sieht die
@@ -86,6 +65,22 @@ Das war der einzige "technische" Schritt – danach läuft alles automatisch.
 - Wächst das Team stark oder braucht ihr getrennte Bereiche pro Team, lässt
   sich das später ergänzen (eigene Tabelle/Berechtigungen) – für den Start
   reicht die gemeinsame Liste.
+
+## Eigenen Claude API-Key hinterlegen (für "Mit KI ausarbeiten")
+
+Dieser Schritt ist **optional** und macht jede Person für sich selbst,
+direkt in der App – nicht du als Ersteller:in einmalig für alle:
+
+1. Key auf [console.anthropic.com](https://console.anthropic.com) erstellen
+   ("API Keys", etwas Guthaben aufladen reicht für sehr viele Nutzungen).
+2. In der App oben rechts auf das Zahnrad-Symbol (⚙) tippen.
+3. Key einfügen, "Speichern" tippen. Fertig.
+
+Der Key wird ausschließlich lokal auf dem jeweiligen Handy gespeichert und
+bei der KI-Anfrage direkt an Claude geschickt – er läuft nie über einen
+gemeinsamen Server und andere Kolleg:innen sehen ihn nicht. Ohne Key
+funktioniert die App ganz normal weiter, nur der Button "Mit KI
+ausarbeiten" zeigt dann einen Hinweis, den Key zu ergänzen.
 
 ---
 
@@ -97,7 +92,8 @@ Das war der einzige "technische" Schritt – danach läuft alles automatisch.
   zeigt direkt eine Einordnung ("Quick Win", "Großes Projekt", ...).
 - **Mit KI ausarbeiten**: Ein Klick generiert einen Beschreibungsvorschlag,
   passende Tools, wichtige Punkte vorab und einen fertigen Start-Prompt für
-  den eigentlichen Projektstart.
+  den eigentlichen Projektstart (braucht einen eigenen, kostenlos in der
+  App hinterlegten Claude API-Key, siehe unten).
 - **Gemeinsam nutzen**: Mehrere Kolleg:innen loggen sich ein und sehen/bearbeiten dieselbe Liste.
 - **Prozesse dokumentieren**: Im Tab "Prozesse" alle Abläufe eures Bereichs
   erfassen und mit einer AI-Potenzial-Einschätzung versehen.
@@ -108,11 +104,10 @@ Das war der einzige "technische" Schritt – danach läuft alles automatisch.
 ## Projektstruktur
 
 ```
-index.html                          Haupt-App
-css/style.css                       Design
-js/config.js                        Supabase-Zugangsdaten (Schritt 2)
-js/app.js                           App-Logik
-manifest.json, sw.js, icons/        PWA-Grundlagen (Installierbarkeit)
-supabase/schema.sql                 Datenbank-Struktur
-supabase/functions/elaborate-idea/  KI-Funktion (Claude API Aufruf)
+index.html                Haupt-App
+css/style.css             Design
+js/config.js              Supabase-Zugangsdaten (Schritt 2)
+js/app.js                 App-Logik inkl. direktem Claude API Aufruf
+manifest.json, sw.js, icons/   PWA-Grundlagen (Installierbarkeit)
+supabase/schema.sql       Datenbank-Struktur (Ideen + Prozesse)
 ```

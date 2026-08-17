@@ -53,6 +53,11 @@ header.topbar h1 {
   font-weight: 700;
 }
 
+header.topbar .actions {
+  display: flex;
+  gap: 8px;
+}
+
 header.topbar button.icon-btn {
   background: rgba(255,255,255,0.15);
   border: none;

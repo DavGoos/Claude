@@ -70,6 +70,7 @@ function currentRoute() {
   m = hash.match(/^#\/process\/([^/]+)$/);
   if (m) return { view: "process-detail", id: m[1] };
   if (hash === "#/processes") return { view: "process-list" };
+  if (hash === "#/settings") return { view: "settings" };
   return { view: "idea-list" };
 }
 
@@ -148,15 +149,71 @@ async function deleteIdea(id) {
   return true;
 }
 
+const API_KEY_STORAGE = "ai_ideen_anthropic_key";
+
+function getApiKey() {
+  return localStorage.getItem(API_KEY_STORAGE) || "";
+}
+
+function setApiKey(key) {
+  if (key) localStorage.setItem(API_KEY_STORAGE, key);
+  else localStorage.removeItem(API_KEY_STORAGE);
+}
+
+const ELABORATE_SYSTEM_PROMPT = `Du bist ein erfahrener AI-Solution-Architekt, der intern erfasste
+AI-Use-Case-Ideen eines Unternehmens ausarbeitet. Du bekommst eine kurze Notiz und
+optional eine erste Beschreibung. Antworte AUSSCHLIESSLICH mit einem JSON-Objekt
+(kein Markdown, kein Fließtext davor oder danach) mit genau diesen Feldern:
+
+{
+  "description": "Strukturierte Beschreibung: Problem, Zielgruppe, vorgeschlagene Lösung, erwarteter Nutzen. Auf Deutsch, 4-8 Sätze.",
+  "tools": "Konkrete Vorschläge für Tools/Frameworks/Architektur, die für die Umsetzung sinnvoll sind, als kurze Liste mit Begründung.",
+  "considerations": "Wichtige Gedanken vorab: Datenschutz, benötigte Datenquellen, Kosten, Abhängigkeiten, Stakeholder, Risiken. Als kurze Liste.",
+  "initial_prompt": "Ein guter, direkt verwendbarer Start-Prompt (auf Deutsch), mit dem man z.B. bei Claude Code oder einem neuen Chat in die Umsetzung dieses Projekts einsteigen kann. Soll Kontext, Ziel und relevante Rahmenbedingungen enthalten."
+}`;
+
+function extractJson(text) {
+  const trimmed = text.trim();
+  const fenced = trimmed.match(/```(?:json)?\s*([\s\S]*?)```/i);
+  const candidate = fenced ? fenced[1] : trimmed;
+  const start = candidate.indexOf("{");
+  const end = candidate.lastIndexOf("}");
+  const jsonSlice = start >= 0 && end >= 0 ? candidate.slice(start, end + 1) : candidate;
+  return JSON.parse(jsonSlice);
+}
+
 async function elaborateWithAI(idea) {
-  const { data, error } = await sb.functions.invoke("elaborate-idea", {
-    body: {
-      quick_note: idea.quick_note,
-      description: idea.description || "",
+  const apiKey = getApiKey();
+  if (!apiKey) {
+    throw new Error("Kein eigener Claude API-Key hinterlegt. Bitte unter Einstellungen eintragen.");
+  }
+
+  const userMessage = `Kurznotiz: ${idea.quick_note}\n\nBisherige Beschreibung: ${idea.description || "(noch keine)"}`;
+
+  const res = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      "x-api-key": apiKey,
+      "anthropic-version": "2023-06-01",
+      "anthropic-dangerous-direct-browser-access": "true",
     },
+    body: JSON.stringify({
+      model: "claude-sonnet-5",
+      max_tokens: 1500,
+      system: ELABORATE_SYSTEM_PROMPT,
+      messages: [{ role: "user", content: userMessage }],
+    }),
   });
-  if (error) throw error;
-  return data;
+
+  if (!res.ok) {
+    const errText = await res.text();
+    throw new Error(`Claude API Fehler: ${errText}`);
+  }
+
+  const data = await res.json();
+  const rawText = data.content?.[0]?.text || "";
+  return extractJson(rawText);
 }
 
 // ---------- Data: Processes ----------
@@ -289,7 +346,10 @@ async function renderList() {
   $app.innerHTML = `
     <header class="topbar">
       <h1>AI Ideen</h1>
-      <button class="icon-btn" id="logout-btn">Logout</button>
+      <div class="actions">
+        <button class="icon-btn" id="settings-btn">⚙</button>
+        <button class="icon-btn" id="logout-btn">Logout</button>
+      </div>
     </header>
     <main>
       ${tabBar("ideas")}
@@ -309,6 +369,9 @@ async function renderList() {
 
   bindTabBar();
   document.getElementById("logout-btn").addEventListener("click", logout);
+  document.getElementById("settings-btn").addEventListener("click", () => {
+    window.location.hash = "#/settings";
+  });
 
   document.getElementById("save-capture").addEventListener("click", async () => {
     const ta = document.getElementById("quick-note");
@@ -598,7 +661,10 @@ async function renderProcessList() {
   $app.innerHTML = `
     <header class="topbar">
       <h1>Prozesse</h1>
-      <button class="icon-btn" id="logout-btn">Logout</button>
+      <div class="actions">
+        <button class="icon-btn" id="settings-btn">⚙</button>
+        <button class="icon-btn" id="logout-btn">Logout</button>
+      </div>
     </header>
     <main>
       ${tabBar("processes")}
@@ -618,6 +684,9 @@ async function renderProcessList() {
 
   bindTabBar();
   document.getElementById("logout-btn").addEventListener("click", logout);
+  document.getElementById("settings-btn").addEventListener("click", () => {
+    window.location.hash = "#/settings";
+  });
 
   document.getElementById("save-process").addEventListener("click", async () => {
     const ta = document.getElementById("process-name");
@@ -796,6 +865,52 @@ async function renderProcessDetail(id) {
   });
 }
 
+// ---------- View: Settings ----------
+
+function renderSettings() {
+  const existing = getApiKey();
+  $app.innerHTML = `
+    <header class="topbar">
+      <div class="back-row">
+        <button class="icon-btn" id="back-btn">&larr; Zurück</button>
+      </div>
+    </header>
+    <main>
+      <div class="card">
+        <div class="section-title" style="margin:0 0 10px;">Eigener Claude API-Key</div>
+        <p style="font-size:13.5px; color:var(--text-dim); margin:0 0 14px; line-height:1.5;">
+          Wird nur für den Button "Mit KI ausarbeiten" gebraucht und ausschließlich
+          auf diesem Handy gespeichert – nie an Kolleg:innen oder einen eigenen
+          Server geschickt. Einen Key bekommst du kostenlos (mit kleinem
+          Startguthaben) auf <strong>console.anthropic.com</strong> unter "API Keys".
+        </p>
+        <label class="field-label" style="margin-top:0;">API-Key</label>
+        <input class="field" id="f-api-key" type="password" value="${escapeHtml(existing)}" placeholder="sk-ant-..." autocomplete="off" />
+        <div class="row">
+          <button class="btn-primary" id="save-key-btn">Speichern</button>
+          <button class="btn-secondary" id="remove-key-btn">Entfernen</button>
+        </div>
+      </div>
+    </main>
+  `;
+
+  document.getElementById("back-btn").addEventListener("click", () => {
+    window.location.hash = "";
+  });
+
+  document.getElementById("save-key-btn").addEventListener("click", () => {
+    const key = document.getElementById("f-api-key").value.trim();
+    setApiKey(key);
+    toast(key ? "API-Key gespeichert" : "API-Key entfernt");
+  });
+
+  document.getElementById("remove-key-btn").addEventListener("click", () => {
+    document.getElementById("f-api-key").value = "";
+    setApiKey("");
+    toast("API-Key entfernt");
+  });
+}
+
 async function render() {
   if (!currentUser) {
     renderLogin();
@@ -808,6 +923,8 @@ async function render() {
     await renderProcessList();
   } else if (route.view === "process-detail") {
     await renderProcessDetail(route.id);
+  } else if (route.view === "settings") {
+    renderSettings();
   } else {
     await renderList();
   }
