@@ -44,19 +44,38 @@ keine weitere Einrichtung durch dich nötig.
 
 ## Schritt 3: App online stellen (GitHub Pages)
 
+GitHub Pages ist bei privaten Repos nur mit einem kostenpflichtigen
+GitHub-Plan möglich. Ist euer Repo privat und ihr habt keinen solchen Plan,
+müsst ihr es zuerst öffentlich machen (Settings -> ganz unten "Danger Zone"
+-> "Change visibility"). Im Code liegen keine Geheimnisse (der anon-Key ist
+bewusst öffentlich nutzbar, siehe Schritt 2), das ist also unbedenklich.
+
 1. Auf GitHub im Repository: **Settings -> Pages**.
 2. Bei "Source" den Branch auswählen, auf dem dieser Code liegt (aktuell
    `claude/ai-usecase-collection-app-ldxcdk`, nach dem Zusammenführen ggf. `main`), Ordner `/ (root)`.
 3. Speichern. Nach 1–2 Minuten ist die App unter der angezeigten Adresse
-   erreichbar (z.B. `https://dein-name.github.io/dein-repo/`).
+   erreichbar (z.B. `https://dein-name.github.io/dein-repo/`). Diese Adresse
+   brauchst du gleich in Schritt 4.
 
-## Schritt 4: App aufs Handy holen
+## Schritt 4: Login-Adresse bei Supabase eintragen
+
+Ohne diesen Schritt landet der Login-Link aus der E-Mail auf einer
+falschen Adresse ("localhost") statt in eurer App.
+
+1. Im Supabase-Dashboard zu **Authentication -> URL Configuration**.
+2. **Site URL** auf die Adresse aus Schritt 3 setzen, z.B.
+   `https://dein-name.github.io/dein-repo/`.
+3. Unter **Redirect URLs** eine Zeile hinzufügen:
+   `https://dein-name.github.io/dein-repo/**`
+4. Speichern.
+
+## Schritt 5: App aufs Handy holen
 
 1. Öffne den Link aus Schritt 3 im Handy-Browser (Safari bei iPhone, Chrome bei Android).
 2. Tippe auf **"Zum Home-Bildschirm"** (iPhone) bzw. **"App installieren"** (Android).
 3. Fertig – die App hat jetzt ein eigenes Icon auf dem Home-Bildschirm.
 
-## Schritt 5: Login & Kollegen einladen
+## Schritt 6: Login & Kollegen einladen
 
 - Login läuft ohne Passwort: E-Mail eingeben, es kommt ein Link per Mail, draufklicken – fertig.
 - Jede:r, der/die den App-Link kennt und sich per E-Mail einloggt, sieht die
