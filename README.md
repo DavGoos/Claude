@@ -59,8 +59,8 @@ bewusst öffentlich nutzbar, siehe Schritt 2), das ist also unbedenklich.
 
 ## Schritt 4: Login-Adresse bei Supabase eintragen
 
-Ohne diesen Schritt landet der Login-Link aus der E-Mail auf einer
-falschen Adresse ("localhost") statt in eurer App.
+Ohne diesen Schritt landet der Bestätigungs- bzw. Passwort-Reset-Link aus
+der E-Mail auf einer falschen Adresse ("localhost") statt in eurer App.
 
 1. Im Supabase-Dashboard zu **Authentication -> URL Configuration**.
 2. **Site URL** auf die Adresse aus Schritt 3 setzen, z.B.
@@ -77,13 +77,21 @@ falschen Adresse ("localhost") statt in eurer App.
 
 ## Schritt 6: Login & Kollegen einladen
 
-- Login läuft ohne Passwort: E-Mail eingeben, es kommt ein Link per Mail, draufklicken – fertig.
-- Jede:r, der/die den App-Link kennt und sich per E-Mail einloggt, sieht die
+- Erstanmeldung: Auf **"Registrieren"** tippen, E-Mail + Passwort vergeben.
+  Danach kommt **einmalig** eine Bestätigungsmail – den Link darin antippen.
+- Ab dann läuft der Login rein über E-Mail + Passwort, ganz ohne weitere
+  Mails. Nur bei "Passwort vergessen?" wird nochmal eine E-Mail nötig.
+- Jede:r, der/die den App-Link kennt und sich registriert, sieht die
   gleiche gemeinsame Ideen-Liste. Teile den Link also nur mit den
   Kolleg:innen, die mitmachen sollen.
 - Wächst das Team stark oder braucht ihr getrennte Bereiche pro Team, lässt
   sich das später ergänzen (eigene Tabelle/Berechtigungen) – für den Start
   reicht die gemeinsame Liste.
+- Der Mailversand steht weiterhin auf Supabases test-tauglichem,
+  stark gedrosseltem Standardversand (siehe vorheriger Hinweis zum
+  "email rate limit"). Bei mehreren Kolleg:innen, die sich kurz
+  hintereinander registrieren, kann das Limit erneut greifen – dann
+  hilft nur abwarten oder ein eigener SMTP-Dienst wie Resend.
 
 ## Eigenen Claude API-Key hinterlegen (für "Mit KI ausarbeiten")
 

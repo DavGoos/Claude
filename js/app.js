@@ -22,6 +22,8 @@ let currentUser = null;
 let ideasCache = [];
 let processesCache = [];
 let activeFilter = "all";
+let passwordRecoveryMode = false;
+let authMode = "login";
 
 const $app = document.getElementById("app");
 
@@ -81,17 +83,31 @@ window.addEventListener("hashchange", render);
 async function init() {
   const { data } = await sb.auth.getSession();
   currentUser = data.session ? data.session.user : null;
-  sb.auth.onAuthStateChange((_event, session) => {
+  sb.auth.onAuthStateChange((event, session) => {
+    if (event === "PASSWORD_RECOVERY") passwordRecoveryMode = true;
     currentUser = session ? session.user : null;
     render();
   });
   render();
 }
 
-async function sendMagicLink(email) {
-  const { error } = await sb.auth.signInWithOtp({
+async function signUpWithPassword(email, password) {
+  const { error } = await sb.auth.signUp({
     email,
+    password,
     options: { emailRedirectTo: window.location.origin + window.location.pathname },
+  });
+  return error;
+}
+
+async function signInWithPassword(email, password) {
+  const { error } = await sb.auth.signInWithPassword({ email, password });
+  return error;
+}
+
+async function requestPasswordReset(email) {
+  const { error } = await sb.auth.resetPasswordForEmail(email, {
+    redirectTo: window.location.origin + window.location.pathname,
   });
   return error;
 }
@@ -280,32 +296,107 @@ function bindTabBar() {
 // ---------- Views ----------
 
 function renderLogin() {
+  const isSignup = authMode === "signup";
   $app.innerHTML = `
     <div class="login-wrap">
       <img src="icons/icon-192.png" alt="Logo" />
       <h1>AI Use-Case Sammlung</h1>
       <p>Erfasse Ideen für AI Use-Cases in Sekunden, ordne sie euren Prozessen zu und lass dir von der KI die Umsetzung vorschlagen.</p>
-      <form id="login-form" style="width:100%; max-width:320px;">
-        <input type="email" id="login-email" placeholder="deine@email.de" required autocomplete="email" />
-        <button type="submit" class="btn-primary" style="width:100%;">Login-Link senden</button>
+      <div class="tabbar" style="max-width:320px;">
+        <button data-mode="login" class="${!isSignup ? "active" : ""}">Anmelden</button>
+        <button data-mode="signup" class="${isSignup ? "active" : ""}">Registrieren</button>
+      </div>
+      <form id="auth-form" style="width:100%; max-width:320px;">
+        <input type="email" id="auth-email" placeholder="deine@email.de" required autocomplete="email" />
+        <input
+          type="password"
+          id="auth-password"
+          placeholder="Passwort"
+          required
+          minlength="6"
+          autocomplete="${isSignup ? "new-password" : "current-password"}"
+        />
+        <button type="submit" class="btn-primary" style="width:100%;">${isSignup ? "Registrieren" : "Anmelden"}</button>
       </form>
+      ${!isSignup ? `<button class="btn-ghost" id="forgot-btn" style="margin-top:10px;">Passwort vergessen?</button>` : ""}
       <p id="login-msg" style="margin-top:14px; font-size:13px;"></p>
     </div>
   `;
-  document.getElementById("login-form").addEventListener("submit", async (e) => {
+
+  document.querySelectorAll(".tabbar button").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      authMode = btn.dataset.mode;
+      renderLogin();
+    });
+  });
+
+  document.getElementById("auth-form").addEventListener("submit", async (e) => {
     e.preventDefault();
-    const email = document.getElementById("login-email").value.trim();
+    const email = document.getElementById("auth-email").value.trim();
+    const password = document.getElementById("auth-password").value;
+    const btn = e.target.querySelector("button");
+    const msg = document.getElementById("login-msg");
+    btn.disabled = true;
+    btn.textContent = isSignup ? "Registriere..." : "Melde an...";
+    const error = isSignup ? await signUpWithPassword(email, password) : await signInWithPassword(email, password);
+    btn.disabled = false;
+    btn.textContent = isSignup ? "Registrieren" : "Anmelden";
+    if (error) {
+      msg.textContent = "Fehler: " + error.message;
+      msg.style.color = "#ef4444";
+    } else if (isSignup) {
+      msg.textContent = "Fast fertig! Bitte bestätige deine E-Mail-Adresse über den Link, den wir dir gerade geschickt haben. Danach kannst du dich hier mit E-Mail + Passwort anmelden.";
+      msg.style.color = "#22c55e";
+    }
+    // Bei erfolgreichem Login übernimmt onAuthStateChange das Weiterleiten in die App.
+  });
+
+  const forgotBtn = document.getElementById("forgot-btn");
+  if (forgotBtn) {
+    forgotBtn.addEventListener("click", async () => {
+      const email = prompt("Für welche E-Mail-Adresse soll das Passwort zurückgesetzt werden?");
+      if (!email || !email.trim()) return;
+      const error = await requestPasswordReset(email.trim());
+      const msg = document.getElementById("login-msg");
+      msg.textContent = error
+        ? "Fehler: " + error.message
+        : "Falls diese Adresse registriert ist, kommt gleich eine E-Mail mit einem Link zum Zurücksetzen.";
+      msg.style.color = error ? "#ef4444" : "#22c55e";
+    });
+  }
+}
+
+function renderSetNewPassword() {
+  $app.innerHTML = `
+    <div class="login-wrap">
+      <img src="icons/icon-192.png" alt="Logo" />
+      <h1>Neues Passwort setzen</h1>
+      <p>Vergib ein neues Passwort für dein Konto.</p>
+      <form id="new-password-form" style="width:100%; max-width:320px;">
+        <input type="password" id="new-password" placeholder="Neues Passwort" required minlength="6" autocomplete="new-password" />
+        <button type="submit" class="btn-primary" style="width:100%;">Passwort speichern</button>
+      </form>
+      <p id="reset-msg" style="margin-top:14px; font-size:13px;"></p>
+    </div>
+  `;
+
+  document.getElementById("new-password-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const password = document.getElementById("new-password").value;
     const btn = e.target.querySelector("button");
     btn.disabled = true;
-    btn.textContent = "Sende...";
-    const error = await sendMagicLink(email);
+    const { error } = await sb.auth.updateUser({ password });
     btn.disabled = false;
-    btn.textContent = "Login-Link senden";
-    const msg = document.getElementById("login-msg");
-    msg.textContent = error
-      ? "Fehler: " + error.message
-      : "Link gesendet! Öffne deine E-Mails auf diesem Handy und tippe auf den Link.";
-    msg.style.color = error ? "#ef4444" : "#22c55e";
+    const msg = document.getElementById("reset-msg");
+    if (error) {
+      msg.textContent = "Fehler: " + error.message;
+      msg.style.color = "#ef4444";
+      return;
+    }
+    passwordRecoveryMode = false;
+    toast("Passwort gespeichert, du bist eingeloggt.");
+    window.location.hash = "";
+    render();
   });
 }
 
@@ -912,6 +1003,10 @@ function renderSettings() {
 }
 
 async function render() {
+  if (passwordRecoveryMode) {
+    renderSetNewPassword();
+    return;
+  }
   if (!currentUser) {
     renderLogin();
     return;
