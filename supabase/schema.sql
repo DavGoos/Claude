@@ -60,6 +60,32 @@ create trigger on_auth_user_created
   for each row
   execute function handle_new_user();
 
+-- Hilfsfunktionen, die den Freigabe-/Admin-Status der eingeloggten Person
+-- lesen. Als "security definer" umgehen sie beim internen Lesen von
+-- "profiles" dessen eigene Zugriffsregeln - das ist hier bewusst so und
+-- notwendig, weil eine Regel auf "profiles", die direkt wieder "profiles"
+-- abfragt, sonst eine Endlosschleife auslöst ("infinite recursion
+-- detected in policy for relation profiles").
+create or replace function is_approved_user()
+returns boolean
+language sql
+security definer
+set search_path = public
+stable
+as $$
+  select coalesce((select is_approved from public.profiles where id = auth.uid()), false);
+$$;
+
+create or replace function is_admin_user()
+returns boolean
+language sql
+security definer
+set search_path = public
+stable
+as $$
+  select coalesce((select is_admin from public.profiles where id = auth.uid()), false);
+$$;
+
 alter table profiles enable row level security;
 
 drop policy if exists "Profiles: select own" on profiles;
@@ -70,12 +96,12 @@ create policy "Profiles: select own"
 drop policy if exists "Profiles: admin select all" on profiles;
 create policy "Profiles: admin select all"
   on profiles for select
-  using (exists (select 1 from profiles p where p.id = auth.uid() and p.is_admin));
+  using (is_admin_user());
 
 drop policy if exists "Profiles: admin update all" on profiles;
 create policy "Profiles: admin update all"
   on profiles for update
-  using (exists (select 1 from profiles p where p.id = auth.uid() and p.is_admin));
+  using (is_admin_user());
 
 -- Für Projekte, die schon vor der Freigabe-Funktion Nutzer:innen hatten:
 -- fehlende Profile nachträglich anlegen (Admin-E-Mail wird automatisch freigeschaltet).
@@ -120,25 +146,25 @@ drop policy if exists "Processes: select for logged in users" on processes;
 drop policy if exists "Processes: select for approved users" on processes;
 create policy "Processes: select for approved users"
   on processes for select
-  using (exists (select 1 from profiles where id = auth.uid() and is_approved));
+  using (is_approved_user());
 
 drop policy if exists "Processes: insert for logged in users" on processes;
 drop policy if exists "Processes: insert for approved users" on processes;
 create policy "Processes: insert for approved users"
   on processes for insert
-  with check (exists (select 1 from profiles where id = auth.uid() and is_approved));
+  with check (is_approved_user());
 
 drop policy if exists "Processes: update for logged in users" on processes;
 drop policy if exists "Processes: update for approved users" on processes;
 create policy "Processes: update for approved users"
   on processes for update
-  using (exists (select 1 from profiles where id = auth.uid() and is_approved));
+  using (is_approved_user());
 
 drop policy if exists "Processes: delete for logged in users" on processes;
 drop policy if exists "Processes: delete for approved users" on processes;
 create policy "Processes: delete for approved users"
   on processes for delete
-  using (exists (select 1 from profiles where id = auth.uid() and is_approved));
+  using (is_approved_user());
 
 -- Ideen / AI Use Cases
 create table if not exists ideas (
@@ -180,22 +206,22 @@ drop policy if exists "Ideas: select for logged in users" on ideas;
 drop policy if exists "Ideas: select for approved users" on ideas;
 create policy "Ideas: select for approved users"
   on ideas for select
-  using (exists (select 1 from profiles where id = auth.uid() and is_approved));
+  using (is_approved_user());
 
 drop policy if exists "Ideas: insert for logged in users" on ideas;
 drop policy if exists "Ideas: insert for approved users" on ideas;
 create policy "Ideas: insert for approved users"
   on ideas for insert
-  with check (exists (select 1 from profiles where id = auth.uid() and is_approved));
+  with check (is_approved_user());
 
 drop policy if exists "Ideas: update for logged in users" on ideas;
 drop policy if exists "Ideas: update for approved users" on ideas;
 create policy "Ideas: update for approved users"
   on ideas for update
-  using (exists (select 1 from profiles where id = auth.uid() and is_approved));
+  using (is_approved_user());
 
 drop policy if exists "Ideas: delete for logged in users" on ideas;
 drop policy if exists "Ideas: delete for approved users" on ideas;
 create policy "Ideas: delete for approved users"
   on ideas for delete
-  using (exists (select 1 from profiles where id = auth.uid() and is_approved));
+  using (is_approved_user());
