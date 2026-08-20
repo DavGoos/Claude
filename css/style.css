@@ -35,6 +35,36 @@ body {
   flex-direction: column;
 }
 
+/* Ab Tablet/Desktop-Breite: mehr Platz nutzen statt schmaler Handy-Spalte. */
+@media (min-width: 860px) {
+  #app {
+    max-width: 960px;
+  }
+
+  main {
+    padding: 24px 28px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  main > * {
+    width: 100%;
+    max-width: 680px;
+  }
+
+  .idea-list {
+    max-width: 900px;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+
+  .idea-list .empty-state {
+    grid-column: 1 / -1;
+  }
+}
+
 header.topbar {
   position: sticky;
   top: 0;

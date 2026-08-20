@@ -19,8 +19,10 @@ const PROCESS_STATUS_LABELS = {
 const PROCESS_STATUS_ORDER = ["open", "reviewed"];
 
 let currentUser = null;
+let currentProfile = null;
 let ideasCache = [];
 let processesCache = [];
+let profilesCache = [];
 let activeFilter = "all";
 let passwordRecoveryMode = false;
 let authMode = "login";
@@ -73,6 +75,7 @@ function currentRoute() {
   if (m) return { view: "process-detail", id: m[1] };
   if (hash === "#/processes") return { view: "process-list" };
   if (hash === "#/settings") return { view: "settings" };
+  if (hash === "#/admin") return { view: "admin" };
   return { view: "idea-list" };
 }
 
@@ -80,12 +83,40 @@ window.addEventListener("hashchange", render);
 
 // ---------- Auth ----------
 
+async function loadOwnProfile() {
+  const { data, error } = await sb.from("profiles").select("*").eq("id", currentUser.id).single();
+  if (error) {
+    toast("Fehler beim Laden des Profils: " + error.message);
+    return null;
+  }
+  return data;
+}
+
+async function loadAllProfiles() {
+  const { data, error } = await sb.from("profiles").select("*").order("created_at", { ascending: false });
+  if (error) {
+    toast("Fehler beim Laden: " + error.message);
+    return [];
+  }
+  return data || [];
+}
+
+async function approveUser(id) {
+  const { error } = await sb.from("profiles").update({ is_approved: true }).eq("id", id);
+  if (error) {
+    toast("Fehler beim Freigeben: " + error.message);
+    return false;
+  }
+  return true;
+}
+
 async function init() {
   const { data } = await sb.auth.getSession();
   currentUser = data.session ? data.session.user : null;
   sb.auth.onAuthStateChange((event, session) => {
     if (event === "PASSWORD_RECOVERY") passwordRecoveryMode = true;
     currentUser = session ? session.user : null;
+    currentProfile = null;
     render();
   });
   render();
@@ -516,6 +547,7 @@ async function renderList() {
     <header class="topbar">
       <h1>AI Ideen</h1>
       <div class="actions">
+        ${adminNavButton()}
         <button class="icon-btn" id="settings-btn">⚙</button>
         <button class="icon-btn" id="logout-btn">Logout</button>
       </div>
@@ -537,6 +569,7 @@ async function renderList() {
   `;
 
   bindTabBar();
+  bindAdminNavButton();
   document.getElementById("logout-btn").addEventListener("click", logout);
   document.getElementById("settings-btn").addEventListener("click", () => {
     window.location.hash = "#/settings";
@@ -899,6 +932,7 @@ async function renderProcessList() {
     <header class="topbar">
       <h1>Prozesse</h1>
       <div class="actions">
+        ${adminNavButton()}
         <button class="icon-btn" id="settings-btn">⚙</button>
         <button class="icon-btn" id="logout-btn">Logout</button>
       </div>
@@ -920,6 +954,7 @@ async function renderProcessList() {
   `;
 
   bindTabBar();
+  bindAdminNavButton();
   document.getElementById("logout-btn").addEventListener("click", logout);
   document.getElementById("settings-btn").addEventListener("click", () => {
     window.location.hash = "#/settings";
@@ -1214,6 +1249,123 @@ function renderSettings() {
   });
 }
 
+function renderPendingApproval() {
+  $app.innerHTML = `
+    <div class="login-wrap">
+      <img src="icons/icon-192.png" alt="Logo" />
+      <h1>Warten auf Freigabe</h1>
+      <p>Dein Konto (${escapeHtml(currentUser.email)}) ist bestätigt, muss aber noch
+      von einem Admin freigegeben werden, bevor du Ideen und Prozesse sehen kannst.
+      Melde dich kurz bei d.goos@house-of-communication.com.</p>
+      <div class="row" style="width:100%; max-width:320px;">
+        <button class="btn-secondary" id="recheck-btn" style="width:100%;">Status prüfen</button>
+      </div>
+      <button class="btn-ghost" id="pending-logout-btn" style="margin-top:14px;">Ausloggen</button>
+    </div>
+  `;
+  document.getElementById("recheck-btn").addEventListener("click", async () => {
+    currentProfile = null;
+    await render();
+  });
+  document.getElementById("pending-logout-btn").addEventListener("click", logout);
+}
+
+function renderProfileError() {
+  $app.innerHTML = `
+    <div class="login-wrap">
+      <img src="icons/icon-192.png" alt="Logo" />
+      <h1>Profil nicht gefunden</h1>
+      <p>Es gab ein Problem beim Laden deines Konto-Profils. Bitte kurz neu laden
+      oder bei d.goos@house-of-communication.com melden.</p>
+      <button class="btn-ghost" id="error-logout-btn">Ausloggen</button>
+    </div>
+  `;
+  document.getElementById("error-logout-btn").addEventListener("click", logout);
+}
+
+function adminNavButton() {
+  return currentProfile && currentProfile.is_admin
+    ? `<button class="icon-btn" id="admin-btn">🛡 Freigaben</button>`
+    : "";
+}
+
+function bindAdminNavButton() {
+  const btn = document.getElementById("admin-btn");
+  if (btn) {
+    btn.addEventListener("click", () => {
+      window.location.hash = "#/admin";
+    });
+  }
+}
+
+async function renderAdmin() {
+  profilesCache = await loadAllProfiles();
+  const pending = profilesCache.filter((p) => !p.is_approved);
+  const approved = profilesCache.filter((p) => p.is_approved);
+
+  $app.innerHTML = `
+    <header class="topbar">
+      <div class="back-row">
+        <button class="icon-btn" id="back-btn">&larr; Zurück</button>
+      </div>
+    </header>
+    <main>
+      <div class="section-title" style="margin:0 4px 8px;">Wartet auf Freigabe (${pending.length})</div>
+      <div class="idea-list" style="margin-bottom:20px;">
+        ${
+          pending.length
+            ? pending
+                .map(
+                  (p) => `
+              <div class="idea-item">
+                <div class="idea-title">${escapeHtml(p.email)}</div>
+                <div class="idea-meta">
+                  <button class="btn-primary" data-approve="${p.id}" style="padding:8px 14px; font-size:13px;">Freigeben</button>
+                </div>
+              </div>
+            `
+                )
+                .join("")
+            : `<div class="empty-state">Aktuell wartet niemand auf Freigabe.</div>`
+        }
+      </div>
+
+      <div class="section-title" style="margin:0 4px 8px;">Freigegebene Mitglieder (${approved.length})</div>
+      <div class="idea-list">
+        ${approved
+          .map(
+            (p) => `
+            <div class="idea-item">
+              <div class="idea-title">${escapeHtml(p.email)}</div>
+              <div class="idea-meta">
+                ${p.is_admin ? `<span class="badge">Admin</span>` : ""}
+              </div>
+            </div>
+          `
+          )
+          .join("")}
+      </div>
+    </main>
+  `;
+
+  document.getElementById("back-btn").addEventListener("click", () => {
+    window.location.hash = "";
+  });
+
+  document.querySelectorAll("[data-approve]").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      btn.disabled = true;
+      const ok = await approveUser(btn.dataset.approve);
+      if (ok) {
+        toast("Freigegeben");
+        await renderAdmin();
+      } else {
+        btn.disabled = false;
+      }
+    });
+  });
+}
+
 async function render() {
   if (passwordRecoveryMode) {
     renderSetNewPassword();
@@ -1221,6 +1373,17 @@ async function render() {
   }
   if (!currentUser) {
     renderLogin();
+    return;
+  }
+  if (!currentProfile) {
+    currentProfile = await loadOwnProfile();
+  }
+  if (!currentProfile) {
+    renderProfileError();
+    return;
+  }
+  if (!currentProfile.is_approved) {
+    renderPendingApproval();
     return;
   }
   const route = currentRoute();
@@ -1232,6 +1395,8 @@ async function render() {
     await renderProcessDetail(route.id);
   } else if (route.view === "settings") {
     renderSettings();
+  } else if (route.view === "admin" && currentProfile.is_admin) {
+    await renderAdmin();
   } else {
     await renderList();
   }

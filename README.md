@@ -82,9 +82,17 @@ der E-Mail auf einer falschen Adresse ("localhost") statt in eurer App.
   Danach kommt **einmalig** eine Bestätigungsmail – den Link darin antippen.
 - Ab dann läuft der Login rein über E-Mail + Passwort, ganz ohne weitere
   Mails. Nur bei "Passwort vergessen?" wird nochmal eine E-Mail nötig.
-- Jede:r, der/die den App-Link kennt und sich registriert, sieht die
-  gleiche gemeinsame Ideen-Liste. Teile den Link also nur mit den
-  Kolleg:innen, die mitmachen sollen.
+- **Zugriff ist auf zwei Arten geschützt:**
+  1. **Domain-Sperre**: Nur E-Mail-Adressen mit `@house-of-communication.com`
+     können sich überhaupt registrieren (fest im Datenbank-Skript
+     hinterlegt – bei einer anderen Firmendomain in `supabase/schema.sql`
+     nach `house-of-communication` suchen und ersetzen).
+  2. **Admin-Freigabe**: Nach der E-Mail-Bestätigung sieht die Person noch
+     keine Daten, sondern einen "Warten auf Freigabe"-Bildschirm. Der Admin
+     (**d.goos@house-of-communication.com**, automatisch beim ersten Login
+     als Admin markiert) sieht oben rechts einen Button **"🛡 Freigaben"**,
+     dort die wartende Person freischalten – danach hat sie normalen
+     Zugriff.
 - Wächst das Team stark oder braucht ihr getrennte Bereiche pro Team, lässt
   sich das später ergänzen (eigene Tabelle/Berechtigungen) – für den Start
   reicht die gemeinsame Liste.
@@ -136,7 +144,10 @@ funktioniert die App ganz normal weiter, nur eben ohne die KI-Ausarbeitung.
   API-Key nötig. Die Antwort kopiert man zurück und übernimmt daraus
   Beschreibung, Tools, wichtige Punkte vorab und einen Start-Prompt.
   Optional geht das auch automatisch mit einem eigenen API-Key (siehe unten).
-- **Gemeinsam nutzen**: Mehrere Kolleg:innen loggen sich ein und sehen/bearbeiten dieselbe Liste.
+- **Gemeinsam nutzen**: Mehrere Kolleg:innen loggen sich ein und sehen/bearbeiten dieselbe Liste
+  – geschützt durch Domain-Sperre + Admin-Freigabe (siehe Schritt 6).
+- **Am PC nutzen**: Läuft genauso im Desktop-Browser, das Layout passt sich
+  automatisch an breitere Bildschirme an.
 - **Prozesse dokumentieren**: Im Tab "Prozesse" alle Abläufe eures Bereichs
   erfassen und mit einer AI-Potenzial-Einschätzung versehen.
 - **Teilprozesse strukturieren**: Jeder Prozess kann optional einem
