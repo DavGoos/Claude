@@ -25,6 +25,12 @@
       window.addEventListener("load", () => {
         navigator.serviceWorker.register("sw.js").catch(() => {});
       });
+      let reloadedForUpdate = false;
+      navigator.serviceWorker.addEventListener("controllerchange", () => {
+        if (reloadedForUpdate) return;
+        reloadedForUpdate = true;
+        window.location.reload();
+      });
     }
   </script>
 </body>
