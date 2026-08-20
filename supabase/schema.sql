@@ -24,8 +24,13 @@ create table if not exists processes (
   ai_potential smallint not null default 3 check (ai_potential between 1 and 5),
   notes text not null default '',
   status text not null default 'open'
-    check (status in ('open', 'reviewed'))
+    check (status in ('open', 'reviewed')),
+  parent_process_id uuid references processes (id) on delete set null
 );
+
+-- Für Projekte, die die processes-Tabelle schon vor der Teilprozess-
+-- Verknüpfung angelegt hatten: Spalte nachträglich ergänzen.
+alter table processes add column if not exists parent_process_id uuid references processes (id) on delete set null;
 
 drop trigger if exists processes_set_updated_at on processes;
 create trigger processes_set_updated_at

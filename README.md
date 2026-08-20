@@ -1,8 +1,9 @@
-# AI Use-Case Sammlung
+# Process- & AI-Usecase Management
 
-Eine kleine App, um AI-Ideen sekundenschnell zu erfassen, sie euren
-Geschäftsprozessen zuzuordnen und später mit KI-Unterstützung zu bewerten
-und auszuarbeiten. Läuft als Web-App, die man sich aufs Handy holt wie eine
+Eine kleine App, um die Prozesse eures Bereichs zu dokumentieren, sie auf
+AI-Potenzial zu prüfen und AI-Use-Case-Ideen sekundenschnell zu erfassen,
+euren Prozessen zuzuordnen und später mit KI-Unterstützung zu bewerten und
+auszuarbeiten. Läuft als Web-App, die man sich aufs Handy holt wie eine
 normale App (kein App Store nötig).
 
 Es gibt **keinen eigenen Server**, den ihr betreiben müsst – nur zwei fertige
@@ -13,8 +14,8 @@ Bausteine, die einmalig eingerichtet werden:
 
 Die Einrichtung dauert einmalig ca. 15–20 Minuten. Danach nutzt ihr die App
 einfach. Für die KI-Ausarbeitung hinterlegt später jede:r Nutzer:in optional
-einen eigenen Claude API-Key direkt in der App (siehe unten) – dafür ist
-keine weitere Einrichtung durch dich nötig.
+einen eigenen API-Key (Claude oder OpenAI, frei wählbar) direkt in der App
+(siehe unten) – dafür ist keine weitere Einrichtung durch dich nötig.
 
 ---
 
@@ -93,21 +94,27 @@ der E-Mail auf einer falschen Adresse ("localhost") statt in eurer App.
   hintereinander registrieren, kann das Limit erneut greifen – dann
   hilft nur abwarten oder ein eigener SMTP-Dienst wie Resend.
 
-## Eigenen Claude API-Key hinterlegen (für "Mit KI ausarbeiten")
+## Eigenen KI-API-Key hinterlegen (für "Mit KI ausarbeiten")
 
 Dieser Schritt ist **optional** und macht jede Person für sich selbst,
-direkt in der App – nicht du als Ersteller:in einmalig für alle:
+direkt in der App – nicht du als Ersteller:in einmalig für alle. Man kann
+zwischen zwei Anbietern wählen, je nachdem, wo man schon einen Zugang hat:
 
-1. Key auf [console.anthropic.com](https://console.anthropic.com) erstellen
-   ("API Keys", etwas Guthaben aufladen reicht für sehr viele Nutzungen).
-2. In der App oben rechts auf das Zahnrad-Symbol (⚙) tippen.
+1. In der App oben rechts auf das Zahnrad-Symbol (⚙) tippen.
+2. **Claude** oder **OpenAI** auswählen (die App zeigt direkt an, wo man
+   für den gewählten Anbieter einen Key bekommt):
+   - **Claude**: Key auf [console.anthropic.com](https://console.anthropic.com) erstellen ("API Keys").
+   - **OpenAI**: Key auf [platform.openai.com](https://platform.openai.com) erstellen ("API keys").
+   - Bei beiden reicht ein kleines Guthaben (wenige Euro) für sehr viele Nutzungen.
 3. Key einfügen, "Speichern" tippen. Fertig.
 
 Der Key wird ausschließlich lokal auf dem jeweiligen Handy gespeichert und
-bei der KI-Anfrage direkt an Claude geschickt – er läuft nie über einen
-gemeinsamen Server und andere Kolleg:innen sehen ihn nicht. Ohne Key
-funktioniert die App ganz normal weiter, nur der Button "Mit KI
-ausarbeiten" zeigt dann einen Hinweis, den Key zu ergänzen.
+bei der KI-Anfrage direkt an den gewählten Anbieter geschickt – er läuft
+nie über einen gemeinsamen Server und andere Kolleg:innen sehen ihn nicht.
+Jede Person kann sich unabhängig für Claude oder OpenAI entscheiden, je
+nachdem, was ihr schon zur Verfügung steht. Ohne Key funktioniert die App
+ganz normal weiter, nur der Button "Mit KI ausarbeiten" zeigt dann einen
+Hinweis, den Key zu ergänzen.
 
 ---
 
@@ -120,10 +127,13 @@ ausarbeiten" zeigt dann einen Hinweis, den Key zu ergänzen.
 - **Mit KI ausarbeiten**: Ein Klick generiert einen Beschreibungsvorschlag,
   passende Tools, wichtige Punkte vorab und einen fertigen Start-Prompt für
   den eigentlichen Projektstart (braucht einen eigenen, kostenlos in der
-  App hinterlegten Claude API-Key, siehe unten).
+  App hinterlegten API-Key von Claude oder OpenAI, siehe unten).
 - **Gemeinsam nutzen**: Mehrere Kolleg:innen loggen sich ein und sehen/bearbeiten dieselbe Liste.
 - **Prozesse dokumentieren**: Im Tab "Prozesse" alle Abläufe eures Bereichs
   erfassen und mit einer AI-Potenzial-Einschätzung versehen.
+- **Teilprozesse strukturieren**: Jeder Prozess kann optional einem
+  übergeordneten Gesamtprozess zugeordnet werden; die Detailansicht zeigt
+  alle Teilprozesse eines übergeordneten Prozesses.
 - **Use Cases zu Prozessen zuordnen**: Jede Idee kann optional einem Prozess
   zugeordnet werden; in der Prozess-Detailansicht seht ihr alle dazu bereits
   erfassten Use Cases.
@@ -134,7 +144,7 @@ ausarbeiten" zeigt dann einen Hinweis, den Key zu ergänzen.
 index.html                Haupt-App
 css/style.css             Design
 js/config.js              Supabase-Zugangsdaten (Schritt 2)
-js/app.js                 App-Logik inkl. direktem Claude API Aufruf
+js/app.js                 App-Logik inkl. direktem Claude/OpenAI API Aufruf
 manifest.json, sw.js, icons/   PWA-Grundlagen (Installierbarkeit)
-supabase/schema.sql       Datenbank-Struktur (Ideen + Prozesse)
+supabase/schema.sql       Datenbank-Struktur (Ideen + Prozesse inkl. Teilprozess-Hierarchie)
 ```

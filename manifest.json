@@ -1,7 +1,7 @@
 {
-  "name": "AI Use-Case Sammlung",
-  "short_name": "AI Ideen",
-  "description": "Ideen für AI Use-Cases schnell erfassen, bewerten und ausarbeiten.",
+  "name": "Process- & AI-Usecase Management",
+  "short_name": "Process & AI",
+  "description": "Prozesse dokumentieren, auf AI-Potenzial prüfen und AI-Use-Cases erfassen, bewerten und ausarbeiten.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",

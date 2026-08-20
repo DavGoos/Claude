@@ -165,15 +165,48 @@ async function deleteIdea(id) {
   return true;
 }
 
-const API_KEY_STORAGE = "ai_ideen_anthropic_key";
+const AI_PROVIDERS = {
+  anthropic: {
+    label: "Claude",
+    keyStorage: "ai_ideen_anthropic_key",
+    placeholder: "sk-ant-...",
+    howTo: [
+      "Auf console.anthropic.com registrieren oder einloggen.",
+      'Links im Menü auf "API Keys" gehen und einen neuen Key erstellen.',
+      "Etwas Guthaben aufladen (wenige Euro reichen für sehr viele Nutzungen).",
+    ],
+  },
+  openai: {
+    label: "OpenAI (ChatGPT)",
+    keyStorage: "ai_ideen_openai_key",
+    placeholder: "sk-...",
+    howTo: [
+      "Auf platform.openai.com registrieren oder einloggen.",
+      'Über das Nutzermenü zu "API keys" gehen und einen neuen Key erstellen.',
+      "Etwas Guthaben aufladen (wenige Euro reichen für sehr viele Nutzungen).",
+    ],
+  },
+};
 
-function getApiKey() {
-  return localStorage.getItem(API_KEY_STORAGE) || "";
+const AI_PROVIDER_STORAGE = "ai_ideen_ai_provider";
+
+function getAiProvider() {
+  const stored = localStorage.getItem(AI_PROVIDER_STORAGE);
+  return AI_PROVIDERS[stored] ? stored : "anthropic";
 }
 
-function setApiKey(key) {
-  if (key) localStorage.setItem(API_KEY_STORAGE, key);
-  else localStorage.removeItem(API_KEY_STORAGE);
+function setAiProvider(provider) {
+  localStorage.setItem(AI_PROVIDER_STORAGE, provider);
+}
+
+function getProviderKey(provider) {
+  return localStorage.getItem(AI_PROVIDERS[provider].keyStorage) || "";
+}
+
+function setProviderKey(provider, key) {
+  const storageKey = AI_PROVIDERS[provider].keyStorage;
+  if (key) localStorage.setItem(storageKey, key);
+  else localStorage.removeItem(storageKey);
 }
 
 const ELABORATE_SYSTEM_PROMPT = `Du bist ein erfahrener AI-Solution-Architekt, der intern erfasste
@@ -198,14 +231,7 @@ function extractJson(text) {
   return JSON.parse(jsonSlice);
 }
 
-async function elaborateWithAI(idea) {
-  const apiKey = getApiKey();
-  if (!apiKey) {
-    throw new Error("Kein eigener Claude API-Key hinterlegt. Bitte unter Einstellungen eintragen.");
-  }
-
-  const userMessage = `Kurznotiz: ${idea.quick_note}\n\nBisherige Beschreibung: ${idea.description || "(noch keine)"}`;
-
+async function elaborateWithAnthropic(apiKey, userMessage) {
   const res = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: {
@@ -221,21 +247,62 @@ async function elaborateWithAI(idea) {
       messages: [{ role: "user", content: userMessage }],
     }),
   });
-
   if (!res.ok) {
     const errText = await res.text();
     throw new Error(`Claude API Fehler: ${errText}`);
   }
-
   const data = await res.json();
-  const rawText = data.content?.[0]?.text || "";
+  return data.content?.[0]?.text || "";
+}
+
+async function elaborateWithOpenAI(apiKey, userMessage) {
+  const res = await fetch("https://api.openai.com/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model: "gpt-4o-mini",
+      response_format: { type: "json_object" },
+      messages: [
+        { role: "system", content: ELABORATE_SYSTEM_PROMPT },
+        { role: "user", content: userMessage },
+      ],
+    }),
+  });
+  if (!res.ok) {
+    const errText = await res.text();
+    throw new Error(`OpenAI API Fehler: ${errText}`);
+  }
+  const data = await res.json();
+  return data.choices?.[0]?.message?.content || "";
+}
+
+async function elaborateWithAI(idea) {
+  const provider = getAiProvider();
+  const apiKey = getProviderKey(provider);
+  if (!apiKey) {
+    throw new Error("Kein eigener API-Key hinterlegt. Bitte unter Einstellungen eintragen.");
+  }
+
+  const userMessage = `Kurznotiz: ${idea.quick_note}\n\nBisherige Beschreibung: ${idea.description || "(noch keine)"}`;
+
+  const rawText =
+    provider === "openai"
+      ? await elaborateWithOpenAI(apiKey, userMessage)
+      : await elaborateWithAnthropic(apiKey, userMessage);
+
   return extractJson(rawText);
 }
 
 // ---------- Data: Processes ----------
 
 async function loadProcesses() {
-  const { data, error } = await sb.from("processes").select("*").order("created_at", { ascending: false });
+  const { data, error } = await sb
+    .from("processes")
+    .select("*, parent:parent_process_id(id, name)")
+    .order("created_at", { ascending: false });
   if (error) {
     toast("Fehler beim Laden: " + error.message);
     return [];
@@ -243,11 +310,13 @@ async function loadProcesses() {
   return data || [];
 }
 
-async function createProcess(name) {
+async function createProcess(name, parentProcessId) {
+  const payload = { name, created_by: currentUser.id };
+  if (parentProcessId) payload.parent_process_id = parentProcessId;
   const { data, error } = await sb
     .from("processes")
-    .insert({ name, created_by: currentUser.id })
-    .select()
+    .insert(payload)
+    .select("*, parent:parent_process_id(id, name)")
     .single();
   if (error) {
     toast("Fehler beim Speichern: " + error.message);
@@ -257,7 +326,12 @@ async function createProcess(name) {
 }
 
 async function updateProcess(id, patch) {
-  const { data, error } = await sb.from("processes").update(patch).eq("id", id).select().single();
+  const { data, error } = await sb
+    .from("processes")
+    .update(patch)
+    .eq("id", id)
+    .select("*, parent:parent_process_id(id, name)")
+    .single();
   if (error) {
     toast("Fehler beim Speichern: " + error.message);
     return null;
@@ -300,8 +374,8 @@ function renderLogin() {
   $app.innerHTML = `
     <div class="login-wrap">
       <img src="icons/icon-192.png" alt="Logo" />
-      <h1>AI Use-Case Sammlung</h1>
-      <p>Erfasse Ideen für AI Use-Cases in Sekunden, ordne sie euren Prozessen zu und lass dir von der KI die Umsetzung vorschlagen.</p>
+      <h1>Process- &amp; AI-Usecase Management</h1>
+      <p>Dokumentiere eure Prozesse, prüft sie auf AI-Potenzial und erfasst AI-Use-Cases in Sekunden – inklusive Bewertung und KI-gestützter Ausarbeitung.</p>
       <div class="tabbar" style="max-width:320px;">
         <button data-mode="login" class="${!isSignup ? "active" : ""}">Anmelden</button>
         <button data-mode="signup" class="${isSignup ? "active" : ""}">Registrieren</button>
@@ -528,6 +602,16 @@ function processOptions(selectedId) {
   return options.join("");
 }
 
+function parentProcessOptions(excludeId, selectedId) {
+  const options = [`<option value="">— Keiner (Top-Level-Prozess) —</option>`];
+  processesCache
+    .filter((p) => p.id !== excludeId)
+    .forEach((p) => {
+      options.push(`<option value="${p.id}" ${p.id === selectedId ? "selected" : ""}>${escapeHtml(p.name)}</option>`);
+    });
+  return options.join("");
+}
+
 async function renderDetail(id) {
   let idea = ideasCache.find((i) => i.id === id);
   if (!idea) {
@@ -741,6 +825,7 @@ function processCard(proc) {
         <span class="badge status-${proc.status === "reviewed" ? "done" : "idea"}">${PROCESS_STATUS_LABELS[proc.status]}</span>
         <span class="badge"><span class="priority-dot" style="background:${ai.color}"></span> ${ai.label}</span>
         ${proc.department ? `<span class="badge">${escapeHtml(proc.department)}</span>` : ""}
+        ${proc.parent ? `<span class="badge">↳ ${escapeHtml(proc.parent.name)}</span>` : ""}
       </div>
     </div>
   `;
@@ -840,6 +925,8 @@ async function renderProcessDetail(id) {
     ? ideasCache.filter((i) => i.process_id === proc.id)
     : (ideasCache = await loadIdeas()).filter((i) => i.process_id === proc.id);
 
+  const subProcesses = processesCache.filter((p) => p.parent_process_id === proc.id);
+
   $app.innerHTML = `
     <header class="topbar">
       <div class="back-row">
@@ -854,6 +941,11 @@ async function renderProcessDetail(id) {
 
         <label class="field-label">Bereich / Team</label>
         <input class="field" id="f-department" value="${escapeHtml(proc.department || "")}" placeholder="z.B. Vertrieb, Buchhaltung..." />
+
+        <label class="field-label">Übergeordneter Prozess</label>
+        <select class="field" id="f-parent-process">
+          ${parentProcessOptions(proc.id, proc.parent_process_id)}
+        </select>
 
         <label class="field-label">Status</label>
         <select class="field" id="f-status">
@@ -872,6 +964,20 @@ async function renderProcessDetail(id) {
         ${sliderRow("ai_potential", "AI-Potenzial", proc.ai_potential)}
         <label class="field-label">Notizen / Begründung</label>
         <textarea class="field" id="f-notes" placeholder="Warum viel/wenig Potenzial? Erste Ansätze?">${escapeHtml(proc.notes || "")}</textarea>
+      </div>
+
+      <div class="card">
+        <div class="section-title" style="margin:0 0 10px;">Teilprozesse</div>
+        <div id="sub-processes">
+          ${
+            subProcesses.length
+              ? subProcesses.map((p) => `<a class="link-item" href="#/process/${p.id}">${escapeHtml(p.name)}</a>`).join("")
+              : `<div class="empty-state" style="padding:16px 4px;">Noch keine Teilprozesse zugeordnet.</div>`
+          }
+        </div>
+        <div class="row">
+          <button class="btn-secondary" id="add-subprocess-btn" style="width:100%;">+ Neuen Teilprozess anlegen</button>
+        </div>
       </div>
 
       <div class="card">
@@ -933,6 +1039,17 @@ async function renderProcessDetail(id) {
     }
   });
 
+  document.getElementById("add-subprocess-btn").addEventListener("click", async () => {
+    const text = prompt("Name des neuen Teilprozesses:");
+    if (!text || !text.trim()) return;
+    const sub = await createProcess(text.trim(), proc.id);
+    if (sub) {
+      toast("Teilprozess gespeichert");
+      processesCache = await loadProcesses();
+      window.location.hash = `#/process/${sub.id}`;
+    }
+  });
+
   document.getElementById("save-process-detail-btn").addEventListener("click", async () => {
     const btn = document.getElementById("save-process-detail-btn");
     btn.disabled = true;
@@ -940,6 +1057,7 @@ async function renderProcessDetail(id) {
     const patch = {
       name: document.getElementById("f-name").value.trim(),
       department: document.getElementById("f-department").value.trim(),
+      parent_process_id: document.getElementById("f-parent-process").value || null,
       status: document.getElementById("f-status").value,
       description: document.getElementById("f-description").value.trim(),
       ai_potential: Number(document.querySelector('[data-field="ai_potential"]').value),
@@ -959,7 +1077,10 @@ async function renderProcessDetail(id) {
 // ---------- View: Settings ----------
 
 function renderSettings() {
-  const existing = getApiKey();
+  const provider = getAiProvider();
+  const info = AI_PROVIDERS[provider];
+  const existing = getProviderKey(provider);
+
   $app.innerHTML = `
     <header class="topbar">
       <div class="back-row">
@@ -968,15 +1089,28 @@ function renderSettings() {
     </header>
     <main>
       <div class="card">
-        <div class="section-title" style="margin:0 0 10px;">Eigener Claude API-Key</div>
+        <div class="section-title" style="margin:0 0 10px;">Eigener KI-API-Key</div>
         <p style="font-size:13.5px; color:var(--text-dim); margin:0 0 14px; line-height:1.5;">
           Wird nur für den Button "Mit KI ausarbeiten" gebraucht und ausschließlich
           auf diesem Handy gespeichert – nie an Kolleg:innen oder einen eigenen
-          Server geschickt. Einen Key bekommst du kostenlos (mit kleinem
-          Startguthaben) auf <strong>console.anthropic.com</strong> unter "API Keys".
+          Server geschickt.
         </p>
-        <label class="field-label" style="margin-top:0;">API-Key</label>
-        <input class="field" id="f-api-key" type="password" value="${escapeHtml(existing)}" placeholder="sk-ant-..." autocomplete="off" />
+        <div class="tabbar">
+          ${Object.keys(AI_PROVIDERS)
+            .map(
+              (key) =>
+                `<button data-provider="${key}" class="${key === provider ? "active" : ""}">${AI_PROVIDERS[key].label}</button>`
+            )
+            .join("")}
+        </div>
+        <div style="font-size:13.5px; color:var(--text-dim); margin:14px 0; line-height:1.6;">
+          <strong style="color:var(--text);">So kommst du an einen ${info.label}-Key:</strong>
+          <ol style="margin:8px 0 0; padding-left:20px;">
+            ${info.howTo.map((step) => `<li style="margin-bottom:4px;">${step}</li>`).join("")}
+          </ol>
+        </div>
+        <label class="field-label" style="margin-top:0;">API-Key (${info.label})</label>
+        <input class="field" id="f-api-key" type="password" value="${escapeHtml(existing)}" placeholder="${info.placeholder}" autocomplete="off" />
         <div class="row">
           <button class="btn-primary" id="save-key-btn">Speichern</button>
           <button class="btn-secondary" id="remove-key-btn">Entfernen</button>
@@ -989,15 +1123,23 @@ function renderSettings() {
     window.location.hash = "";
   });
 
+  document.querySelectorAll(".tabbar button").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      setAiProvider(btn.dataset.provider);
+      renderSettings();
+    });
+  });
+
   document.getElementById("save-key-btn").addEventListener("click", () => {
     const key = document.getElementById("f-api-key").value.trim();
-    setApiKey(key);
+    setProviderKey(provider, key);
+    setAiProvider(provider);
     toast(key ? "API-Key gespeichert" : "API-Key entfernt");
   });
 
   document.getElementById("remove-key-btn").addEventListener("click", () => {
     document.getElementById("f-api-key").value = "";
-    setApiKey("");
+    setProviderKey(provider, "");
     toast("API-Key entfernt");
   });
 }
