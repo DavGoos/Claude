@@ -221,6 +221,10 @@ optional eine erste Beschreibung. Antworte AUSSCHLIESSLICH mit einem JSON-Objekt
   "initial_prompt": "Ein guter, direkt verwendbarer Start-Prompt (auf Deutsch), mit dem man z.B. bei Claude Code oder einem neuen Chat in die Umsetzung dieses Projekts einsteigen kann. Soll Kontext, Ziel und relevante Rahmenbedingungen enthalten."
 }`;
 
+function buildElaboratePrompt(idea) {
+  return `${ELABORATE_SYSTEM_PROMPT}\n\n---\n\nKurznotiz: ${idea.quick_note}\n\nBisherige Beschreibung: ${idea.description || "(noch keine)"}`;
+}
+
 function extractJson(text) {
   const trimmed = text.trim();
   const fenced = trimmed.match(/```(?:json)?\s*([\s\S]*?)```/i);
@@ -668,8 +672,30 @@ async function renderDetail(id) {
 
       <div class="card">
         <div class="section-title" style="margin:0 0 10px;">KI-Unterstützung</div>
-        <button class="btn-secondary" id="ai-btn" style="width:100%;">✨ Mit KI ausarbeiten</button>
+        <p style="font-size:13.5px; color:var(--text-dim); margin:0 0 12px; line-height:1.5;">
+          Erzeuge einen fertigen Prompt und füge ihn in ein beliebiges KI-Chat-Tool ein,
+          das du bereits nutzt (Copilot, ChatGPT, Claude, Gemini, ...) – kein eigener
+          API-Key nötig. Kopier die Antwort danach hier zurück rein.
+        </p>
+        <button class="btn-secondary" id="generate-prompt-btn" style="width:100%;">📋 Prompt erzeugen</button>
+        <div id="generated-prompt-wrap" style="display:none; margin-top:12px;">
+          <pre id="generated-prompt-text" style="white-space:pre-wrap; background:var(--surface-2); border:1px solid var(--border); border-radius:10px; padding:12px; font-size:13px; font-family:inherit; margin:0; max-height:220px; overflow-y:auto;"></pre>
+          <div class="row">
+            <button class="btn-secondary" id="copy-generated-prompt-btn" style="width:100%;">In Zwischenablage kopieren</button>
+          </div>
+        </div>
+
+        <label class="field-label">Antwort der KI hier einfügen</label>
+        <textarea class="field" id="ai-response-paste" placeholder="Antwort aus Copilot/ChatGPT/Claude/... hier einfügen"></textarea>
+        <div class="row">
+          <button class="btn-primary" id="apply-pasted-btn" style="width:100%;">Übernehmen</button>
+        </div>
         <div id="ai-result" class="ai-result"></div>
+
+        <details style="margin-top:18px;">
+          <summary style="cursor:pointer; font-size:13px; color:var(--text-dim);">Stattdessen automatisch mit eigenem API-Key (optional)</summary>
+          <button class="btn-secondary" id="ai-btn" style="width:100%; margin-top:10px;">✨ Automatisch mit KI ausarbeiten</button>
+        </details>
       </div>
 
       <div class="card">
@@ -682,7 +708,7 @@ async function renderDetail(id) {
         <label class="field-label">Start-Prompt fürs Projekt</label>
         <textarea class="field" id="f-initial-prompt" placeholder="Wird von der KI generiert">${escapeHtml(idea.initial_prompt || "")}</textarea>
         <div class="row">
-          <button class="btn-secondary" id="copy-prompt-btn" style="width:100%;">Prompt kopieren</button>
+          <button class="btn-secondary" id="copy-prompt-btn" style="width:100%;">Start-Prompt kopieren</button>
         </div>
       </div>
 
@@ -762,6 +788,60 @@ async function renderDetail(id) {
     }
   });
 
+  function showAiResult(result) {
+    const resultEl = document.getElementById("ai-result");
+    resultEl.innerHTML = `
+      <h3>Vorschlag Beschreibung</h3>
+      <pre>${escapeHtml(result.description || "")}</pre>
+      <h3>Vorschlag Tools</h3>
+      <pre>${escapeHtml(result.tools || "")}</pre>
+      <h3>Wichtige Gedanken vorab</h3>
+      <pre>${escapeHtml(result.considerations || "")}</pre>
+      <h3>Start-Prompt</h3>
+      <pre>${escapeHtml(result.initial_prompt || "")}</pre>
+      <div class="row" style="margin-top:12px;">
+        <button class="btn-primary" id="apply-ai-btn" style="width:100%;">Vorschlag übernehmen</button>
+      </div>
+    `;
+    document.getElementById("apply-ai-btn").addEventListener("click", () => {
+      if (result.description) document.getElementById("f-description").value = result.description;
+      if (result.tools) document.getElementById("f-tools").value = result.tools;
+      if (result.considerations) document.getElementById("f-considerations").value = result.considerations;
+      if (result.initial_prompt) document.getElementById("f-initial-prompt").value = result.initial_prompt;
+      toast("Vorschlag übernommen, denk ans Speichern!");
+    });
+  }
+
+  document.getElementById("generate-prompt-btn").addEventListener("click", async () => {
+    const patchNow = collectPatch();
+    await updateIdea(idea.id, patchNow);
+    const prompt = buildElaboratePrompt(patchNow);
+    document.getElementById("generated-prompt-text").textContent = prompt;
+    document.getElementById("generated-prompt-wrap").style.display = "block";
+  });
+
+  document.getElementById("copy-generated-prompt-btn").addEventListener("click", async () => {
+    const text = document.getElementById("generated-prompt-text").textContent;
+    try {
+      await navigator.clipboard.writeText(text);
+      toast("In Zwischenablage kopiert – jetzt in dein KI-Tool einfügen");
+    } catch {
+      toast("Kopieren nicht möglich, bitte manuell markieren");
+    }
+  });
+
+  document.getElementById("apply-pasted-btn").addEventListener("click", () => {
+    const resultEl = document.getElementById("ai-result");
+    const pasted = document.getElementById("ai-response-paste").value;
+    if (!pasted.trim()) return;
+    try {
+      const result = extractJson(pasted);
+      showAiResult(result);
+    } catch {
+      resultEl.innerHTML = `<p style="color:#ef4444; font-size:13.5px;">Konnte die Antwort nicht automatisch auslesen. Du kannst die Felder unten auch selbst aus der Antwort befüllen.</p>`;
+    }
+  });
+
   document.getElementById("ai-btn").addEventListener("click", async () => {
     const btn = document.getElementById("ai-btn");
     const resultEl = document.getElementById("ai-result");
@@ -772,31 +852,12 @@ async function renderDetail(id) {
       const patchNow = collectPatch();
       await updateIdea(idea.id, patchNow);
       const result = await elaborateWithAI(patchNow);
-      resultEl.innerHTML = `
-        <h3>Vorschlag Beschreibung</h3>
-        <pre>${escapeHtml(result.description || "")}</pre>
-        <h3>Vorschlag Tools</h3>
-        <pre>${escapeHtml(result.tools || "")}</pre>
-        <h3>Wichtige Gedanken vorab</h3>
-        <pre>${escapeHtml(result.considerations || "")}</pre>
-        <h3>Start-Prompt</h3>
-        <pre>${escapeHtml(result.initial_prompt || "")}</pre>
-        <div class="row" style="margin-top:12px;">
-          <button class="btn-primary" id="apply-ai-btn" style="width:100%;">Vorschlag übernehmen</button>
-        </div>
-      `;
-      document.getElementById("apply-ai-btn").addEventListener("click", () => {
-        if (result.description) document.getElementById("f-description").value = result.description;
-        if (result.tools) document.getElementById("f-tools").value = result.tools;
-        if (result.considerations) document.getElementById("f-considerations").value = result.considerations;
-        if (result.initial_prompt) document.getElementById("f-initial-prompt").value = result.initial_prompt;
-        toast("Vorschlag übernommen, denk ans Speichern!");
-      });
+      showAiResult(result);
     } catch (err) {
       resultEl.innerHTML = `<p style="color:#ef4444; font-size:13.5px;">Fehler: ${escapeHtml(err.message || String(err))}</p>`;
     }
     btn.disabled = false;
-    btn.innerHTML = "✨ Mit KI ausarbeiten";
+    btn.innerHTML = "✨ Automatisch mit KI ausarbeiten";
   });
 }
 
@@ -1089,11 +1150,20 @@ function renderSettings() {
     </header>
     <main>
       <div class="card">
-        <div class="section-title" style="margin:0 0 10px;">Eigener KI-API-Key</div>
+        <div class="section-title" style="margin:0 0 10px;">Eigener KI-API-Key (optional)</div>
+        <p style="font-size:13.5px; color:var(--text-dim); margin:0 0 10px; line-height:1.5;">
+          Komplett optional: Standardmäßig erzeugt die App einen Prompt zum
+          Kopieren, den du in ein beliebiges KI-Chat-Tool einfügst, das du
+          bereits nutzt (Copilot, ChatGPT, Claude, Gemini, ...) – ganz ohne
+          diesen Key. Nur wer die Ausarbeitung stattdessen automatisch mit
+          einem Klick möchte, braucht hier einen eigenen Key.
+        </p>
         <p style="font-size:13.5px; color:var(--text-dim); margin:0 0 14px; line-height:1.5;">
-          Wird nur für den Button "Mit KI ausarbeiten" gebraucht und ausschließlich
-          auf diesem Handy gespeichert – nie an Kolleg:innen oder einen eigenen
-          Server geschickt.
+          Wichtig: Ein bestehendes Claude- oder ChatGPT-Abo deckt das
+          <strong>nicht</strong> ab – der API-Zugang ist ein separates,
+          eigenständig abgerechnetes Angebot (siehe Anleitung unten) und wird
+          ausschließlich auf diesem Handy gespeichert, nie an Kolleg:innen
+          oder einen eigenen Server geschickt.
         </p>
         <div class="tabbar">
           ${Object.keys(AI_PROVIDERS)

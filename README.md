@@ -94,27 +94,34 @@ der E-Mail auf einer falschen Adresse ("localhost") statt in eurer App.
   hintereinander registrieren, kann das Limit erneut greifen – dann
   hilft nur abwarten oder ein eigener SMTP-Dienst wie Resend.
 
-## Eigenen KI-API-Key hinterlegen (für "Mit KI ausarbeiten")
+## KI-Ausarbeitung: Standardweg braucht keinen API-Key
 
-Dieser Schritt ist **optional** und macht jede Person für sich selbst,
-direkt in der App – nicht du als Ersteller:in einmalig für alle. Man kann
-zwischen zwei Anbietern wählen, je nachdem, wo man schon einen Zugang hat:
+Bei einer Idee auf **"📋 Prompt erzeugen"** tippen, den Text kopieren und in
+ein beliebiges KI-Chat-Tool einfügen, das ihr ohnehin schon nutzt – Copilot,
+ChatGPT (kostenlose Version), Claude.ai, Gemini, völlig egal. Die Antwort
+der KI kopiert ihr zurück in das Feld "Antwort der KI hier einfügen" und
+tippt auf "Übernehmen". Keine Anmeldung bei einem Entwickler-Portal, kein
+Guthaben, keine Kreditkarte nötig.
 
-1. In der App oben rechts auf das Zahnrad-Symbol (⚙) tippen.
-2. **Claude** oder **OpenAI** auswählen (die App zeigt direkt an, wo man
-   für den gewählten Anbieter einen Key bekommt):
-   - **Claude**: Key auf [console.anthropic.com](https://console.anthropic.com) erstellen ("API Keys").
-   - **OpenAI**: Key auf [platform.openai.com](https://platform.openai.com) erstellen ("API keys").
-   - Bei beiden reicht ein kleines Guthaben (wenige Euro) für sehr viele Nutzungen.
-3. Key einfügen, "Speichern" tippen. Fertig.
+### Optional: automatische Ausarbeitung mit eigenem API-Key
 
-Der Key wird ausschließlich lokal auf dem jeweiligen Handy gespeichert und
-bei der KI-Anfrage direkt an den gewählten Anbieter geschickt – er läuft
-nie über einen gemeinsamen Server und andere Kolleg:innen sehen ihn nicht.
-Jede Person kann sich unabhängig für Claude oder OpenAI entscheiden, je
-nachdem, was ihr schon zur Verfügung steht. Ohne Key funktioniert die App
-ganz normal weiter, nur der Button "Mit KI ausarbeiten" zeigt dann einen
-Hinweis, den Key zu ergänzen.
+Wer statt Copy & Paste einen einzigen Klick möchte, kann zusätzlich einen
+eigenen API-Key hinterlegen (unter dem Zahnrad ⚙ → "Stattdessen automatisch
+mit eigenem API-Key" bei der Idee ausklappen). Wichtig dabei:
+
+- **Ein bestehendes Claude- oder ChatGPT-Abo deckt das nicht ab.** Der
+  API-Zugang (console.anthropic.com bzw. platform.openai.com) ist ein
+  eigenständiges, separat abgerechnetes Angebot, unabhängig vom Chat-Abo –
+  auch mit Abo muss man dort ein kleines Guthaben aufladen (wenige Euro
+  reichen für sehr viele Nutzungen).
+- Der Key wird ausschließlich lokal auf dem jeweiligen Handy gespeichert
+  und bei der Anfrage direkt an den gewählten Anbieter geschickt – nie über
+  einen gemeinsamen Server, andere Kolleg:innen sehen ihn nicht.
+- Jede Person entscheidet unabhängig, ob und welchen Anbieter (Claude oder
+  OpenAI) sie dafür nutzen möchte.
+
+Beide Wege sind komplett optional zueinander – ohne irgendetwas davon
+funktioniert die App ganz normal weiter, nur eben ohne die KI-Ausarbeitung.
 
 ---
 
@@ -124,10 +131,11 @@ Hinweis, den Key zu ergänzen.
 - **Später ausarbeiten**: Beschreibung, Tags, Status pro Idee ergänzen.
 - **Bewerten**: Nutzen / Machbarkeit / Aufwand / Risiko einschätzen, die App
   zeigt direkt eine Einordnung ("Quick Win", "Großes Projekt", ...).
-- **Mit KI ausarbeiten**: Ein Klick generiert einen Beschreibungsvorschlag,
-  passende Tools, wichtige Punkte vorab und einen fertigen Start-Prompt für
-  den eigentlichen Projektstart (braucht einen eigenen, kostenlos in der
-  App hinterlegten API-Key von Claude oder OpenAI, siehe unten).
+- **Mit KI ausarbeiten**: Erzeugt einen fertigen Prompt zum Einfügen in ein
+  beliebiges KI-Chat-Tool (Copilot, ChatGPT, Claude, Gemini, ...) – kein
+  API-Key nötig. Die Antwort kopiert man zurück und übernimmt daraus
+  Beschreibung, Tools, wichtige Punkte vorab und einen Start-Prompt.
+  Optional geht das auch automatisch mit einem eigenen API-Key (siehe unten).
 - **Gemeinsam nutzen**: Mehrere Kolleg:innen loggen sich ein und sehen/bearbeiten dieselbe Liste.
 - **Prozesse dokumentieren**: Im Tab "Prozesse" alle Abläufe eures Bereichs
   erfassen und mit einer AI-Potenzial-Einschätzung versehen.
