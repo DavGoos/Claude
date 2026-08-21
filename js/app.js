@@ -106,6 +106,12 @@ const I18N = {
     tagsPlaceholder: "z.B. Vertrieb, Automatisierung",
     descriptionLabel: "Beschreibung",
     descriptionPlaceholder: "Was ist das Problem, was soll die Lösung bringen?",
+    problemLabel: "Problem",
+    problemPlaceholder: "Welches Problem soll gelöst werden? Was ist aktuell schwierig/aufwendig?",
+    goalLabel: "Ziel",
+    goalPlaceholder: "Was soll die Lösung konkret erreichen?",
+    businessBenefitLabel: "Business Benefit",
+    businessBenefitPlaceholder: "Welcher konkrete Nutzen (Zeit, Qualität, Kosten, Risiko) entsteht dadurch?",
     departmentLabel: "Abteilung",
     teamLabel: "Team",
     selectPlaceholderOption: "— Bitte wählen —",
@@ -176,7 +182,9 @@ const I18N = {
     couldNotParseMsg:
       "Konnte die Antwort nicht automatisch auslesen. Du kannst die Felder unten auch selbst aus der Antwort befüllen.",
     proposalApplied: "Vorschlag übernommen, denk ans Speichern!",
-    suggestedDescription: "Vorschlag Beschreibung",
+    suggestedProblem: "Vorschlag Problem",
+    suggestedGoal: "Vorschlag Ziel",
+    suggestedBusinessBenefit: "Vorschlag Business Benefit",
     suggestedTools: "Vorschlag Tools",
     suggestedConsiderations: "Wichtige Gedanken vorab",
     suggestedStartPrompt: "Start-Prompt",
@@ -327,6 +335,12 @@ const I18N = {
     tagsPlaceholder: "e.g. Sales, Automation",
     descriptionLabel: "Description",
     descriptionPlaceholder: "What's the problem, what should the solution achieve?",
+    problemLabel: "Problem",
+    problemPlaceholder: "What problem should be solved? What's currently hard/slow/error-prone?",
+    goalLabel: "Goal",
+    goalPlaceholder: "What should the solution actually achieve?",
+    businessBenefitLabel: "Business Benefit",
+    businessBenefitPlaceholder: "What concrete benefit (time, quality, cost, risk) does this create?",
     departmentLabel: "Department",
     teamLabel: "Team",
     selectPlaceholderOption: "— Please select —",
@@ -397,7 +411,9 @@ const I18N = {
     couldNotParseMsg:
       "Couldn't automatically parse the reply. You can also fill in the fields below yourself from the reply.",
     proposalApplied: "Suggestion applied, remember to save!",
-    suggestedDescription: "Suggested description",
+    suggestedProblem: "Suggested problem",
+    suggestedGoal: "Suggested goal",
+    suggestedBusinessBenefit: "Suggested business benefit",
     suggestedTools: "Suggested tools",
     suggestedConsiderations: "Key considerations upfront",
     suggestedStartPrompt: "Starter prompt",
@@ -744,34 +760,50 @@ function setProviderKey(provider, key) {
 const ELABORATE_SYSTEM_PROMPTS = {
   de: `Du bist ein erfahrener AI-Solution-Architekt, der intern erfasste
 AI-Use-Case-Ideen eines Unternehmens ausarbeitet. Du bekommst eine kurze Notiz und
-optional eine erste Beschreibung. Antworte AUSSCHLIESSLICH mit einem JSON-Objekt
-(kein Markdown, kein Fließtext davor oder danach) mit genau diesen Feldern:
+optional ein bereits vorhandenes Problem/Ziel/Business Benefit. Antworte AUSSCHLIESSLICH
+mit einem JSON-Objekt (kein Markdown, kein Fließtext davor oder danach) mit genau
+diesen Feldern:
 
 {
-  "description": "Strukturierte Beschreibung: Problem, Zielgruppe, vorgeschlagene Lösung, erwarteter Nutzen. Auf Deutsch, 4-8 Sätze.",
+  "problem": "Klare Beschreibung des Problems: was ist aktuell schwierig, aufwendig oder fehleranfällig? Auf Deutsch, 2-4 Sätze.",
+  "goal": "Was soll die KI-Lösung konkret leisten bzw. automatisieren? Auf Deutsch, 2-4 Sätze.",
+  "business_benefit": "Welcher konkrete Nutzen (Zeit, Qualität, Kosten, Risiko) entsteht dadurch? Auf Deutsch, 2-4 Sätze.",
   "tools": "Konkrete Vorschläge für Tools/Frameworks/Architektur, die für die Umsetzung sinnvoll sind, als kurze Liste mit Begründung.",
   "considerations": "Wichtige Gedanken vorab: Datenschutz, benötigte Datenquellen, Kosten, Abhängigkeiten, Stakeholder, Risiken. Als kurze Liste.",
   "initial_prompt": "Ein guter, direkt verwendbarer Start-Prompt (auf Deutsch), mit dem man z.B. bei Claude Code oder einem neuen Chat in die Umsetzung dieses Projekts einsteigen kann. Soll Kontext, Ziel und relevante Rahmenbedingungen enthalten."
 }`,
   en: `You are an experienced AI solution architect who elaborates on internally
 captured AI use case ideas for a company. You get a short note and optionally
-an initial description. Respond ONLY with a JSON object (no markdown, no text
-before or after) with exactly these fields:
+an existing problem/goal/business benefit. Respond ONLY with a JSON object
+(no markdown, no text before or after) with exactly these fields:
 
 {
-  "description": "Structured description: problem, target audience, proposed solution, expected benefit. In English, 4-8 sentences.",
+  "problem": "Clear description of the problem: what's currently hard, slow, or error-prone? In English, 2-4 sentences.",
+  "goal": "What should the AI solution actually do / automate? In English, 2-4 sentences.",
+  "business_benefit": "What concrete benefit (time, quality, cost, risk) does this create? In English, 2-4 sentences.",
   "tools": "Concrete suggestions for tools/frameworks/architecture that make sense for the implementation, as a short list with rationale.",
   "considerations": "Key considerations upfront: privacy, required data sources, cost, dependencies, stakeholders, risks. As a short list.",
   "initial_prompt": "A good, directly usable starter prompt (in English) to kick off implementation of this project, e.g. with Claude Code or a new chat. Should include context, goal, and relevant constraints."
 }`,
 };
 
+function ideaContextMessage(idea) {
+  const none = currentLang === "en" ? "(none yet)" : "(noch keine)";
+  const labels =
+    currentLang === "en"
+      ? { note: "Quick note", problem: "Problem", goal: "Goal", benefit: "Business benefit" }
+      : { note: "Kurznotiz", problem: "Problem", goal: "Ziel", benefit: "Business Benefit" };
+  return [
+    `${labels.note}: ${idea.quick_note}`,
+    `${labels.problem}: ${idea.problem || none}`,
+    `${labels.goal}: ${idea.goal || none}`,
+    `${labels.benefit}: ${idea.business_benefit || none}`,
+  ].join("\n\n");
+}
+
 function buildElaboratePrompt(idea) {
   const prompt = ELABORATE_SYSTEM_PROMPTS[currentLang];
-  const noteLabel = currentLang === "en" ? "Quick note" : "Kurznotiz";
-  const descLabel = currentLang === "en" ? "Existing description" : "Bisherige Beschreibung";
-  const none = currentLang === "en" ? "(none yet)" : "(noch keine)";
-  return `${prompt}\n\n---\n\n${noteLabel}: ${idea.quick_note}\n\n${descLabel}: ${idea.description || none}`;
+  return `${prompt}\n\n---\n\n${ideaContextMessage(idea)}`;
 }
 
 function extractJson(text) {
@@ -839,10 +871,7 @@ async function elaborateWithAI(idea) {
     throw new Error(t("noApiKeyError"));
   }
 
-  const noteLabel = currentLang === "en" ? "Quick note" : "Kurznotiz";
-  const descLabel = currentLang === "en" ? "Existing description" : "Bisherige Beschreibung";
-  const none = currentLang === "en" ? "(none yet)" : "(noch keine)";
-  const userMessage = `${noteLabel}: ${idea.quick_note}\n\n${descLabel}: ${idea.description || none}`;
+  const userMessage = ideaContextMessage(idea);
 
   const rawText =
     provider === "openai"
@@ -1348,8 +1377,14 @@ async function renderDetail(id) {
         <label class="field-label">${t("tagsLabel")}</label>
         <input class="field" id="f-tags" value="${escapeHtml(idea.tags || "")}" placeholder="${t("tagsPlaceholder")}" />
 
-        <label class="field-label">${t("descriptionLabel")}</label>
-        <textarea class="field" id="f-description" placeholder="${t("descriptionPlaceholder")}">${escapeHtml(idea.description || "")}</textarea>
+        <label class="field-label">${t("problemLabel")}</label>
+        <textarea class="field" id="f-problem" placeholder="${t("problemPlaceholder")}">${escapeHtml(idea.problem || "")}</textarea>
+
+        <label class="field-label">${t("goalLabel")}</label>
+        <textarea class="field" id="f-goal" placeholder="${t("goalPlaceholder")}">${escapeHtml(idea.goal || "")}</textarea>
+
+        <label class="field-label">${t("businessBenefitLabel")}</label>
+        <textarea class="field" id="f-business-benefit" placeholder="${t("businessBenefitPlaceholder")}">${escapeHtml(idea.business_benefit || "")}</textarea>
       </div>
 
       <div class="card">
@@ -1534,7 +1569,9 @@ async function renderDetail(id) {
       department,
       team,
       tags: document.getElementById("f-tags").value.trim(),
-      description: document.getElementById("f-description").value.trim(),
+      problem: document.getElementById("f-problem").value.trim(),
+      goal: document.getElementById("f-goal").value.trim(),
+      business_benefit: document.getElementById("f-business-benefit").value.trim(),
       impact: Number(document.querySelector('[data-field="impact"]').value),
       feasibility: Number(document.querySelector('[data-field="feasibility"]').value),
       effort: Number(document.querySelector('[data-field="effort"]').value),
@@ -1577,8 +1614,12 @@ async function renderDetail(id) {
   function showAiResult(result) {
     const resultEl = document.getElementById("ai-result");
     resultEl.innerHTML = `
-      <h3>${t("suggestedDescription")}</h3>
-      <pre>${escapeHtml(result.description || "")}</pre>
+      <h3>${t("suggestedProblem")}</h3>
+      <pre>${escapeHtml(result.problem || "")}</pre>
+      <h3>${t("suggestedGoal")}</h3>
+      <pre>${escapeHtml(result.goal || "")}</pre>
+      <h3>${t("suggestedBusinessBenefit")}</h3>
+      <pre>${escapeHtml(result.business_benefit || "")}</pre>
       <h3>${t("suggestedTools")}</h3>
       <pre>${escapeHtml(result.tools || "")}</pre>
       <h3>${t("suggestedConsiderations")}</h3>
@@ -1590,7 +1631,9 @@ async function renderDetail(id) {
       </div>
     `;
     document.getElementById("apply-ai-btn").addEventListener("click", () => {
-      if (result.description) document.getElementById("f-description").value = result.description;
+      if (result.problem) document.getElementById("f-problem").value = result.problem;
+      if (result.goal) document.getElementById("f-goal").value = result.goal;
+      if (result.business_benefit) document.getElementById("f-business-benefit").value = result.business_benefit;
       if (result.tools) document.getElementById("f-tools").value = result.tools;
       if (result.considerations) document.getElementById("f-considerations").value = result.considerations;
       if (result.initial_prompt) document.getElementById("f-initial-prompt").value = result.initial_prompt;
@@ -2089,7 +2132,9 @@ function buildExportBlock(idea) {
     idea.ai_role ? `KI-Rolle: ${idea.ai_role}` : "",
     idea.kpi_kind ? `Kind of KPI: ${idea.kpi_kind}` : "",
     idea.list_priority ? `Priorität (Liste): ${idea.list_priority}` : "",
-    section("Beschreibung", idea.description),
+    section("Problem", idea.problem),
+    section("Ziel", idea.goal),
+    section("Business Benefit", idea.business_benefit),
     section("Tools/Systeme", idea.tools),
     section("Wichtige Gedanken vorab / Risiken", idea.considerations),
     section("Input", idea.input_source),

@@ -166,6 +166,10 @@ funktioniert die App ganz normal weiter, nur eben ohne die KI-Ausarbeitung.
   rechts, u.a. auf dem Login-Bildschirm und den beiden Haupt-Listen)
   übersetzt die komplette Oberfläche inkl. der von der KI angefragten
   Sprache. Die Einstellung wird pro Gerät gespeichert.
+- **Problem / Ziel / Business Benefit getrennt**: Statt einem einzigen
+  Beschreibungsfeld gibt es drei eigene Felder, die exakt den Spalten des
+  Excel-Use-Case-Katalogs entsprechen. Das macht den Export in die Liste
+  eindeutig (kein Raten mehr nötig, wie der Text aufzuteilen ist).
 - **Katalog-Abgleich (optional)**: In der Idee-Detailansicht gibt es einen
   ausklappbaren Bereich "Weitere Katalog-Felder" (Katalog-ID, KI-Rolle,
   Input, Output, Kind of KPI, quantifizierter/qualitativer Nutzen,
@@ -179,13 +183,15 @@ funktioniert die App ganz normal weiter, nur eben ohne die KI-Ausarbeitung.
 - **Export für den Excel-Katalog (🔄 Export)**: Zeigt alle Ideen ohne
   Katalog-ID, also solche, die noch nicht in der Excel-Liste stehen. Über
   "Kopieren" (einzeln oder "Alle kopieren") wird ein fertig formatierter
-  Text in die Zwischenablage kopiert. Diesen Text postet man in den Chat mit
-  Claude (der Zugriff auf die SharePoint-Excel-Datei hat) – Claude trägt die
-  Idee(n) dort als neue Zeile(n) ein und nennt die vergebene GC-Nummer.
-  Diese trägt man anschließend als Katalog-ID bei der Idee ein, danach
-  taucht sie hier nicht mehr auf. Der umgekehrte Weg (Import aus der Liste
-  in die App) läuft genauso über den Chat: Case-Nummer(n) nennen, Claude
-  liest sie aus der Liste und erzeugt SQL zum Einfügen in Supabase.
+  Text mit den bereits getrennten Feldern Problem/Ziel/Business Benefit in
+  die Zwischenablage kopiert. Diesen Text postet man in den Chat mit
+  Claude – Claude bereitet daraus die passende Zeile fürs Einfügen in die
+  SharePoint-Excel-Liste vor (Claude kann die Datei aus technischen Gründen
+  nicht direkt beschreiben, nur vorbereiten). Nach dem Eintragen die
+  vergebene GC-Nummer als Katalog-ID bei der Idee eintragen, danach taucht
+  sie hier nicht mehr auf. Der umgekehrte Weg (Import aus der Liste in die
+  App) läuft genauso über den Chat: Case-Nummer(n) nennen, Claude liest sie
+  aus der Liste und erzeugt SQL zum Einfügen in Supabase.
 
 ## Projektstruktur
 

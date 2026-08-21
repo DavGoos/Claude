@@ -225,6 +225,18 @@ create unique index if not exists ideas_catalog_id_key on ideas (catalog_id);
 -- einem Nutzerkonto).
 alter table ideas add column if not exists owner_name text not null default '';
 
+-- "description" war ein einziges Freitextfeld für Problem/Ziel/Business
+-- Benefit zusammen - der Excel-Katalog braucht die drei aber als getrennte
+-- Spalten (sonst muss man beim Export jedes Mal raten, wie der Text
+-- aufzuteilen ist). Deshalb drei eigene Felder; bestehender Text aus
+-- "description" wandert einmalig komplett ins neue "problem"-Feld, "goal"
+-- und "business_benefit" bleiben erstmal leer zum späteren Nachpflegen.
+alter table ideas add column if not exists problem text not null default '';
+alter table ideas add column if not exists goal text not null default '';
+alter table ideas add column if not exists business_benefit text not null default '';
+
+update ideas set problem = description where problem = '' and description <> '';
+
 -- Stufenkette: ein Use Case ist oft nur der erste Schritt einer mehrstufigen
 -- Weiterentwicklung (z.B. GC12 -> GC13 -> GC14). "parent_idea_id" verweist auf
 -- die jeweils vorherige Stufe; die Stufennummer und die Folgestufen werden in
