@@ -214,6 +214,17 @@ alter table ideas add column if not exists qualitative_benefit text not null def
 alter table ideas add column if not exists comment text not null default '';
 alter table ideas add column if not exists list_priority text not null default '';
 
+-- Eindeutige ID aus dem Excel-Katalog (z.B. "GC29"), für den Abgleich
+-- zwischen App und Liste. Nullable, da nur importierte Ideen eine haben;
+-- ein Unique-Index statt eines Constraints, damit "add ... if not exists"
+-- funktioniert (mehrere NULLs sind dabei weiterhin erlaubt).
+alter table ideas add column if not exists catalog_id text;
+create unique index if not exists ideas_catalog_id_key on ideas (catalog_id);
+
+-- Ansprechpartner/in für den Use Case (freier Name, keine Verknüpfung zu
+-- einem Nutzerkonto).
+alter table ideas add column if not exists owner_name text not null default '';
+
 drop trigger if exists ideas_set_updated_at on ideas;
 create trigger ideas_set_updated_at
   before update on ideas

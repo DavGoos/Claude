@@ -167,10 +167,15 @@ funktioniert die App ganz normal weiter, nur eben ohne die KI-Ausarbeitung.
   übersetzt die komplette Oberfläche inkl. der von der KI angefragten
   Sprache. Die Einstellung wird pro Gerät gespeichert.
 - **Katalog-Abgleich (optional)**: In der Idee-Detailansicht gibt es einen
-  ausklappbaren Bereich "Weitere Katalog-Felder" (KI-Rolle, Input, Output,
-  Kind of KPI, quantifizierter/qualitativer Nutzen, Kommentar, Priorität
-  laut Liste) – für den geplanten Abgleich mit dem bestehenden
-  Excel-Use-Case-Katalog. Optional, nicht nötig für die normale Nutzung.
+  ausklappbaren Bereich "Weitere Katalog-Felder" (Katalog-ID, KI-Rolle,
+  Input, Output, Kind of KPI, quantifizierter/qualitativer Nutzen,
+  Kommentar, Priorität laut Liste) – für den geplanten Abgleich mit dem
+  bestehenden Excel-Use-Case-Katalog. Optional, nicht nötig für die
+  normale Nutzung. Die Katalog-ID (z.B. "GC29") muss eindeutig sein und
+  dient als Schlüssel für spätere Abgleiche zwischen App und Liste.
+- **Usecase-Geber / Ansprechpartner**: Direkt im Hauptbereich jeder Idee
+  lässt sich der Name der verantwortlichen Person hinterlegen, damit klar
+  ist, wer bei Rückfragen anzusprechen ist.
 
 ## Projektstruktur
 

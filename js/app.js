@@ -112,6 +112,10 @@ const I18N = {
     qualitativeBenefitPlaceholder: "z.B. bessere Entscheidungsgrundlage",
     commentLabel: "Kommentar",
     listPriorityLabel: "Priorität (Liste)",
+    catalogIdLabel: "Katalog-ID",
+    catalogIdPlaceholder: "z.B. GC29 (muss eindeutig sein)",
+    ownerNameLabel: "Usecase-Geber / Ansprechpartner",
+    ownerNamePlaceholder: "Name der verantwortlichen Person",
 
     evaluationTitle: "Bewertung",
     impactLabel: "Nutzen",
@@ -308,6 +312,10 @@ const I18N = {
     qualitativeBenefitPlaceholder: "e.g. better basis for decisions",
     commentLabel: "Comment",
     listPriorityLabel: "Priority (catalog)",
+    catalogIdLabel: "Catalog ID",
+    catalogIdPlaceholder: "e.g. GC29 (must be unique)",
+    ownerNameLabel: "Use case owner / contact",
+    ownerNamePlaceholder: "Name of the responsible person",
 
     evaluationTitle: "Scoring",
     impactLabel: "Impact",
@@ -1021,10 +1029,11 @@ function ideaCard(idea) {
     .filter(Boolean);
   return `
     <div class="idea-item" data-id="${idea.id}">
-      <div class="idea-title">${escapeHtml(idea.quick_note)}</div>
+      <div class="idea-title">${idea.catalog_id ? `<span class="badge">🏷 ${escapeHtml(idea.catalog_id)}</span> ` : ""}${escapeHtml(idea.quick_note)}</div>
       <div class="idea-meta">
         <span class="badge status-${idea.status}">${t(`status_${idea.status}`)}</span>
         <span class="badge"><span class="priority-dot" style="background:${p.color}"></span> ${p.label}</span>
+        ${idea.owner_name ? `<span class="badge">👤 ${escapeHtml(idea.owner_name)}</span>` : ""}
         ${idea.team ? `<span class="badge">${escapeHtml(idea.team)}</span>` : ""}
         ${idea.processes ? `<span class="badge">⚙ ${escapeHtml(idea.processes.name)}</span>` : ""}
         ${tags.map((tag) => `<span class="badge">#${escapeHtml(tag)}</span>`).join("")}
@@ -1174,6 +1183,9 @@ async function renderDetail(id) {
         <label class="field-label">${t("quickNoteLabel")}</label>
         <textarea class="field" id="f-quick-note">${escapeHtml(idea.quick_note)}</textarea>
 
+        <label class="field-label">${t("ownerNameLabel")}</label>
+        <input class="field" id="f-owner-name" value="${escapeHtml(idea.owner_name || "")}" placeholder="${t("ownerNamePlaceholder")}" />
+
         <label class="field-label">${t("statusLabel")}</label>
         <select class="field" id="f-status">
           ${STATUS_ORDER.map(
@@ -1249,7 +1261,10 @@ async function renderDetail(id) {
         <summary style="cursor:pointer; font-size:14px; font-weight:600; color:var(--text);">${t("catalogFieldsTitle")}</summary>
         <p style="font-size:13px; color:var(--text-dim); margin:10px 0 14px; line-height:1.5;">${t("catalogFieldsDesc")}</p>
 
-        <label class="field-label" style="margin-top:0;">${t("aiRoleLabel")}</label>
+        <label class="field-label" style="margin-top:0;">${t("catalogIdLabel")}</label>
+        <input class="field" id="f-catalog-id" value="${escapeHtml(idea.catalog_id || "")}" placeholder="${t("catalogIdPlaceholder")}" />
+
+        <label class="field-label">${t("aiRoleLabel")}</label>
         <select class="field" id="f-ai-role">
           ${selectOptionsFrom(AI_ROLE_OPTIONS, idea.ai_role)}
         </select>
@@ -1350,6 +1365,8 @@ async function renderDetail(id) {
       qualitative_benefit: document.getElementById("f-qualitative-benefit").value.trim(),
       comment: document.getElementById("f-comment").value.trim(),
       list_priority: document.getElementById("f-list-priority").value,
+      catalog_id: document.getElementById("f-catalog-id").value.trim() || null,
+      owner_name: document.getElementById("f-owner-name").value.trim(),
     };
   }
 
