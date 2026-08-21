@@ -225,6 +225,13 @@ create unique index if not exists ideas_catalog_id_key on ideas (catalog_id);
 -- einem Nutzerkonto).
 alter table ideas add column if not exists owner_name text not null default '';
 
+-- Stufenkette: ein Use Case ist oft nur der erste Schritt einer mehrstufigen
+-- Weiterentwicklung (z.B. GC12 -> GC13 -> GC14). "parent_idea_id" verweist auf
+-- die jeweils vorherige Stufe; die Stufennummer und die Folgestufen werden in
+-- js/app.js aus dieser Kette berechnet, nicht separat gespeichert.
+alter table ideas add column if not exists parent_idea_id uuid references ideas (id) on delete set null;
+create index if not exists ideas_parent_idea_id_idx on ideas (parent_idea_id);
+
 drop trigger if exists ideas_set_updated_at on ideas;
 create trigger ideas_set_updated_at
   before update on ideas

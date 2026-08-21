@@ -88,6 +88,18 @@ const I18N = {
     statusLabel: "Status",
     relatedProcessLabel: "Zugehöriger Prozess",
     noneOption: "— Keiner —",
+    stageChainTitle: "Stufenkette",
+    stageChainDesc:
+      "Ist dieser Use Case der erste Schritt oder eine Weiterentwicklung eines anderen (z.B. GC12 → GC13 → GC14)? Hier verknüpfen, dann ist überall erkennbar, welche Stufe woran gerade gearbeitet wird.",
+    previousStageLabel: "Vorherige Stufe",
+    noneFirstStageOption: "— Keine (erste Stufe) —",
+    stageChainPositionLabel: "Position in der Stufenkette",
+    stagePrefix: "Stufe ",
+    followUpStagesTitle: "Folgestufen",
+    emptyFollowUpStages: "Noch keine Folgestufe angelegt.",
+    addFollowUpStageBtn: "+ Neue Folgestufe anlegen",
+    newFollowUpStagePrompt: "Kurznotiz für die neue Folgestufe:",
+    followUpStageSavedMsg: "Folgestufe gespeichert",
     tagsLabel: "Tags (Komma-getrennt)",
     tagsPlaceholder: "z.B. Vertrieb, Automatisierung",
     descriptionLabel: "Beschreibung",
@@ -288,6 +300,18 @@ const I18N = {
     statusLabel: "Status",
     relatedProcessLabel: "Related process",
     noneOption: "— None —",
+    stageChainTitle: "Stage chain",
+    stageChainDesc:
+      "Is this use case the first step, or a follow-up on another one (e.g. GC12 → GC13 → GC14)? Link it here so everyone can see which stage is currently being worked on.",
+    previousStageLabel: "Previous stage",
+    noneFirstStageOption: "— None (first stage) —",
+    stageChainPositionLabel: "Position in the stage chain",
+    stagePrefix: "Stage ",
+    followUpStagesTitle: "Follow-up stages",
+    emptyFollowUpStages: "No follow-up stage yet.",
+    addFollowUpStageBtn: "+ Add follow-up stage",
+    newFollowUpStagePrompt: "Quick note for the new follow-up stage:",
+    followUpStageSavedMsg: "Follow-up stage saved",
     tagsLabel: "Tags (comma-separated)",
     tagsPlaceholder: "e.g. Sales, Automation",
     descriptionLabel: "Description",
@@ -580,10 +604,12 @@ async function logout() {
 
 // ---------- Data: Ideas ----------
 
+const IDEA_SELECT = "*, processes(id, name), parent:parent_idea_id(id, quick_note, catalog_id, status)";
+
 async function loadIdeas() {
   const { data, error } = await sb
     .from("ideas")
-    .select("*, processes(id, name)")
+    .select(IDEA_SELECT)
     .order("created_at", { ascending: false });
   if (error) {
     toast(t("loadErrorPrefix") + error.message);
@@ -592,10 +618,11 @@ async function loadIdeas() {
   return data || [];
 }
 
-async function createIdea(quickNote, department, team, processId) {
+async function createIdea(quickNote, department, team, processId, parentIdeaId) {
   const payload = { quick_note: quickNote, department, team, created_by: currentUser.id };
   if (processId) payload.process_id = processId;
-  const { data, error } = await sb.from("ideas").insert(payload).select("*, processes(id, name)").single();
+  if (parentIdeaId) payload.parent_idea_id = parentIdeaId;
+  const { data, error } = await sb.from("ideas").insert(payload).select(IDEA_SELECT).single();
   if (error) {
     toast(t("saveErrorPrefix") + error.message);
     return null;
@@ -608,7 +635,7 @@ async function updateIdea(id, patch) {
     .from("ideas")
     .update(patch)
     .eq("id", id)
-    .select("*, processes(id, name)")
+    .select(IDEA_SELECT)
     .single();
   if (error) {
     toast(t("saveErrorPrefix") + error.message);
@@ -1021,18 +1048,102 @@ function filterChips() {
   `;
 }
 
+// ---------- Stufenkette: Ideen, die als Weiterentwicklung eines anderen
+// Use Cases verknüpft sind (z.B. GC12 -> GC13 -> GC14) ----------
+
+function ideaAncestorChain(idea) {
+  const byId = new Map(ideasCache.map((i) => [i.id, i]));
+  const chain = [];
+  let cur = idea;
+  const seen = new Set([idea.id]);
+  while (cur.parent_idea_id && byId.has(cur.parent_idea_id)) {
+    const p = byId.get(cur.parent_idea_id);
+    if (seen.has(p.id)) break;
+    chain.unshift(p);
+    seen.add(p.id);
+    cur = p;
+  }
+  return chain;
+}
+
+function ideaFollowUpStages(idea) {
+  return ideasCache.filter((i) => i.parent_idea_id === idea.id);
+}
+
+function ideaDescendantIds(idea) {
+  const result = new Set();
+  let frontier = [idea.id];
+  while (frontier.length) {
+    const next = [];
+    ideasCache
+      .filter((i) => frontier.includes(i.parent_idea_id) && !result.has(i.id))
+      .forEach((child) => {
+        result.add(child.id);
+        next.push(child.id);
+      });
+    frontier = next;
+  }
+  return result;
+}
+
+function ideaStageNumber(idea) {
+  return ideaAncestorChain(idea).length + 1;
+}
+
+function ideaLabel(idea) {
+  return idea.catalog_id ? `${idea.catalog_id} – ${idea.quick_note}` : idea.quick_note;
+}
+
+function parentIdeaOptions(idea) {
+  const excludeIds = new Set([idea.id, ...ideaDescendantIds(idea)]);
+  const options = [`<option value="">${t("noneFirstStageOption")}</option>`];
+  ideasCache
+    .filter((i) => !excludeIds.has(i.id))
+    .forEach((i) => {
+      options.push(
+        `<option value="${i.id}" ${i.id === idea.parent_idea_id ? "selected" : ""}>${escapeHtml(ideaLabel(i))}</option>`
+      );
+    });
+  return options.join("");
+}
+
+function stageChainHtml(idea) {
+  const ancestors = ideaAncestorChain(idea);
+  const followUps = ideaFollowUpStages(idea);
+  if (ancestors.length === 0 && followUps.length === 0) return "";
+  const chain = [...ancestors, idea];
+  return `
+    <label class="field-label" style="margin-top:0;">${t("stageChainPositionLabel")}</label>
+    <div class="stage-chain">
+      ${chain
+        .map((node, idx) => {
+          const classes = ["stage-chip"];
+          if (node.id === idea.id) classes.push("current");
+          if (node.status === "in_progress") classes.push("active");
+          const label = `${t("stagePrefix")}${idx + 1}: ${escapeHtml(ideaLabel(node))}`;
+          return node.id === idea.id
+            ? `<span class="${classes.join(" ")}">${label}</span>`
+            : `<a class="${classes.join(" ")}" href="#/idea/${node.id}">${label}</a>`;
+        })
+        .join('<span class="stage-arrow">→</span>')}
+    </div>
+  `;
+}
+
 function ideaCard(idea) {
   const p = priorityInfo(idea);
   const tags = (idea.tags || "")
     .split(",")
     .map((t2) => t2.trim())
     .filter(Boolean);
+  const isChained = idea.parent_idea_id || ideaFollowUpStages(idea).length > 0;
   return `
     <div class="idea-item" data-id="${idea.id}">
       <div class="idea-title">${idea.catalog_id ? `<span class="badge">🏷 ${escapeHtml(idea.catalog_id)}</span> ` : ""}${escapeHtml(idea.quick_note)}</div>
       <div class="idea-meta">
         <span class="badge status-${idea.status}">${t(`status_${idea.status}`)}</span>
         <span class="badge"><span class="priority-dot" style="background:${p.color}"></span> ${p.label}</span>
+        ${isChained ? `<span class="badge">🔗 ${t("stagePrefix")}${ideaStageNumber(idea)}</span>` : ""}
         ${idea.owner_name ? `<span class="badge">👤 ${escapeHtml(idea.owner_name)}</span>` : ""}
         ${idea.team ? `<span class="badge">${escapeHtml(idea.team)}</span>` : ""}
         ${idea.processes ? `<span class="badge">⚙ ${escapeHtml(idea.processes.name)}</span>` : ""}
@@ -1209,6 +1320,35 @@ async function renderDetail(id) {
       </div>
 
       <div class="card">
+        <div class="section-title" style="margin:0 0 10px;">${t("stageChainTitle")}</div>
+        <p style="font-size:13px; color:var(--text-dim); margin:0 0 12px; line-height:1.5;">${t("stageChainDesc")}</p>
+
+        <label class="field-label" style="margin-top:0;">${t("previousStageLabel")}</label>
+        <select class="field" id="f-parent-idea">
+          ${parentIdeaOptions(idea)}
+        </select>
+
+        ${stageChainHtml(idea)}
+
+        <label class="field-label" style="margin-top:0;">${t("followUpStagesTitle")}</label>
+        <div id="follow-up-stages">
+          ${
+            ideaFollowUpStages(idea).length
+              ? ideaFollowUpStages(idea)
+                  .map(
+                    (i) =>
+                      `<a class="link-item" href="#/idea/${i.id}">${escapeHtml(ideaLabel(i))} <span class="badge status-${i.status}">${t(`status_${i.status}`)}</span></a>`
+                  )
+                  .join("")
+              : `<div class="empty-state" style="padding:16px 4px;">${t("emptyFollowUpStages")}</div>`
+          }
+        </div>
+        <div class="row">
+          <button class="btn-secondary" id="add-followup-btn" style="width:100%;">${t("addFollowUpStageBtn")}</button>
+        </div>
+      </div>
+
+      <div class="card">
         <div class="section-title" style="margin:0 0 10px;">${t("evaluationTitle")}</div>
         <div id="priority-banner" class="priority-banner"></div>
         ${sliderRow("impact", t("impactLabel"), idea.impact)}
@@ -1340,12 +1480,24 @@ async function renderDetail(id) {
     }
   });
 
+  document.getElementById("add-followup-btn").addEventListener("click", async () => {
+    const text = prompt(t("newFollowUpStagePrompt"));
+    if (!text || !text.trim()) return;
+    const followUp = await createIdea(text.trim(), idea.department, idea.team, idea.process_id, idea.id);
+    if (followUp) {
+      toast(t("followUpStageSavedMsg"));
+      ideasCache = await loadIdeas();
+      window.location.hash = `#/idea/${followUp.id}`;
+    }
+  });
+
   function collectPatch() {
     const { department, team } = readDepartmentTeam("detail");
     return {
       quick_note: document.getElementById("f-quick-note").value.trim(),
       status: document.getElementById("f-status").value,
       process_id: document.getElementById("f-process").value || null,
+      parent_idea_id: document.getElementById("f-parent-idea").value || null,
       department,
       team,
       tags: document.getElementById("f-tags").value.trim(),

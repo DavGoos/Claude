@@ -185,5 +185,5 @@ css/style.css             Design
 js/config.js              Supabase-Zugangsdaten (Schritt 2)
 js/app.js                 App-Logik inkl. direktem Claude/OpenAI API Aufruf
 manifest.json, sw.js, icons/   PWA-Grundlagen (Installierbarkeit)
-supabase/schema.sql       Datenbank-Struktur (Ideen + Prozesse inkl. Teilprozess-Hierarchie)
+supabase/schema.sql       Datenbank-Struktur (Ideen inkl. Stufenketten + Prozesse inkl. Teilprozess-Hierarchie)
 ```
