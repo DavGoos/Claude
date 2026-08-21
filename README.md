@@ -176,6 +176,16 @@ funktioniert die App ganz normal weiter, nur eben ohne die KI-Ausarbeitung.
 - **Usecase-Geber / Ansprechpartner**: Direkt im Hauptbereich jeder Idee
   lässt sich der Name der verantwortlichen Person hinterlegen, damit klar
   ist, wer bei Rückfragen anzusprechen ist.
+- **Export für den Excel-Katalog (🔄 Export)**: Zeigt alle Ideen ohne
+  Katalog-ID, also solche, die noch nicht in der Excel-Liste stehen. Über
+  "Kopieren" (einzeln oder "Alle kopieren") wird ein fertig formatierter
+  Text in die Zwischenablage kopiert. Diesen Text postet man in den Chat mit
+  Claude (der Zugriff auf die SharePoint-Excel-Datei hat) – Claude trägt die
+  Idee(n) dort als neue Zeile(n) ein und nennt die vergebene GC-Nummer.
+  Diese trägt man anschließend als Katalog-ID bei der Idee ein, danach
+  taucht sie hier nicht mehr auf. Der umgekehrte Weg (Import aus der Liste
+  in die App) läuft genauso über den Chat: Case-Nummer(n) nennen, Claude
+  liest sie aus der Liste und erzeugt SQL zum Einfügen in Supabase.
 
 ## Projektstruktur
 

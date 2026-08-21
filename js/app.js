@@ -53,6 +53,7 @@ const I18N = {
     ideasTab: "Ideen",
     processesTab: "Prozesse",
     adminNav: "🛡 Freigaben",
+    exportNav: "🔄 Export",
     logoutBtn: "Logout",
     ideasHeaderTitle: "AI Ideen",
     processesHeaderTitle: "Prozesse",
@@ -129,6 +130,13 @@ const I18N = {
     catalogIdPlaceholder: "z.B. GC29 (muss eindeutig sein)",
     ownerNameLabel: "Usecase-Geber / Ansprechpartner",
     ownerNamePlaceholder: "Name der verantwortlichen Person",
+
+    exportTitle: "Neue Ideen für die Excel-Liste exportieren",
+    exportIntro:
+      "Hier stehen alle Ideen, die noch keine Katalog-ID haben (also noch nicht in der Excel-Liste stehen). Kopiere eine Idee (oder alle) und poste den Text in den Chat mit Claude – Claude trägt sie dann als neue Zeile(n) in die Liste ein und nennt dir die vergebene GC-Nummer. Trag diese anschließend als Katalog-ID bei der Idee ein, dann verschwindet sie hier aus der Liste.",
+    exportEmpty: "Alle Ideen haben bereits eine Katalog-ID – nichts zu exportieren.",
+    copyOneBtn: "📋 Kopieren",
+    copyAllBtn: "📋 Alle kopieren",
 
     evaluationTitle: "Bewertung",
     impactLabel: "Nutzen",
@@ -266,6 +274,7 @@ const I18N = {
     ideasTab: "Ideas",
     processesTab: "Processes",
     adminNav: "🛡 Approvals",
+    exportNav: "🔄 Export",
     logoutBtn: "Log out",
     ideasHeaderTitle: "AI Ideas",
     processesHeaderTitle: "Processes",
@@ -342,6 +351,13 @@ const I18N = {
     catalogIdPlaceholder: "e.g. GC29 (must be unique)",
     ownerNameLabel: "Use case owner / contact",
     ownerNamePlaceholder: "Name of the responsible person",
+
+    exportTitle: "Export new ideas for the Excel list",
+    exportIntro:
+      "This lists every idea that doesn't have a catalog ID yet (i.e. isn't in the Excel list yet). Copy one idea (or all of them) and post the text into the chat with Claude - Claude will add it as a new row / rows in the list and tell you the assigned GC number. Enter that back as the catalog ID on the idea afterwards, then it disappears from this list.",
+    exportEmpty: "Every idea already has a catalog ID - nothing to export.",
+    copyOneBtn: "📋 Copy",
+    copyAllBtn: "📋 Copy all",
 
     evaluationTitle: "Scoring",
     impactLabel: "Impact",
@@ -543,6 +559,7 @@ function currentRoute() {
   if (hash === "#/processes") return { view: "process-list" };
   if (hash === "#/settings") return { view: "settings" };
   if (hash === "#/admin") return { view: "admin" };
+  if (hash === "#/export") return { view: "export" };
   return { view: "idea-list" };
 }
 
@@ -1173,6 +1190,7 @@ async function renderList() {
       <h1>${t("ideasHeaderTitle")}</h1>
       <div class="actions">
         ${langToggleButton()}
+        ${exportNavButton()}
         ${adminNavButton()}
         <button class="icon-btn" id="settings-btn">⚙</button>
         <button class="icon-btn" id="logout-btn">${t("logoutBtn")}</button>
@@ -1197,6 +1215,7 @@ async function renderList() {
 
   bindTabBar();
   bindAdminNavButton();
+  bindExportNavButton();
   bindLangToggle();
   document.getElementById("logout-btn").addEventListener("click", logout);
   document.getElementById("settings-btn").addEventListener("click", () => {
@@ -1670,6 +1689,7 @@ async function renderProcessList() {
       <h1>${t("processesHeaderTitle")}</h1>
       <div class="actions">
         ${langToggleButton()}
+        ${exportNavButton()}
         ${adminNavButton()}
         <button class="icon-btn" id="settings-btn">⚙</button>
         <button class="icon-btn" id="logout-btn">${t("logoutBtn")}</button>
@@ -1694,6 +1714,7 @@ async function renderProcessList() {
 
   bindTabBar();
   bindAdminNavButton();
+  bindExportNavButton();
   bindLangToggle();
   document.getElementById("logout-btn").addEventListener("click", logout);
   document.getElementById("settings-btn").addEventListener("click", () => {
@@ -2041,6 +2062,124 @@ function bindAdminNavButton() {
   }
 }
 
+function exportNavButton() {
+  return `<button class="icon-btn" id="export-btn">${t("exportNav")}</button>`;
+}
+
+function bindExportNavButton() {
+  const btn = document.getElementById("export-btn");
+  if (btn) {
+    btn.addEventListener("click", () => {
+      window.location.hash = "#/export";
+    });
+  }
+}
+
+// ---------- View: Export (App -> Excel-Katalog Sync) ----------
+
+function buildExportBlock(idea) {
+  const section = (label, value) => (value ? `\n${label}:\n${value}\n` : "");
+  return [
+    `### ${idea.quick_note}`,
+    `Status: ${idea.status}`,
+    `Abteilung: ${idea.department}`,
+    `Team: ${idea.team}`,
+    idea.owner_name ? `Usecase-Geber: ${idea.owner_name}` : "",
+    idea.tags ? `Tags/Bucket: ${idea.tags}` : "",
+    idea.ai_role ? `KI-Rolle: ${idea.ai_role}` : "",
+    idea.kpi_kind ? `Kind of KPI: ${idea.kpi_kind}` : "",
+    idea.list_priority ? `Priorität (Liste): ${idea.list_priority}` : "",
+    section("Beschreibung", idea.description),
+    section("Tools/Systeme", idea.tools),
+    section("Wichtige Gedanken vorab / Risiken", idea.considerations),
+    section("Input", idea.input_source),
+    section("Output", idea.output_result),
+    section("Quantifizierter Nutzen", idea.quantified_benefit),
+    section("Qualitativer Nutzen", idea.qualitative_benefit),
+    section("Kommentar", idea.comment),
+    section("Start-Prompt", idea.initial_prompt),
+  ]
+    .filter(Boolean)
+    .join("\n");
+}
+
+async function renderExportSync() {
+  ideasCache = await loadIdeas();
+  const list = ideasCache.filter((i) => !i.catalog_id);
+
+  $app.innerHTML = `
+    <header class="topbar">
+      <div class="back-row">
+        <button class="icon-btn" id="back-btn">${t("backBtn")}</button>
+      </div>
+      ${langToggleButton()}
+    </header>
+    <main>
+      <div class="card">
+        <div class="section-title" style="margin:0 0 10px;">${t("exportTitle")}</div>
+        <p style="font-size:13.5px; color:var(--text-dim); margin:0 0 14px; line-height:1.5;">${t("exportIntro")}</p>
+        ${
+          list.length
+            ? `<div class="row"><button class="btn-primary" id="copy-all-btn" style="width:100%;">${t("copyAllBtn")} (${list.length})</button></div>`
+            : ""
+        }
+      </div>
+      <div class="idea-list" id="export-list">
+        ${
+          list.length
+            ? list
+                .map(
+                  (idea) => `
+                <div class="idea-item" style="cursor:default;">
+                  <div class="idea-title">${escapeHtml(idea.quick_note)}</div>
+                  <div class="idea-meta">
+                    <span class="badge status-${idea.status}">${t(`status_${idea.status}`)}</span>
+                    ${idea.team ? `<span class="badge">${escapeHtml(idea.team)}</span>` : ""}
+                  </div>
+                  <div class="row" style="margin-top:10px;">
+                    <button class="btn-secondary" data-copy-one="${idea.id}" style="width:100%;">${t("copyOneBtn")}</button>
+                  </div>
+                </div>
+              `
+                )
+                .join("")
+            : `<div class="empty-state">${t("exportEmpty")}</div>`
+        }
+      </div>
+    </main>
+  `;
+
+  document.getElementById("back-btn").addEventListener("click", () => {
+    window.location.hash = "";
+  });
+  bindLangToggle();
+
+  document.querySelectorAll("[data-copy-one]").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const idea = list.find((i) => i.id === btn.dataset.copyOne);
+      try {
+        await navigator.clipboard.writeText(buildExportBlock(idea));
+        toast(t("copiedMsg"));
+      } catch {
+        toast(t("copyFailedMsg"));
+      }
+    });
+  });
+
+  const copyAllBtn = document.getElementById("copy-all-btn");
+  if (copyAllBtn) {
+    copyAllBtn.addEventListener("click", async () => {
+      const text = list.map(buildExportBlock).join("\n\n---\n\n");
+      try {
+        await navigator.clipboard.writeText(text);
+        toast(t("copiedMsg"));
+      } catch {
+        toast(t("copyFailedMsg"));
+      }
+    });
+  }
+}
+
 async function renderAdmin() {
   profilesCache = await loadAllProfiles();
   const pending = profilesCache.filter((p) => !p.is_approved);
@@ -2143,6 +2282,8 @@ async function render() {
     renderSettings();
   } else if (route.view === "admin" && currentProfile.is_admin) {
     await renderAdmin();
+  } else if (route.view === "export") {
+    await renderExportSync();
   } else {
     await renderList();
   }
