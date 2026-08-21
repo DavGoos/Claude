@@ -97,6 +97,22 @@ const I18N = {
     selectPlaceholderOption: "— Bitte wählen —",
     departmentTeamRequiredMsg: "Bitte Abteilung und Team auswählen.",
 
+    catalogFieldsTitle: "Weitere Katalog-Felder (optional)",
+    catalogFieldsDesc:
+      "Zusätzliche Felder für den Abgleich mit dem bestehenden Excel-Use-Case-Katalog. Nicht nötig für die tägliche Nutzung.",
+    aiRoleLabel: "KI-Rolle",
+    inputSourceLabel: "Input (Datenquelle)",
+    inputSourcePlaceholder: "Woher kommen die Daten/Eingaben?",
+    outputResultLabel: "Output (Datenausgabe)",
+    outputResultPlaceholder: "Was liefert der Use Case als Ergebnis?",
+    kpiKindLabel: "Kind of KPI",
+    quantifiedBenefitLabel: "Quantifizierter Nutzen",
+    quantifiedBenefitPlaceholder: "z.B. 20 Std./Jahr Ersparnis",
+    qualitativeBenefitLabel: "Qualitativer Nutzen",
+    qualitativeBenefitPlaceholder: "z.B. bessere Entscheidungsgrundlage",
+    commentLabel: "Kommentar",
+    listPriorityLabel: "Priorität (Liste)",
+
     evaluationTitle: "Bewertung",
     impactLabel: "Nutzen",
     feasibilityLabel: "Machbarkeit",
@@ -277,6 +293,22 @@ const I18N = {
     selectPlaceholderOption: "— Please select —",
     departmentTeamRequiredMsg: "Please select department and team.",
 
+    catalogFieldsTitle: "Additional catalog fields (optional)",
+    catalogFieldsDesc:
+      "Extra fields to align with the existing Excel use-case catalog. Not needed for everyday use.",
+    aiRoleLabel: "AI role",
+    inputSourceLabel: "Input (data source)",
+    inputSourcePlaceholder: "Where does the data/input come from?",
+    outputResultLabel: "Output (result)",
+    outputResultPlaceholder: "What does the use case deliver as a result?",
+    kpiKindLabel: "Kind of KPI",
+    quantifiedBenefitLabel: "Quantified benefit",
+    quantifiedBenefitPlaceholder: "e.g. 20 hrs/year saved",
+    qualitativeBenefitLabel: "Qualitative benefit",
+    qualitativeBenefitPlaceholder: "e.g. better basis for decisions",
+    commentLabel: "Comment",
+    listPriorityLabel: "Priority (catalog)",
+
     evaluationTitle: "Scoring",
     impactLabel: "Impact",
     feasibilityLabel: "Feasibility",
@@ -387,6 +419,14 @@ const PROCESS_STATUS_ORDER = ["open", "reviewed"];
 // der App gepflegt (nicht als DB-Constraint) - Liste einfach erweitern.
 const DEPARTMENT_OPTIONS = ["050005 CO"];
 const TEAM_OPTIONS = ["Group Controlling", "Treasury", "Cost Allocation", "Workforce Controlling", "BI-Strategy"];
+
+// Zusätzliche, optionale Katalog-Felder für den Abgleich mit dem
+// bestehenden Excel-Use-Case-Katalog. Werte bewusst nicht übersetzt
+// (unabhängig von der UI-Sprache), damit Import/Export mit der Liste
+// exakt passt.
+const AI_ROLE_OPTIONS = ["Automatisieren", "Ergänzen", "Ersetzen", "Intelligenter Assistenzpartner"];
+const KPI_KIND_OPTIONS = ["Quantity", "Quality", "Hybrid"];
+const LIST_PRIORITY_OPTIONS = ["in using", "ungültig", "High", "Medium", "Low"];
 
 let currentUser = null;
 let currentProfile = null;
@@ -1205,6 +1245,41 @@ async function renderDetail(id) {
         </div>
       </div>
 
+      <details class="card">
+        <summary style="cursor:pointer; font-size:14px; font-weight:600; color:var(--text);">${t("catalogFieldsTitle")}</summary>
+        <p style="font-size:13px; color:var(--text-dim); margin:10px 0 14px; line-height:1.5;">${t("catalogFieldsDesc")}</p>
+
+        <label class="field-label" style="margin-top:0;">${t("aiRoleLabel")}</label>
+        <select class="field" id="f-ai-role">
+          ${selectOptionsFrom(AI_ROLE_OPTIONS, idea.ai_role)}
+        </select>
+
+        <label class="field-label">${t("inputSourceLabel")}</label>
+        <textarea class="field" id="f-input-source" placeholder="${t("inputSourcePlaceholder")}">${escapeHtml(idea.input_source || "")}</textarea>
+
+        <label class="field-label">${t("outputResultLabel")}</label>
+        <textarea class="field" id="f-output-result" placeholder="${t("outputResultPlaceholder")}">${escapeHtml(idea.output_result || "")}</textarea>
+
+        <label class="field-label">${t("kpiKindLabel")}</label>
+        <select class="field" id="f-kpi-kind">
+          ${selectOptionsFrom(KPI_KIND_OPTIONS, idea.kpi_kind)}
+        </select>
+
+        <label class="field-label">${t("quantifiedBenefitLabel")}</label>
+        <textarea class="field" id="f-quantified-benefit" placeholder="${t("quantifiedBenefitPlaceholder")}">${escapeHtml(idea.quantified_benefit || "")}</textarea>
+
+        <label class="field-label">${t("qualitativeBenefitLabel")}</label>
+        <textarea class="field" id="f-qualitative-benefit" placeholder="${t("qualitativeBenefitPlaceholder")}">${escapeHtml(idea.qualitative_benefit || "")}</textarea>
+
+        <label class="field-label">${t("commentLabel")}</label>
+        <textarea class="field" id="f-comment">${escapeHtml(idea.comment || "")}</textarea>
+
+        <label class="field-label">${t("listPriorityLabel")}</label>
+        <select class="field" id="f-list-priority">
+          ${selectOptionsFrom(LIST_PRIORITY_OPTIONS, idea.list_priority)}
+        </select>
+      </details>
+
       <div class="row">
         <button class="btn-primary" id="save-detail-btn">${t("saveBtn")}</button>
       </div>
@@ -1267,6 +1342,14 @@ async function renderDetail(id) {
       tools: document.getElementById("f-tools").value.trim(),
       considerations: document.getElementById("f-considerations").value.trim(),
       initial_prompt: document.getElementById("f-initial-prompt").value.trim(),
+      ai_role: document.getElementById("f-ai-role").value,
+      input_source: document.getElementById("f-input-source").value.trim(),
+      output_result: document.getElementById("f-output-result").value.trim(),
+      kpi_kind: document.getElementById("f-kpi-kind").value,
+      quantified_benefit: document.getElementById("f-quantified-benefit").value.trim(),
+      qualitative_benefit: document.getElementById("f-qualitative-benefit").value.trim(),
+      comment: document.getElementById("f-comment").value.trim(),
+      list_priority: document.getElementById("f-list-priority").value,
     };
   }
 

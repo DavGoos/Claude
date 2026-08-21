@@ -202,6 +202,18 @@ alter table ideas add column if not exists process_id uuid references processes 
 alter table ideas add column if not exists department text not null default '';
 alter table ideas add column if not exists team text not null default '';
 
+-- Zusätzliche, optionale Felder für den Abgleich mit dem bestehenden
+-- Excel-Use-Case-Katalog (Import/Export). Dropdown-Werte werden wie bei
+-- Abteilung/Team nur in js/app.js gepflegt, nicht als DB-Constraint.
+alter table ideas add column if not exists ai_role text not null default '';
+alter table ideas add column if not exists input_source text not null default '';
+alter table ideas add column if not exists output_result text not null default '';
+alter table ideas add column if not exists kpi_kind text not null default '';
+alter table ideas add column if not exists quantified_benefit text not null default '';
+alter table ideas add column if not exists qualitative_benefit text not null default '';
+alter table ideas add column if not exists comment text not null default '';
+alter table ideas add column if not exists list_priority text not null default '';
+
 drop trigger if exists ideas_set_updated_at on ideas;
 create trigger ideas_set_updated_at
   before update on ideas

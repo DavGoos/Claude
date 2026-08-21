@@ -166,6 +166,11 @@ funktioniert die App ganz normal weiter, nur eben ohne die KI-Ausarbeitung.
   rechts, u.a. auf dem Login-Bildschirm und den beiden Haupt-Listen)
   übersetzt die komplette Oberfläche inkl. der von der KI angefragten
   Sprache. Die Einstellung wird pro Gerät gespeichert.
+- **Katalog-Abgleich (optional)**: In der Idee-Detailansicht gibt es einen
+  ausklappbaren Bereich "Weitere Katalog-Felder" (KI-Rolle, Input, Output,
+  Kind of KPI, quantifizierter/qualitativer Nutzen, Kommentar, Priorität
+  laut Liste) – für den geplanten Abgleich mit dem bestehenden
+  Excel-Use-Case-Katalog. Optional, nicht nötig für die normale Nutzung.
 
 ## Projektstruktur
 
