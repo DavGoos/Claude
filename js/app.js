@@ -100,6 +100,7 @@ const I18N = {
     addFollowUpStageBtn: "+ Neue Folgestufe anlegen",
     newFollowUpStagePrompt: "Kurznotiz für die neue Folgestufe:",
     followUpStageSavedMsg: "Folgestufe gespeichert",
+    lastSavedTitle: "Zuletzt gespeichert",
     tagsLabel: "Tags (Komma-getrennt)",
     tagsPlaceholder: "z.B. Vertrieb, Automatisierung",
     descriptionLabel: "Beschreibung",
@@ -312,6 +313,7 @@ const I18N = {
     addFollowUpStageBtn: "+ Add follow-up stage",
     newFollowUpStagePrompt: "Quick note for the new follow-up stage:",
     followUpStageSavedMsg: "Follow-up stage saved",
+    lastSavedTitle: "Last saved",
     tagsLabel: "Tags (comma-separated)",
     tagsPlaceholder: "e.g. Sales, Automation",
     descriptionLabel: "Description",
@@ -475,6 +477,17 @@ function escapeHtml(str) {
   return (str || "").replace(/[&<>"']/g, (c) => ({
     "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
   })[c]);
+}
+
+function formatDateTime(iso) {
+  if (!iso) return "";
+  return new Date(iso).toLocaleString(currentLang === "en" ? "en-GB" : "de-DE", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 }
 
 function toast(msg) {
@@ -1148,6 +1161,7 @@ function ideaCard(idea) {
         ${idea.team ? `<span class="badge">${escapeHtml(idea.team)}</span>` : ""}
         ${idea.processes ? `<span class="badge">⚙ ${escapeHtml(idea.processes.name)}</span>` : ""}
         ${tags.map((tag) => `<span class="badge">#${escapeHtml(tag)}</span>`).join("")}
+        <span class="badge" title="${t("lastSavedTitle")}">🕒 ${formatDateTime(idea.updated_at)}</span>
       </div>
     </div>
   `;
