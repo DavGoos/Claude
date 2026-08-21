@@ -1,22 +1,392 @@
 const sb = window.supabaseClient;
 
-const STATUS_LABELS = {
-  idea: "Idee",
-  evaluating: "In Bewertung",
-  planned: "Geplant",
-  in_progress: "In Umsetzung",
-  done: "Fertig",
-  discarded: "Verworfen",
+// ============================================================
+// i18n
+// ============================================================
+
+const LANG_STORAGE = "ai_ideen_lang";
+let currentLang = localStorage.getItem(LANG_STORAGE) === "en" ? "en" : "de";
+
+function setLang(lang) {
+  currentLang = lang;
+  localStorage.setItem(LANG_STORAGE, lang);
+  render();
+}
+
+function t(key) {
+  const value = (I18N[currentLang] && I18N[currentLang][key]) ?? I18N.de[key];
+  return value === undefined ? key : value;
+}
+
+const I18N = {
+  de: {
+    appName: "Process- & AI-Usecase Management",
+    tagline:
+      "Dokumentiere eure Prozesse, prüft sie auf AI-Potenzial und erfasst AI-Use-Cases in Sekunden – inklusive Bewertung und KI-gestützter Ausarbeitung.",
+    login: "Anmelden",
+    signup: "Registrieren",
+    emailPlaceholder: "deine@email.de",
+    passwordPlaceholder: "Passwort",
+    loggingIn: "Melde an...",
+    signingUp: "Registriere...",
+    forgotPassword: "Passwort vergessen?",
+    signupSuccessMsg:
+      "Fast fertig! Bitte bestätige deine E-Mail-Adresse über den Link, den wir dir gerade geschickt haben. Danach kannst du dich hier mit E-Mail + Passwort anmelden.",
+    errorPrefix: "Fehler: ",
+    resetPromptEmail: "Für welche E-Mail-Adresse soll das Passwort zurückgesetzt werden?",
+    resetSentMsg: "Falls diese Adresse registriert ist, kommt gleich eine E-Mail mit einem Link zum Zurücksetzen.",
+    setNewPasswordTitle: "Neues Passwort setzen",
+    setNewPasswordDesc: "Vergib ein neues Passwort für dein Konto.",
+    newPasswordPlaceholder: "Neues Passwort",
+    savePassword: "Passwort speichern",
+    passwordSavedMsg: "Passwort gespeichert, du bist eingeloggt.",
+
+    pendingTitle: "Warten auf Freigabe",
+    pendingDesc:
+      "ist bestätigt, muss aber noch von einem Admin freigegeben werden, bevor du Ideen und Prozesse sehen kannst. Melde dich kurz bei d.goos@house-of-communication.com.",
+    checkStatus: "Status prüfen",
+    logout: "Ausloggen",
+    profileErrorTitle: "Profil nicht gefunden",
+    profileErrorDesc:
+      "Es gab ein Problem beim Laden deines Konto-Profils. Bitte kurz neu laden oder bei d.goos@house-of-communication.com melden.",
+
+    ideasTab: "Ideen",
+    processesTab: "Prozesse",
+    adminNav: "🛡 Freigaben",
+    logoutBtn: "Logout",
+    ideasHeaderTitle: "AI Ideen",
+    processesHeaderTitle: "Prozesse",
+
+    newIdeaLabel: "Neue Idee erfassen",
+    ideaPlaceholder: "z.B. Automatische Zusammenfassung von Kundenmails per KI...",
+    saveIdea: "Idee speichern",
+    ideaSavedMsg: "Idee gespeichert",
+    filterAll: "Alle",
+    emptyIdeas: "Noch keine Ideen hier. Trag oben deine erste Idee ein!",
+    loadingIdeas: "Lade Ideen...",
+
+    status_idea: "Idee",
+    status_evaluating: "In Bewertung",
+    status_planned: "Geplant",
+    status_in_progress: "In Umsetzung",
+    status_done: "Fertig",
+    status_discarded: "Verworfen",
+
+    priority_quickWin: "Quick Win",
+    priority_bigProject: "Großes Projekt",
+    priority_niceToHave: "Nice to have",
+    priority_postpone: "Eher verschieben",
+    priority_review: "Prüfen",
+
+    ai_high: "Hohes AI-Potenzial",
+    ai_low: "Geringes AI-Potenzial",
+    ai_medium: "Mittleres AI-Potenzial",
+
+    backBtn: "← Zurück",
+    deleteBtn: "Löschen",
+    quickNoteLabel: "Kurznotiz",
+    statusLabel: "Status",
+    relatedProcessLabel: "Zugehöriger Prozess",
+    noneOption: "— Keiner —",
+    tagsLabel: "Tags (Komma-getrennt)",
+    tagsPlaceholder: "z.B. Vertrieb, Automatisierung",
+    descriptionLabel: "Beschreibung",
+    descriptionPlaceholder: "Was ist das Problem, was soll die Lösung bringen?",
+    departmentLabel: "Abteilung",
+    teamLabel: "Team",
+    selectPlaceholderOption: "— Bitte wählen —",
+    departmentTeamRequiredMsg: "Bitte Abteilung und Team auswählen.",
+
+    evaluationTitle: "Bewertung",
+    impactLabel: "Nutzen",
+    feasibilityLabel: "Machbarkeit",
+    effortLabel: "Aufwand",
+    riskLabel: "Risiko",
+    assessmentPrefix: "Einschätzung: ",
+
+    aiSupportTitle: "KI-Unterstützung",
+    aiSupportDesc:
+      "Erzeuge einen fertigen Prompt und füge ihn in ein beliebiges KI-Chat-Tool ein, das du bereits nutzt (Copilot, ChatGPT, Claude, Gemini, ...) – kein eigener API-Key nötig. Kopier die Antwort danach hier zurück rein.",
+    generatePromptBtn: "📋 Prompt erzeugen",
+    copyToClipboardBtn: "In Zwischenablage kopieren",
+    aiResponsePasteLabel: "Antwort der KI hier einfügen",
+    aiResponsePlaceholder: "Antwort aus Copilot/ChatGPT/Claude/... hier einfügen",
+    applyBtn: "Übernehmen",
+    optionalApiDetails: "Stattdessen automatisch mit eigenem API-Key (optional)",
+    autoElaborateBtn: "✨ Automatisch mit KI ausarbeiten",
+    aiWorkingMsg: "KI arbeitet...",
+
+    toolsLabel: "Tools & Umsetzungsoptionen",
+    toolsPlaceholder: "Wird von der KI vorgeschlagen oder hier selbst eintragen",
+    considerationsLabel: "Wichtige Gedanken vorab",
+    considerationsPlaceholder: "z.B. Datenschutz, Datenquelle, Kosten",
+    startPromptLabel: "Start-Prompt fürs Projekt",
+    startPromptPlaceholder: "Wird von der KI generiert",
+    copyStartPromptBtn: "Start-Prompt kopieren",
+
+    saveBtn: "Speichern",
+    savingBtn: "Speichere...",
+    savedMsg: "Gespeichert",
+    deleteIdeaConfirm: "Diese Idee wirklich löschen?",
+    ideaDeletedMsg: "Idee gelöscht",
+    copiedMsg: "In Zwischenablage kopiert",
+    copyFailedMsg: "Kopieren nicht möglich, bitte manuell markieren",
+    copiedPasteHintMsg: "In Zwischenablage kopiert – jetzt in dein KI-Tool einfügen",
+    couldNotParseMsg:
+      "Konnte die Antwort nicht automatisch auslesen. Du kannst die Felder unten auch selbst aus der Antwort befüllen.",
+    proposalApplied: "Vorschlag übernommen, denk ans Speichern!",
+    suggestedDescription: "Vorschlag Beschreibung",
+    suggestedTools: "Vorschlag Tools",
+    suggestedConsiderations: "Wichtige Gedanken vorab",
+    suggestedStartPrompt: "Start-Prompt",
+    applySuggestionBtn: "Vorschlag übernehmen",
+
+    newProcessLabel: "Neuen Prozess dokumentieren",
+    processPlaceholder: "z.B. Angebote erstellen, Rechnungsprüfung, Kundenonboarding...",
+    saveProcessBtn: "Prozess speichern",
+    processSavedMsg: "Prozess gespeichert",
+    emptyProcesses: "Noch keine Prozesse erfasst. Trag oben den ersten Prozess deines Bereichs ein!",
+    loadingProcesses: "Lade Prozesse...",
+
+    pstatus_open: "Offen",
+    pstatus_reviewed: "Geprüft",
+
+    processNameLabel: "Prozessname",
+    parentProcessLabel: "Übergeordneter Prozess",
+    noneTopLevelOption: "— Keiner (Top-Level-Prozess) —",
+    aiPotentialTitle: "AI-Potenzial",
+    aiPotentialLabel: "AI-Potenzial",
+    notesLabel: "Notizen / Begründung",
+    notesPlaceholder: "Warum viel/wenig Potenzial? Erste Ansätze?",
+    processDescPlaceholder: "Wie läuft der Prozess ab, wer ist beteiligt?",
+    subProcessesTitle: "Teilprozesse",
+    emptySubProcesses: "Noch keine Teilprozesse zugeordnet.",
+    addSubProcessBtn: "+ Neuen Teilprozess anlegen",
+    linkedUseCasesTitle: "Zugehörige Use Cases",
+    emptyLinkedIdeas: "Noch keine Idee für diesen Prozess.",
+    addIdeaBtn: "+ Neue Idee für diesen Prozess",
+    newIdeaPrompt: "Kurznotiz für die neue Idee:",
+    newSubProcessPrompt: "Name des neuen Teilprozesses:",
+    deleteProcessConfirm:
+      "Diesen Prozess wirklich löschen? Verknüpfte Ideen bleiben erhalten, verlieren aber die Zuordnung.",
+    processDeletedMsg: "Prozess gelöscht",
+    subProcessSavedMsg: "Teilprozess gespeichert",
+
+    settingsTitleOptionalKey: "Eigener KI-API-Key (optional)",
+    settingsIntro1:
+      "Komplett optional: Standardmäßig erzeugt die App einen Prompt zum Kopieren, den du in ein beliebiges KI-Chat-Tool einfügst, das du bereits nutzt (Copilot, ChatGPT, Claude, Gemini, ...) – ganz ohne diesen Key. Nur wer die Ausarbeitung stattdessen automatisch mit einem Klick möchte, braucht hier einen eigenen Key.",
+    settingsIntro2:
+      "Wichtig: Ein bestehendes Claude- oder ChatGPT-Abo deckt das nicht ab – der API-Zugang ist ein separates, eigenständig abgerechnetes Angebot (siehe Anleitung unten) und wird ausschließlich auf diesem Handy gespeichert, nie an Kolleg:innen oder einen eigenen Server geschickt.",
+    howToTitle: "So kommst du an einen $-Key:",
+    apiKeyLabelPrefix: "API-Key (",
+    removeBtn: "Entfernen",
+    keySavedMsg: "API-Key gespeichert",
+    keyRemovedMsg: "API-Key entfernt",
+
+    pendingApprovalTitlePrefix: "Wartet auf Freigabe (",
+    noPendingMsg: "Aktuell wartet niemand auf Freigabe.",
+    approveBtn: "Freigeben",
+    approvedMembersTitlePrefix: "Freigegebene Mitglieder (",
+    adminBadge: "Admin",
+    approvedMsg: "Freigegeben",
+
+    loadErrorPrefix: "Fehler beim Laden: ",
+    saveErrorPrefix: "Fehler beim Speichern: ",
+    deleteErrorPrefix: "Fehler beim Löschen: ",
+    profileLoadErrorPrefix: "Fehler beim Laden des Profils: ",
+    approveErrorPrefix: "Fehler beim Freigeben: ",
+    noApiKeyError: "Kein eigener API-Key hinterlegt. Bitte unter Einstellungen eintragen.",
+    claudeApiError: "Claude API Fehler: ",
+    openaiApiError: "OpenAI API Fehler: ",
+  },
+  en: {
+    appName: "Process & AI Use Case Management",
+    tagline:
+      "Document your team's processes, screen them for AI potential, and capture AI use cases in seconds - including scoring and AI-assisted elaboration.",
+    login: "Log in",
+    signup: "Sign up",
+    emailPlaceholder: "you@email.com",
+    passwordPlaceholder: "Password",
+    loggingIn: "Logging in...",
+    signingUp: "Signing up...",
+    forgotPassword: "Forgot password?",
+    signupSuccessMsg:
+      "Almost done! Please confirm your email address via the link we just sent you. After that you can log in here with email + password.",
+    errorPrefix: "Error: ",
+    resetPromptEmail: "Which email address should the password be reset for?",
+    resetSentMsg: "If this address is registered, an email with a reset link is on its way.",
+    setNewPasswordTitle: "Set a new password",
+    setNewPasswordDesc: "Choose a new password for your account.",
+    newPasswordPlaceholder: "New password",
+    savePassword: "Save password",
+    passwordSavedMsg: "Password saved, you're logged in.",
+
+    pendingTitle: "Waiting for approval",
+    pendingDesc:
+      "is confirmed, but still needs to be approved by an admin before you can see ideas and processes. Reach out to d.goos@house-of-communication.com.",
+    checkStatus: "Check status",
+    logout: "Log out",
+    profileErrorTitle: "Profile not found",
+    profileErrorDesc:
+      "There was a problem loading your account profile. Please reload, or reach out to d.goos@house-of-communication.com.",
+
+    ideasTab: "Ideas",
+    processesTab: "Processes",
+    adminNav: "🛡 Approvals",
+    logoutBtn: "Log out",
+    ideasHeaderTitle: "AI Ideas",
+    processesHeaderTitle: "Processes",
+
+    newIdeaLabel: "Capture a new idea",
+    ideaPlaceholder: "e.g. Automatic summary of customer emails via AI...",
+    saveIdea: "Save idea",
+    ideaSavedMsg: "Idea saved",
+    filterAll: "All",
+    emptyIdeas: "No ideas yet. Add your first one above!",
+    loadingIdeas: "Loading ideas...",
+
+    status_idea: "Idea",
+    status_evaluating: "Evaluating",
+    status_planned: "Planned",
+    status_in_progress: "In progress",
+    status_done: "Done",
+    status_discarded: "Discarded",
+
+    priority_quickWin: "Quick win",
+    priority_bigProject: "Big project",
+    priority_niceToHave: "Nice to have",
+    priority_postpone: "Better postpone",
+    priority_review: "Review",
+
+    ai_high: "High AI potential",
+    ai_low: "Low AI potential",
+    ai_medium: "Medium AI potential",
+
+    backBtn: "← Back",
+    deleteBtn: "Delete",
+    quickNoteLabel: "Quick note",
+    statusLabel: "Status",
+    relatedProcessLabel: "Related process",
+    noneOption: "— None —",
+    tagsLabel: "Tags (comma-separated)",
+    tagsPlaceholder: "e.g. Sales, Automation",
+    descriptionLabel: "Description",
+    descriptionPlaceholder: "What's the problem, what should the solution achieve?",
+    departmentLabel: "Department",
+    teamLabel: "Team",
+    selectPlaceholderOption: "— Please select —",
+    departmentTeamRequiredMsg: "Please select department and team.",
+
+    evaluationTitle: "Scoring",
+    impactLabel: "Impact",
+    feasibilityLabel: "Feasibility",
+    effortLabel: "Effort",
+    riskLabel: "Risk",
+    assessmentPrefix: "Assessment: ",
+
+    aiSupportTitle: "AI support",
+    aiSupportDesc:
+      "Generate a ready-made prompt and paste it into any AI chat tool you already use (Copilot, ChatGPT, Claude, Gemini, ...) - no API key needed. Paste the reply back in here afterwards.",
+    generatePromptBtn: "📋 Generate prompt",
+    copyToClipboardBtn: "Copy to clipboard",
+    aiResponsePasteLabel: "Paste the AI's reply here",
+    aiResponsePlaceholder: "Paste the reply from Copilot/ChatGPT/Claude/... here",
+    applyBtn: "Apply",
+    optionalApiDetails: "Or automatically with your own API key (optional)",
+    autoElaborateBtn: "✨ Elaborate automatically with AI",
+    aiWorkingMsg: "AI is working...",
+
+    toolsLabel: "Tools & implementation options",
+    toolsPlaceholder: "Suggested by AI, or fill in yourself",
+    considerationsLabel: "Key considerations upfront",
+    considerationsPlaceholder: "e.g. Privacy, data sources, cost",
+    startPromptLabel: "Starter prompt for the project",
+    startPromptPlaceholder: "Generated by AI",
+    copyStartPromptBtn: "Copy starter prompt",
+
+    saveBtn: "Save",
+    savingBtn: "Saving...",
+    savedMsg: "Saved",
+    deleteIdeaConfirm: "Really delete this idea?",
+    ideaDeletedMsg: "Idea deleted",
+    copiedMsg: "Copied to clipboard",
+    copyFailedMsg: "Couldn't copy, please select manually",
+    copiedPasteHintMsg: "Copied to clipboard - now paste it into your AI tool",
+    couldNotParseMsg:
+      "Couldn't automatically parse the reply. You can also fill in the fields below yourself from the reply.",
+    proposalApplied: "Suggestion applied, remember to save!",
+    suggestedDescription: "Suggested description",
+    suggestedTools: "Suggested tools",
+    suggestedConsiderations: "Key considerations upfront",
+    suggestedStartPrompt: "Starter prompt",
+    applySuggestionBtn: "Apply suggestion",
+
+    newProcessLabel: "Document a new process",
+    processPlaceholder: "e.g. Creating quotes, invoice review, customer onboarding...",
+    saveProcessBtn: "Save process",
+    processSavedMsg: "Process saved",
+    emptyProcesses: "No processes yet. Add the first process of your area above!",
+    loadingProcesses: "Loading processes...",
+
+    pstatus_open: "Open",
+    pstatus_reviewed: "Reviewed",
+
+    processNameLabel: "Process name",
+    parentProcessLabel: "Parent process",
+    noneTopLevelOption: "— None (top-level process) —",
+    aiPotentialTitle: "AI potential",
+    aiPotentialLabel: "AI potential",
+    notesLabel: "Notes / rationale",
+    notesPlaceholder: "Why much/little potential? Initial approaches?",
+    processDescPlaceholder: "How does the process run, who's involved?",
+    subProcessesTitle: "Sub-processes",
+    emptySubProcesses: "No sub-processes assigned yet.",
+    addSubProcessBtn: "+ Add new sub-process",
+    linkedUseCasesTitle: "Related use cases",
+    emptyLinkedIdeas: "No idea for this process yet.",
+    addIdeaBtn: "+ Add new idea for this process",
+    newIdeaPrompt: "Quick note for the new idea:",
+    newSubProcessPrompt: "Name of the new sub-process:",
+    deleteProcessConfirm: "Really delete this process? Linked ideas stay, but lose their assignment.",
+    processDeletedMsg: "Process deleted",
+    subProcessSavedMsg: "Sub-process saved",
+
+    settingsTitleOptionalKey: "Your own AI API key (optional)",
+    settingsIntro1:
+      "Completely optional: by default the app generates a prompt to copy, which you paste into any AI chat tool you already use (Copilot, ChatGPT, Claude, Gemini, ...) - no key needed at all. Only if you want the one-click automatic elaboration instead, you need your own key here.",
+    settingsIntro2:
+      "Important: an existing Claude or ChatGPT subscription does not cover this - API access is a separate, independently billed offering (see instructions below) and is stored only on this phone, never sent to colleagues or a server of ours.",
+    howToTitle: "How to get a $ key:",
+    apiKeyLabelPrefix: "API key (",
+    removeBtn: "Remove",
+    keySavedMsg: "API key saved",
+    keyRemovedMsg: "API key removed",
+
+    pendingApprovalTitlePrefix: "Waiting for approval (",
+    noPendingMsg: "No one is currently waiting for approval.",
+    approveBtn: "Approve",
+    approvedMembersTitlePrefix: "Approved members (",
+    adminBadge: "Admin",
+    approvedMsg: "Approved",
+
+    loadErrorPrefix: "Error loading: ",
+    saveErrorPrefix: "Error saving: ",
+    deleteErrorPrefix: "Error deleting: ",
+    profileLoadErrorPrefix: "Error loading profile: ",
+    approveErrorPrefix: "Error approving: ",
+    noApiKeyError: "No personal API key set. Please add one under Settings.",
+    claudeApiError: "Claude API error: ",
+    openaiApiError: "OpenAI API error: ",
+  },
 };
 
 const STATUS_ORDER = ["idea", "evaluating", "planned", "in_progress", "done", "discarded"];
-
-const PROCESS_STATUS_LABELS = {
-  open: "Offen",
-  reviewed: "Geprüft",
-};
-
 const PROCESS_STATUS_ORDER = ["open", "reviewed"];
+
+// Erlaubte Werte für die Pflichtfelder Abteilung/Team. Bewusst nur hier in
+// der App gepflegt (nicht als DB-Constraint) - Liste einfach erweitern.
+const DEPARTMENT_OPTIONS = ["050005 CO"];
+const TEAM_OPTIONS = ["Group Controlling", "Treasury", "Cost Allocation", "Workforce Controlling", "BI-Strategy"];
 
 let currentUser = null;
 let currentProfile = null;
@@ -51,18 +421,30 @@ function toast(msg) {
 function priorityInfo(idea) {
   const impact = idea.impact || 3;
   const effort = idea.effort || 3;
-  if (impact >= 4 && effort <= 2) return { label: "Quick Win", color: "#22c55e" };
-  if (impact >= 4 && effort >= 4) return { label: "Großes Projekt", color: "#8b5cf6" };
-  if (impact <= 2 && effort <= 2) return { label: "Nice to have", color: "#93c5fd" };
-  if (impact <= 2 && effort >= 4) return { label: "Eher verschieben", color: "#9aa1af" };
-  return { label: "Prüfen", color: "#fcd34d" };
+  if (impact >= 4 && effort <= 2) return { label: t("priority_quickWin"), color: "#22c55e" };
+  if (impact >= 4 && effort >= 4) return { label: t("priority_bigProject"), color: "#8b5cf6" };
+  if (impact <= 2 && effort <= 2) return { label: t("priority_niceToHave"), color: "#93c5fd" };
+  if (impact <= 2 && effort >= 4) return { label: t("priority_postpone"), color: "#9aa1af" };
+  return { label: t("priority_review"), color: "#fcd34d" };
 }
 
 function aiPotentialInfo(value) {
   const v = value || 3;
-  if (v >= 4) return { label: "Hohes AI-Potenzial", color: "#22c55e" };
-  if (v <= 2) return { label: "Geringes AI-Potenzial", color: "#9aa1af" };
-  return { label: "Mittleres AI-Potenzial", color: "#fcd34d" };
+  if (v >= 4) return { label: t("ai_high"), color: "#22c55e" };
+  if (v <= 2) return { label: t("ai_low"), color: "#9aa1af" };
+  return { label: t("ai_medium"), color: "#fcd34d" };
+}
+
+function langToggleButton() {
+  const nextLang = currentLang === "de" ? "en" : "de";
+  return `<button class="icon-btn" id="lang-btn" data-next-lang="${nextLang}">${nextLang.toUpperCase()}</button>`;
+}
+
+function bindLangToggle() {
+  const btn = document.getElementById("lang-btn");
+  if (btn) {
+    btn.addEventListener("click", () => setLang(btn.dataset.nextLang));
+  }
 }
 
 // ---------- Routing ----------
@@ -86,7 +468,7 @@ window.addEventListener("hashchange", render);
 async function loadOwnProfile() {
   const { data, error } = await sb.from("profiles").select("*").eq("id", currentUser.id).single();
   if (error) {
-    toast("Fehler beim Laden des Profils: " + error.message);
+    toast(t("profileLoadErrorPrefix") + error.message);
     return null;
   }
   return data;
@@ -95,7 +477,7 @@ async function loadOwnProfile() {
 async function loadAllProfiles() {
   const { data, error } = await sb.from("profiles").select("*").order("created_at", { ascending: false });
   if (error) {
-    toast("Fehler beim Laden: " + error.message);
+    toast(t("loadErrorPrefix") + error.message);
     return [];
   }
   return data || [];
@@ -104,7 +486,7 @@ async function loadAllProfiles() {
 async function approveUser(id) {
   const { error } = await sb.from("profiles").update({ is_approved: true }).eq("id", id);
   if (error) {
-    toast("Fehler beim Freigeben: " + error.message);
+    toast(t("approveErrorPrefix") + error.message);
     return false;
   }
   return true;
@@ -156,18 +538,18 @@ async function loadIdeas() {
     .select("*, processes(id, name)")
     .order("created_at", { ascending: false });
   if (error) {
-    toast("Fehler beim Laden: " + error.message);
+    toast(t("loadErrorPrefix") + error.message);
     return [];
   }
   return data || [];
 }
 
-async function createIdea(quickNote, processId) {
-  const payload = { quick_note: quickNote, created_by: currentUser.id };
+async function createIdea(quickNote, department, team, processId) {
+  const payload = { quick_note: quickNote, department, team, created_by: currentUser.id };
   if (processId) payload.process_id = processId;
   const { data, error } = await sb.from("ideas").insert(payload).select("*, processes(id, name)").single();
   if (error) {
-    toast("Fehler beim Speichern: " + error.message);
+    toast(t("saveErrorPrefix") + error.message);
     return null;
   }
   return data;
@@ -181,7 +563,7 @@ async function updateIdea(id, patch) {
     .select("*, processes(id, name)")
     .single();
   if (error) {
-    toast("Fehler beim Speichern: " + error.message);
+    toast(t("saveErrorPrefix") + error.message);
     return null;
   }
   return data;
@@ -190,7 +572,7 @@ async function updateIdea(id, patch) {
 async function deleteIdea(id) {
   const { error } = await sb.from("ideas").delete().eq("id", id);
   if (error) {
-    toast("Fehler beim Löschen: " + error.message);
+    toast(t("deleteErrorPrefix") + error.message);
     return false;
   }
   return true;
@@ -201,21 +583,35 @@ const AI_PROVIDERS = {
     label: "Claude",
     keyStorage: "ai_ideen_anthropic_key",
     placeholder: "sk-ant-...",
-    howTo: [
-      "Auf console.anthropic.com registrieren oder einloggen.",
-      'Links im Menü auf "API Keys" gehen und einen neuen Key erstellen.',
-      "Etwas Guthaben aufladen (wenige Euro reichen für sehr viele Nutzungen).",
-    ],
+    howTo: {
+      de: [
+        "Auf console.anthropic.com registrieren oder einloggen.",
+        'Links im Menü auf "API Keys" gehen und einen neuen Key erstellen.',
+        "Etwas Guthaben aufladen (wenige Euro reichen für sehr viele Nutzungen).",
+      ],
+      en: [
+        "Sign up or log in at console.anthropic.com.",
+        'Go to "API Keys" in the left menu and create a new key.',
+        "Add a bit of credit (a few euros/dollars covers a lot of usage).",
+      ],
+    },
   },
   openai: {
     label: "OpenAI (ChatGPT)",
     keyStorage: "ai_ideen_openai_key",
     placeholder: "sk-...",
-    howTo: [
-      "Auf platform.openai.com registrieren oder einloggen.",
-      'Über das Nutzermenü zu "API keys" gehen und einen neuen Key erstellen.',
-      "Etwas Guthaben aufladen (wenige Euro reichen für sehr viele Nutzungen).",
-    ],
+    howTo: {
+      de: [
+        "Auf platform.openai.com registrieren oder einloggen.",
+        'Über das Nutzermenü zu "API keys" gehen und einen neuen Key erstellen.',
+        "Etwas Guthaben aufladen (wenige Euro reichen für sehr viele Nutzungen).",
+      ],
+      en: [
+        "Sign up or log in at platform.openai.com.",
+        'Go to "API keys" via the user menu and create a new key.',
+        "Add a bit of credit (a few euros/dollars covers a lot of usage).",
+      ],
+    },
   },
 };
 
@@ -240,7 +636,8 @@ function setProviderKey(provider, key) {
   else localStorage.removeItem(storageKey);
 }
 
-const ELABORATE_SYSTEM_PROMPT = `Du bist ein erfahrener AI-Solution-Architekt, der intern erfasste
+const ELABORATE_SYSTEM_PROMPTS = {
+  de: `Du bist ein erfahrener AI-Solution-Architekt, der intern erfasste
 AI-Use-Case-Ideen eines Unternehmens ausarbeitet. Du bekommst eine kurze Notiz und
 optional eine erste Beschreibung. Antworte AUSSCHLIESSLICH mit einem JSON-Objekt
 (kein Markdown, kein Fließtext davor oder danach) mit genau diesen Feldern:
@@ -250,10 +647,26 @@ optional eine erste Beschreibung. Antworte AUSSCHLIESSLICH mit einem JSON-Objekt
   "tools": "Konkrete Vorschläge für Tools/Frameworks/Architektur, die für die Umsetzung sinnvoll sind, als kurze Liste mit Begründung.",
   "considerations": "Wichtige Gedanken vorab: Datenschutz, benötigte Datenquellen, Kosten, Abhängigkeiten, Stakeholder, Risiken. Als kurze Liste.",
   "initial_prompt": "Ein guter, direkt verwendbarer Start-Prompt (auf Deutsch), mit dem man z.B. bei Claude Code oder einem neuen Chat in die Umsetzung dieses Projekts einsteigen kann. Soll Kontext, Ziel und relevante Rahmenbedingungen enthalten."
-}`;
+}`,
+  en: `You are an experienced AI solution architect who elaborates on internally
+captured AI use case ideas for a company. You get a short note and optionally
+an initial description. Respond ONLY with a JSON object (no markdown, no text
+before or after) with exactly these fields:
+
+{
+  "description": "Structured description: problem, target audience, proposed solution, expected benefit. In English, 4-8 sentences.",
+  "tools": "Concrete suggestions for tools/frameworks/architecture that make sense for the implementation, as a short list with rationale.",
+  "considerations": "Key considerations upfront: privacy, required data sources, cost, dependencies, stakeholders, risks. As a short list.",
+  "initial_prompt": "A good, directly usable starter prompt (in English) to kick off implementation of this project, e.g. with Claude Code or a new chat. Should include context, goal, and relevant constraints."
+}`,
+};
 
 function buildElaboratePrompt(idea) {
-  return `${ELABORATE_SYSTEM_PROMPT}\n\n---\n\nKurznotiz: ${idea.quick_note}\n\nBisherige Beschreibung: ${idea.description || "(noch keine)"}`;
+  const prompt = ELABORATE_SYSTEM_PROMPTS[currentLang];
+  const noteLabel = currentLang === "en" ? "Quick note" : "Kurznotiz";
+  const descLabel = currentLang === "en" ? "Existing description" : "Bisherige Beschreibung";
+  const none = currentLang === "en" ? "(none yet)" : "(noch keine)";
+  return `${prompt}\n\n---\n\n${noteLabel}: ${idea.quick_note}\n\n${descLabel}: ${idea.description || none}`;
 }
 
 function extractJson(text) {
@@ -278,13 +691,13 @@ async function elaborateWithAnthropic(apiKey, userMessage) {
     body: JSON.stringify({
       model: "claude-sonnet-5",
       max_tokens: 1500,
-      system: ELABORATE_SYSTEM_PROMPT,
+      system: ELABORATE_SYSTEM_PROMPTS[currentLang],
       messages: [{ role: "user", content: userMessage }],
     }),
   });
   if (!res.ok) {
     const errText = await res.text();
-    throw new Error(`Claude API Fehler: ${errText}`);
+    throw new Error(t("claudeApiError") + errText);
   }
   const data = await res.json();
   return data.content?.[0]?.text || "";
@@ -301,14 +714,14 @@ async function elaborateWithOpenAI(apiKey, userMessage) {
       model: "gpt-4o-mini",
       response_format: { type: "json_object" },
       messages: [
-        { role: "system", content: ELABORATE_SYSTEM_PROMPT },
+        { role: "system", content: ELABORATE_SYSTEM_PROMPTS[currentLang] },
         { role: "user", content: userMessage },
       ],
     }),
   });
   if (!res.ok) {
     const errText = await res.text();
-    throw new Error(`OpenAI API Fehler: ${errText}`);
+    throw new Error(t("openaiApiError") + errText);
   }
   const data = await res.json();
   return data.choices?.[0]?.message?.content || "";
@@ -318,10 +731,13 @@ async function elaborateWithAI(idea) {
   const provider = getAiProvider();
   const apiKey = getProviderKey(provider);
   if (!apiKey) {
-    throw new Error("Kein eigener API-Key hinterlegt. Bitte unter Einstellungen eintragen.");
+    throw new Error(t("noApiKeyError"));
   }
 
-  const userMessage = `Kurznotiz: ${idea.quick_note}\n\nBisherige Beschreibung: ${idea.description || "(noch keine)"}`;
+  const noteLabel = currentLang === "en" ? "Quick note" : "Kurznotiz";
+  const descLabel = currentLang === "en" ? "Existing description" : "Bisherige Beschreibung";
+  const none = currentLang === "en" ? "(none yet)" : "(noch keine)";
+  const userMessage = `${noteLabel}: ${idea.quick_note}\n\n${descLabel}: ${idea.description || none}`;
 
   const rawText =
     provider === "openai"
@@ -339,14 +755,14 @@ async function loadProcesses() {
     .select("*, parent:parent_process_id(id, name)")
     .order("created_at", { ascending: false });
   if (error) {
-    toast("Fehler beim Laden: " + error.message);
+    toast(t("loadErrorPrefix") + error.message);
     return [];
   }
   return data || [];
 }
 
-async function createProcess(name, parentProcessId) {
-  const payload = { name, created_by: currentUser.id };
+async function createProcess(name, department, team, parentProcessId) {
+  const payload = { name, department, team, created_by: currentUser.id };
   if (parentProcessId) payload.parent_process_id = parentProcessId;
   const { data, error } = await sb
     .from("processes")
@@ -354,7 +770,7 @@ async function createProcess(name, parentProcessId) {
     .select("*, parent:parent_process_id(id, name)")
     .single();
   if (error) {
-    toast("Fehler beim Speichern: " + error.message);
+    toast(t("saveErrorPrefix") + error.message);
     return null;
   }
   return data;
@@ -368,7 +784,7 @@ async function updateProcess(id, patch) {
     .select("*, parent:parent_process_id(id, name)")
     .single();
   if (error) {
-    toast("Fehler beim Speichern: " + error.message);
+    toast(t("saveErrorPrefix") + error.message);
     return null;
   }
   return data;
@@ -377,7 +793,7 @@ async function updateProcess(id, patch) {
 async function deleteProcess(id) {
   const { error } = await sb.from("processes").delete().eq("id", id);
   if (error) {
-    toast("Fehler beim Löschen: " + error.message);
+    toast(t("deleteErrorPrefix") + error.message);
     return false;
   }
   return true;
@@ -388,8 +804,8 @@ async function deleteProcess(id) {
 function tabBar(active) {
   return `
     <div class="tabbar">
-      <button data-tab="ideas" class="${active === "ideas" ? "active" : ""}">Ideen</button>
-      <button data-tab="processes" class="${active === "processes" ? "active" : ""}">Prozesse</button>
+      <button data-tab="ideas" class="${active === "ideas" ? "active" : ""}">${t("ideasTab")}</button>
+      <button data-tab="processes" class="${active === "processes" ? "active" : ""}">${t("processesTab")}</button>
     </div>
   `;
 }
@@ -402,35 +818,68 @@ function bindTabBar() {
   });
 }
 
+function selectOptionsFrom(values, selectedValue) {
+  const options = [`<option value="" ${selectedValue ? "" : "selected"}>${t("selectPlaceholderOption")}</option>`];
+  values.forEach((v) => {
+    options.push(`<option value="${escapeHtml(v)}" ${v === selectedValue ? "selected" : ""}>${escapeHtml(v)}</option>`);
+  });
+  return options.join("");
+}
+
+function departmentTeamFields(department, team, idPrefix) {
+  return `
+    <div class="row">
+      <select class="field" id="${idPrefix}-department" style="flex:1;">
+        ${selectOptionsFrom(DEPARTMENT_OPTIONS, department)}
+      </select>
+      <select class="field" id="${idPrefix}-team" style="flex:1;">
+        ${selectOptionsFrom(TEAM_OPTIONS, team)}
+      </select>
+    </div>
+  `;
+}
+
+function readDepartmentTeam(idPrefix) {
+  return {
+    department: document.getElementById(`${idPrefix}-department`).value,
+    team: document.getElementById(`${idPrefix}-team`).value,
+  };
+}
+
 // ---------- Views ----------
 
 function renderLogin() {
   const isSignup = authMode === "signup";
   $app.innerHTML = `
     <div class="login-wrap">
+      <div class="row" style="width:100%; max-width:320px; justify-content:flex-end; margin-bottom:-8px;">
+        ${langToggleButton()}
+      </div>
       <img src="icons/icon-192.png" alt="Logo" />
-      <h1>Process- &amp; AI-Usecase Management</h1>
-      <p>Dokumentiere eure Prozesse, prüft sie auf AI-Potenzial und erfasst AI-Use-Cases in Sekunden – inklusive Bewertung und KI-gestützter Ausarbeitung.</p>
+      <h1>${t("appName")}</h1>
+      <p>${t("tagline")}</p>
       <div class="tabbar" style="max-width:320px;">
-        <button data-mode="login" class="${!isSignup ? "active" : ""}">Anmelden</button>
-        <button data-mode="signup" class="${isSignup ? "active" : ""}">Registrieren</button>
+        <button data-mode="login" class="${!isSignup ? "active" : ""}">${t("login")}</button>
+        <button data-mode="signup" class="${isSignup ? "active" : ""}">${t("signup")}</button>
       </div>
       <form id="auth-form" style="width:100%; max-width:320px;">
-        <input type="email" id="auth-email" placeholder="deine@email.de" required autocomplete="email" />
+        <input type="email" id="auth-email" placeholder="${t("emailPlaceholder")}" required autocomplete="email" />
         <input
           type="password"
           id="auth-password"
-          placeholder="Passwort"
+          placeholder="${t("passwordPlaceholder")}"
           required
           minlength="6"
           autocomplete="${isSignup ? "new-password" : "current-password"}"
         />
-        <button type="submit" class="btn-primary" style="width:100%;">${isSignup ? "Registrieren" : "Anmelden"}</button>
+        <button type="submit" class="btn-primary" style="width:100%;">${isSignup ? t("signup") : t("login")}</button>
       </form>
-      ${!isSignup ? `<button class="btn-ghost" id="forgot-btn" style="margin-top:10px;">Passwort vergessen?</button>` : ""}
+      ${!isSignup ? `<button class="btn-ghost" id="forgot-btn" style="margin-top:10px;">${t("forgotPassword")}</button>` : ""}
       <p id="login-msg" style="margin-top:14px; font-size:13px;"></p>
     </div>
   `;
+
+  bindLangToggle();
 
   document.querySelectorAll(".tabbar button").forEach((btn) => {
     btn.addEventListener("click", () => {
@@ -446,15 +895,15 @@ function renderLogin() {
     const btn = e.target.querySelector("button");
     const msg = document.getElementById("login-msg");
     btn.disabled = true;
-    btn.textContent = isSignup ? "Registriere..." : "Melde an...";
+    btn.textContent = isSignup ? t("signingUp") : t("loggingIn");
     const error = isSignup ? await signUpWithPassword(email, password) : await signInWithPassword(email, password);
     btn.disabled = false;
-    btn.textContent = isSignup ? "Registrieren" : "Anmelden";
+    btn.textContent = isSignup ? t("signup") : t("login");
     if (error) {
-      msg.textContent = "Fehler: " + error.message;
+      msg.textContent = t("errorPrefix") + error.message;
       msg.style.color = "#ef4444";
     } else if (isSignup) {
-      msg.textContent = "Fast fertig! Bitte bestätige deine E-Mail-Adresse über den Link, den wir dir gerade geschickt haben. Danach kannst du dich hier mit E-Mail + Passwort anmelden.";
+      msg.textContent = t("signupSuccessMsg");
       msg.style.color = "#22c55e";
     }
     // Bei erfolgreichem Login übernimmt onAuthStateChange das Weiterleiten in die App.
@@ -463,13 +912,11 @@ function renderLogin() {
   const forgotBtn = document.getElementById("forgot-btn");
   if (forgotBtn) {
     forgotBtn.addEventListener("click", async () => {
-      const email = prompt("Für welche E-Mail-Adresse soll das Passwort zurückgesetzt werden?");
+      const email = prompt(t("resetPromptEmail"));
       if (!email || !email.trim()) return;
       const error = await requestPasswordReset(email.trim());
       const msg = document.getElementById("login-msg");
-      msg.textContent = error
-        ? "Fehler: " + error.message
-        : "Falls diese Adresse registriert ist, kommt gleich eine E-Mail mit einem Link zum Zurücksetzen.";
+      msg.textContent = error ? t("errorPrefix") + error.message : t("resetSentMsg");
       msg.style.color = error ? "#ef4444" : "#22c55e";
     });
   }
@@ -479,11 +926,11 @@ function renderSetNewPassword() {
   $app.innerHTML = `
     <div class="login-wrap">
       <img src="icons/icon-192.png" alt="Logo" />
-      <h1>Neues Passwort setzen</h1>
-      <p>Vergib ein neues Passwort für dein Konto.</p>
+      <h1>${t("setNewPasswordTitle")}</h1>
+      <p>${t("setNewPasswordDesc")}</p>
       <form id="new-password-form" style="width:100%; max-width:320px;">
-        <input type="password" id="new-password" placeholder="Neues Passwort" required minlength="6" autocomplete="new-password" />
-        <button type="submit" class="btn-primary" style="width:100%;">Passwort speichern</button>
+        <input type="password" id="new-password" placeholder="${t("newPasswordPlaceholder")}" required minlength="6" autocomplete="new-password" />
+        <button type="submit" class="btn-primary" style="width:100%;">${t("savePassword")}</button>
       </form>
       <p id="reset-msg" style="margin-top:14px; font-size:13px;"></p>
     </div>
@@ -498,19 +945,22 @@ function renderSetNewPassword() {
     btn.disabled = false;
     const msg = document.getElementById("reset-msg");
     if (error) {
-      msg.textContent = "Fehler: " + error.message;
+      msg.textContent = t("errorPrefix") + error.message;
       msg.style.color = "#ef4444";
       return;
     }
     passwordRecoveryMode = false;
-    toast("Passwort gespeichert, du bist eingeloggt.");
+    toast(t("passwordSavedMsg"));
     window.location.hash = "";
     render();
   });
 }
 
 function filterChips() {
-  const filters = [{ key: "all", label: "Alle" }, ...STATUS_ORDER.map((s) => ({ key: s, label: STATUS_LABELS[s] }))];
+  const filters = [
+    { key: "all", label: t("filterAll") },
+    ...STATUS_ORDER.map((s) => ({ key: s, label: t(`status_${s}`) })),
+  ];
   return `
     <div class="filters">
       ${filters
@@ -527,16 +977,17 @@ function ideaCard(idea) {
   const p = priorityInfo(idea);
   const tags = (idea.tags || "")
     .split(",")
-    .map((t) => t.trim())
+    .map((t2) => t2.trim())
     .filter(Boolean);
   return `
     <div class="idea-item" data-id="${idea.id}">
       <div class="idea-title">${escapeHtml(idea.quick_note)}</div>
       <div class="idea-meta">
-        <span class="badge status-${idea.status}">${STATUS_LABELS[idea.status]}</span>
+        <span class="badge status-${idea.status}">${t(`status_${idea.status}`)}</span>
         <span class="badge"><span class="priority-dot" style="background:${p.color}"></span> ${p.label}</span>
+        ${idea.team ? `<span class="badge">${escapeHtml(idea.team)}</span>` : ""}
         ${idea.processes ? `<span class="badge">⚙ ${escapeHtml(idea.processes.name)}</span>` : ""}
-        ${tags.map((t) => `<span class="badge">#${escapeHtml(t)}</span>`).join("")}
+        ${tags.map((tag) => `<span class="badge">#${escapeHtml(tag)}</span>`).join("")}
       </div>
     </div>
   `;
@@ -545,31 +996,34 @@ function ideaCard(idea) {
 async function renderList() {
   $app.innerHTML = `
     <header class="topbar">
-      <h1>AI Ideen</h1>
+      <h1>${t("ideasHeaderTitle")}</h1>
       <div class="actions">
+        ${langToggleButton()}
         ${adminNavButton()}
         <button class="icon-btn" id="settings-btn">⚙</button>
-        <button class="icon-btn" id="logout-btn">Logout</button>
+        <button class="icon-btn" id="logout-btn">${t("logoutBtn")}</button>
       </div>
     </header>
     <main>
       ${tabBar("ideas")}
       <div class="card capture-box">
-        <label class="field-label" style="margin-top:0;">Neue Idee erfassen</label>
-        <textarea id="quick-note" placeholder="z.B. Automatische Zusammenfassung von Kundenmails per KI..."></textarea>
+        <label class="field-label" style="margin-top:0;">${t("newIdeaLabel")}</label>
+        <textarea id="quick-note" placeholder="${t("ideaPlaceholder")}"></textarea>
+        ${departmentTeamFields("", "", "capture")}
         <div class="row">
-          <button class="btn-primary" id="save-capture">Idee speichern</button>
+          <button class="btn-primary" id="save-capture">${t("saveIdea")}</button>
         </div>
       </div>
       ${filterChips()}
       <div class="idea-list" id="idea-list">
-        <div class="empty-state">Lade Ideen...</div>
+        <div class="empty-state">${t("loadingIdeas")}</div>
       </div>
     </main>
   `;
 
   bindTabBar();
   bindAdminNavButton();
+  bindLangToggle();
   document.getElementById("logout-btn").addEventListener("click", logout);
   document.getElementById("settings-btn").addEventListener("click", () => {
     window.location.hash = "#/settings";
@@ -578,14 +1032,19 @@ async function renderList() {
   document.getElementById("save-capture").addEventListener("click", async () => {
     const ta = document.getElementById("quick-note");
     const text = ta.value.trim();
+    const { department, team } = readDepartmentTeam("capture");
     if (!text) return;
+    if (!department || !team) {
+      toast(t("departmentTeamRequiredMsg"));
+      return;
+    }
     const btn = document.getElementById("save-capture");
     btn.disabled = true;
-    const idea = await createIdea(text);
+    const idea = await createIdea(text, department, team);
     btn.disabled = false;
     if (idea) {
       ta.value = "";
-      toast("Idee gespeichert");
+      toast(t("ideaSavedMsg"));
       ideasCache = await loadIdeas();
       renderIdeaList();
     }
@@ -607,7 +1066,7 @@ function renderIdeaList() {
   if (!listEl) return;
   const filtered = ideasCache.filter((i) => activeFilter === "all" || i.status === activeFilter);
   if (filtered.length === 0) {
-    listEl.innerHTML = `<div class="empty-state">Noch keine Ideen hier. Trag oben deine erste Idee ein!</div>`;
+    listEl.innerHTML = `<div class="empty-state">${t("emptyIdeas")}</div>`;
   } else {
     listEl.innerHTML = filtered.map(ideaCard).join("");
     listEl.querySelectorAll(".idea-item").forEach((el) => {
@@ -632,7 +1091,7 @@ function sliderRow(name, label, value) {
 }
 
 function processOptions(selectedId) {
-  const options = [`<option value="">— Keiner —</option>`];
+  const options = [`<option value="">${t("noneOption")}</option>`];
   processesCache.forEach((p) => {
     options.push(`<option value="${p.id}" ${p.id === selectedId ? "selected" : ""}>${escapeHtml(p.name)}</option>`);
   });
@@ -640,7 +1099,7 @@ function processOptions(selectedId) {
 }
 
 function parentProcessOptions(excludeId, selectedId) {
-  const options = [`<option value="">— Keiner (Top-Level-Prozess) —</option>`];
+  const options = [`<option value="">${t("noneTopLevelOption")}</option>`];
   processesCache
     .filter((p) => p.id !== excludeId)
     .forEach((p) => {
@@ -666,87 +1125,88 @@ async function renderDetail(id) {
   $app.innerHTML = `
     <header class="topbar">
       <div class="back-row">
-        <button class="icon-btn" id="back-btn">&larr; Zurück</button>
+        <button class="icon-btn" id="back-btn">${t("backBtn")}</button>
       </div>
-      <button class="icon-btn" id="delete-btn">Löschen</button>
+      <button class="icon-btn" id="delete-btn">${t("deleteBtn")}</button>
     </header>
     <main>
       <div class="card">
-        <label class="field-label">Kurznotiz</label>
+        <label class="field-label">${t("quickNoteLabel")}</label>
         <textarea class="field" id="f-quick-note">${escapeHtml(idea.quick_note)}</textarea>
 
-        <label class="field-label">Status</label>
+        <label class="field-label">${t("statusLabel")}</label>
         <select class="field" id="f-status">
           ${STATUS_ORDER.map(
-            (s) => `<option value="${s}" ${s === idea.status ? "selected" : ""}>${STATUS_LABELS[s]}</option>`
+            (s) => `<option value="${s}" ${s === idea.status ? "selected" : ""}>${t(`status_${s}`)}</option>`
           ).join("")}
         </select>
 
-        <label class="field-label">Zugehöriger Prozess</label>
+        <label class="field-label">${t("departmentLabel")} / ${t("teamLabel")}</label>
+        ${departmentTeamFields(idea.department, idea.team, "detail")}
+
+        <label class="field-label">${t("relatedProcessLabel")}</label>
         <select class="field" id="f-process">
           ${processOptions(idea.process_id)}
         </select>
 
-        <label class="field-label">Tags (Komma-getrennt)</label>
-        <input class="field" id="f-tags" value="${escapeHtml(idea.tags || "")}" placeholder="z.B. Vertrieb, Automatisierung" />
+        <label class="field-label">${t("tagsLabel")}</label>
+        <input class="field" id="f-tags" value="${escapeHtml(idea.tags || "")}" placeholder="${t("tagsPlaceholder")}" />
 
-        <label class="field-label">Beschreibung</label>
-        <textarea class="field" id="f-description" placeholder="Was ist das Problem, was soll die Lösung bringen?">${escapeHtml(idea.description || "")}</textarea>
+        <label class="field-label">${t("descriptionLabel")}</label>
+        <textarea class="field" id="f-description" placeholder="${t("descriptionPlaceholder")}">${escapeHtml(idea.description || "")}</textarea>
       </div>
 
       <div class="card">
-        <div class="section-title" style="margin:0 0 10px;">Bewertung</div>
+        <div class="section-title" style="margin:0 0 10px;">${t("evaluationTitle")}</div>
         <div id="priority-banner" class="priority-banner"></div>
-        ${sliderRow("impact", "Nutzen", idea.impact)}
-        ${sliderRow("feasibility", "Machbarkeit", idea.feasibility)}
-        ${sliderRow("effort", "Aufwand", idea.effort)}
-        ${sliderRow("risk", "Risiko", idea.risk)}
+        ${sliderRow("impact", t("impactLabel"), idea.impact)}
+        ${sliderRow("feasibility", t("feasibilityLabel"), idea.feasibility)}
+        ${sliderRow("effort", t("effortLabel"), idea.effort)}
+        ${sliderRow("risk", t("riskLabel"), idea.risk)}
       </div>
 
       <div class="card">
-        <div class="section-title" style="margin:0 0 10px;">KI-Unterstützung</div>
+        <div class="section-title" style="margin:0 0 10px;">${t("aiSupportTitle")}</div>
         <p style="font-size:13.5px; color:var(--text-dim); margin:0 0 12px; line-height:1.5;">
-          Erzeuge einen fertigen Prompt und füge ihn in ein beliebiges KI-Chat-Tool ein,
-          das du bereits nutzt (Copilot, ChatGPT, Claude, Gemini, ...) – kein eigener
-          API-Key nötig. Kopier die Antwort danach hier zurück rein.
+          ${t("aiSupportDesc")}
         </p>
-        <button class="btn-secondary" id="generate-prompt-btn" style="width:100%;">📋 Prompt erzeugen</button>
+        <button class="btn-secondary" id="generate-prompt-btn" style="width:100%;">${t("generatePromptBtn")}</button>
         <div id="generated-prompt-wrap" style="display:none; margin-top:12px;">
           <pre id="generated-prompt-text" style="white-space:pre-wrap; background:var(--surface-2); border:1px solid var(--border); border-radius:10px; padding:12px; font-size:13px; font-family:inherit; margin:0; max-height:220px; overflow-y:auto;"></pre>
           <div class="row">
-            <button class="btn-secondary" id="copy-generated-prompt-btn" style="width:100%;">In Zwischenablage kopieren</button>
+            <button class="btn-secondary" id="copy-generated-prompt-btn" style="width:100%;">${t("copyToClipboardBtn")}</button>
           </div>
         </div>
 
-        <label class="field-label">Antwort der KI hier einfügen</label>
-        <textarea class="field" id="ai-response-paste" placeholder="Antwort aus Copilot/ChatGPT/Claude/... hier einfügen"></textarea>
+        <label class="field-label">${t("aiResponsePasteLabel")}</label>
+        <textarea class="field" id="ai-response-paste" placeholder="${t("aiResponsePlaceholder")}"></textarea>
         <div class="row">
-          <button class="btn-primary" id="apply-pasted-btn" style="width:100%;">Übernehmen</button>
+          <button class="btn-primary" id="apply-pasted-btn" style="width:100%;">${t("applyBtn")}</button>
         </div>
         <div id="ai-result" class="ai-result"></div>
 
         <details style="margin-top:18px;">
-          <summary style="cursor:pointer; font-size:13px; color:var(--text-dim);">Stattdessen automatisch mit eigenem API-Key (optional)</summary>
-          <button class="btn-secondary" id="ai-btn" style="width:100%; margin-top:10px;">✨ Automatisch mit KI ausarbeiten</button>
+          <summary style="cursor:pointer; font-size:13px; color:var(--text-dim);">${t("optionalApiDetails")}</summary>
+          <button class="btn-secondary" id="ai-btn" style="width:100%; margin-top:10px;">${t("autoElaborateBtn")}</button>
         </details>
       </div>
 
       <div class="card">
-        <label class="field-label" style="margin-top:0;">Tools &amp; Umsetzungsoptionen</label>
-        <textarea class="field" id="f-tools" placeholder="Wird von der KI vorgeschlagen oder hier selbst eintragen">${escapeHtml(idea.tools || "")}</textarea>
+        <label class="field-label" style="margin-top:0;">${t("toolsLabel")}</label>
+        <textarea class="field" id="f-tools" placeholder="${t("toolsPlaceholder")}">${escapeHtml(idea.tools || "")}</textarea>
 
-        <label class="field-label">Wichtige Gedanken vorab</label>
-        <textarea class="field" id="f-considerations" placeholder="z.B. Datenschutz, Datenquelle, Kosten">${escapeHtml(idea.considerations || "")}</textarea>
+        <label class="field-label">${t("considerationsLabel")}</label>
+        <textarea class="field" id="f-considerations" placeholder="${t("considerationsPlaceholder")}">${escapeHtml(idea.considerations || "")}</textarea>
 
-        <label class="field-label">Start-Prompt fürs Projekt</label>
-        <textarea class="field" id="f-initial-prompt" placeholder="Wird von der KI generiert">${escapeHtml(idea.initial_prompt || "")}</textarea>
+        <label class="field-label">${t("startPromptLabel")}</label>
+        <textarea class="field" id="f-initial-prompt" placeholder="${t("startPromptPlaceholder")}">${escapeHtml(idea.initial_prompt || "")}</textarea>
         <div class="row">
-          <button class="btn-secondary" id="copy-prompt-btn" style="width:100%;">Start-Prompt kopieren</button>
+          <button class="btn-secondary" id="copy-prompt-btn" style="width:100%;">${t("copyStartPromptBtn")}</button>
         </div>
       </div>
 
       <div class="row">
-        <button class="btn-primary" id="save-detail-btn">Speichern</button>
+        <button class="btn-primary" id="save-detail-btn">${t("saveBtn")}</button>
       </div>
     </main>
   `;
@@ -756,7 +1216,7 @@ async function renderDetail(id) {
     const effort = Number(document.querySelector('[data-field="effort"]').value);
     const p = priorityInfo({ impact, effort });
     document.getElementById("priority-banner").innerHTML =
-      `<span class="priority-dot" style="background:${p.color}"></span> Einschätzung: <strong>${p.label}</strong>`;
+      `<span class="priority-dot" style="background:${p.color}"></span> ${t("assessmentPrefix")}<strong>${p.label}</strong>`;
   }
 
   document.querySelectorAll('input[type="range"]').forEach((slider) => {
@@ -772,10 +1232,10 @@ async function renderDetail(id) {
   });
 
   document.getElementById("delete-btn").addEventListener("click", async () => {
-    if (!confirm("Diese Idee wirklich löschen?")) return;
+    if (!confirm(t("deleteIdeaConfirm"))) return;
     const ok = await deleteIdea(idea.id);
     if (ok) {
-      toast("Idee gelöscht");
+      toast(t("ideaDeletedMsg"));
       window.location.hash = "";
     }
   });
@@ -784,17 +1244,20 @@ async function renderDetail(id) {
     const text = document.getElementById("f-initial-prompt").value;
     try {
       await navigator.clipboard.writeText(text);
-      toast("In Zwischenablage kopiert");
+      toast(t("copiedMsg"));
     } catch {
-      toast("Kopieren nicht möglich, bitte manuell markieren");
+      toast(t("copyFailedMsg"));
     }
   });
 
   function collectPatch() {
+    const { department, team } = readDepartmentTeam("detail");
     return {
       quick_note: document.getElementById("f-quick-note").value.trim(),
       status: document.getElementById("f-status").value,
       process_id: document.getElementById("f-process").value || null,
+      department,
+      team,
       tags: document.getElementById("f-tags").value.trim(),
       description: document.getElementById("f-description").value.trim(),
       impact: Number(document.querySelector('[data-field="impact"]').value),
@@ -808,32 +1271,37 @@ async function renderDetail(id) {
   }
 
   document.getElementById("save-detail-btn").addEventListener("click", async () => {
+    const { department, team } = readDepartmentTeam("detail");
+    if (!department || !team) {
+      toast(t("departmentTeamRequiredMsg"));
+      return;
+    }
     const btn = document.getElementById("save-detail-btn");
     btn.disabled = true;
-    btn.textContent = "Speichere...";
+    btn.textContent = t("savingBtn");
     const updated = await updateIdea(idea.id, collectPatch());
     btn.disabled = false;
-    btn.textContent = "Speichern";
+    btn.textContent = t("saveBtn");
     if (updated) {
       const idx = ideasCache.findIndex((i) => i.id === idea.id);
       if (idx >= 0) ideasCache[idx] = updated;
-      toast("Gespeichert");
+      toast(t("savedMsg"));
     }
   });
 
   function showAiResult(result) {
     const resultEl = document.getElementById("ai-result");
     resultEl.innerHTML = `
-      <h3>Vorschlag Beschreibung</h3>
+      <h3>${t("suggestedDescription")}</h3>
       <pre>${escapeHtml(result.description || "")}</pre>
-      <h3>Vorschlag Tools</h3>
+      <h3>${t("suggestedTools")}</h3>
       <pre>${escapeHtml(result.tools || "")}</pre>
-      <h3>Wichtige Gedanken vorab</h3>
+      <h3>${t("suggestedConsiderations")}</h3>
       <pre>${escapeHtml(result.considerations || "")}</pre>
-      <h3>Start-Prompt</h3>
+      <h3>${t("suggestedStartPrompt")}</h3>
       <pre>${escapeHtml(result.initial_prompt || "")}</pre>
       <div class="row" style="margin-top:12px;">
-        <button class="btn-primary" id="apply-ai-btn" style="width:100%;">Vorschlag übernehmen</button>
+        <button class="btn-primary" id="apply-ai-btn" style="width:100%;">${t("applySuggestionBtn")}</button>
       </div>
     `;
     document.getElementById("apply-ai-btn").addEventListener("click", () => {
@@ -841,15 +1309,15 @@ async function renderDetail(id) {
       if (result.tools) document.getElementById("f-tools").value = result.tools;
       if (result.considerations) document.getElementById("f-considerations").value = result.considerations;
       if (result.initial_prompt) document.getElementById("f-initial-prompt").value = result.initial_prompt;
-      toast("Vorschlag übernommen, denk ans Speichern!");
+      toast(t("proposalApplied"));
     });
   }
 
   document.getElementById("generate-prompt-btn").addEventListener("click", async () => {
     const patchNow = collectPatch();
     await updateIdea(idea.id, patchNow);
-    const prompt = buildElaboratePrompt(patchNow);
-    document.getElementById("generated-prompt-text").textContent = prompt;
+    const promptText = buildElaboratePrompt(patchNow);
+    document.getElementById("generated-prompt-text").textContent = promptText;
     document.getElementById("generated-prompt-wrap").style.display = "block";
   });
 
@@ -857,9 +1325,9 @@ async function renderDetail(id) {
     const text = document.getElementById("generated-prompt-text").textContent;
     try {
       await navigator.clipboard.writeText(text);
-      toast("In Zwischenablage kopiert – jetzt in dein KI-Tool einfügen");
+      toast(t("copiedPasteHintMsg"));
     } catch {
-      toast("Kopieren nicht möglich, bitte manuell markieren");
+      toast(t("copyFailedMsg"));
     }
   });
 
@@ -871,7 +1339,7 @@ async function renderDetail(id) {
       const result = extractJson(pasted);
       showAiResult(result);
     } catch {
-      resultEl.innerHTML = `<p style="color:#ef4444; font-size:13.5px;">Konnte die Antwort nicht automatisch auslesen. Du kannst die Felder unten auch selbst aus der Antwort befüllen.</p>`;
+      resultEl.innerHTML = `<p style="color:#ef4444; font-size:13.5px;">${t("couldNotParseMsg")}</p>`;
     }
   });
 
@@ -879,7 +1347,7 @@ async function renderDetail(id) {
     const btn = document.getElementById("ai-btn");
     const resultEl = document.getElementById("ai-result");
     btn.disabled = true;
-    btn.innerHTML = `<span class="spinner"></span> KI arbeitet...`;
+    btn.innerHTML = `<span class="spinner"></span> ${t("aiWorkingMsg")}`;
     resultEl.innerHTML = "";
     try {
       const patchNow = collectPatch();
@@ -887,17 +1355,20 @@ async function renderDetail(id) {
       const result = await elaborateWithAI(patchNow);
       showAiResult(result);
     } catch (err) {
-      resultEl.innerHTML = `<p style="color:#ef4444; font-size:13.5px;">Fehler: ${escapeHtml(err.message || String(err))}</p>`;
+      resultEl.innerHTML = `<p style="color:#ef4444; font-size:13.5px;">${t("errorPrefix")}${escapeHtml(err.message || String(err))}</p>`;
     }
     btn.disabled = false;
-    btn.innerHTML = "✨ Automatisch mit KI ausarbeiten";
+    btn.innerHTML = t("autoElaborateBtn");
   });
 }
 
 // ---------- Views: Processes ----------
 
 function processFilterChips(activeProcessFilter) {
-  const filters = [{ key: "all", label: "Alle" }, ...PROCESS_STATUS_ORDER.map((s) => ({ key: s, label: PROCESS_STATUS_LABELS[s] }))];
+  const filters = [
+    { key: "all", label: t("filterAll") },
+    ...PROCESS_STATUS_ORDER.map((s) => ({ key: s, label: t(`pstatus_${s}`) })),
+  ];
   return `
     <div class="filters">
       ${filters
@@ -916,9 +1387,9 @@ function processCard(proc) {
     <div class="idea-item" data-id="${proc.id}">
       <div class="idea-title">${escapeHtml(proc.name)}</div>
       <div class="idea-meta">
-        <span class="badge status-${proc.status === "reviewed" ? "done" : "idea"}">${PROCESS_STATUS_LABELS[proc.status]}</span>
+        <span class="badge status-${proc.status === "reviewed" ? "done" : "idea"}">${t(`pstatus_${proc.status}`)}</span>
         <span class="badge"><span class="priority-dot" style="background:${ai.color}"></span> ${ai.label}</span>
-        ${proc.department ? `<span class="badge">${escapeHtml(proc.department)}</span>` : ""}
+        ${proc.team ? `<span class="badge">${escapeHtml(proc.team)}</span>` : ""}
         ${proc.parent ? `<span class="badge">↳ ${escapeHtml(proc.parent.name)}</span>` : ""}
       </div>
     </div>
@@ -930,31 +1401,34 @@ let activeProcessFilter = "all";
 async function renderProcessList() {
   $app.innerHTML = `
     <header class="topbar">
-      <h1>Prozesse</h1>
+      <h1>${t("processesHeaderTitle")}</h1>
       <div class="actions">
+        ${langToggleButton()}
         ${adminNavButton()}
         <button class="icon-btn" id="settings-btn">⚙</button>
-        <button class="icon-btn" id="logout-btn">Logout</button>
+        <button class="icon-btn" id="logout-btn">${t("logoutBtn")}</button>
       </div>
     </header>
     <main>
       ${tabBar("processes")}
       <div class="card capture-box">
-        <label class="field-label" style="margin-top:0;">Neuen Prozess dokumentieren</label>
-        <textarea id="process-name" placeholder="z.B. Angebote erstellen, Rechnungsprüfung, Kundenonboarding..."></textarea>
+        <label class="field-label" style="margin-top:0;">${t("newProcessLabel")}</label>
+        <textarea id="process-name" placeholder="${t("processPlaceholder")}"></textarea>
+        ${departmentTeamFields("", "", "pcapture")}
         <div class="row">
-          <button class="btn-primary" id="save-process">Prozess speichern</button>
+          <button class="btn-primary" id="save-process">${t("saveProcessBtn")}</button>
         </div>
       </div>
       ${processFilterChips(activeProcessFilter)}
       <div class="idea-list" id="process-list">
-        <div class="empty-state">Lade Prozesse...</div>
+        <div class="empty-state">${t("loadingProcesses")}</div>
       </div>
     </main>
   `;
 
   bindTabBar();
   bindAdminNavButton();
+  bindLangToggle();
   document.getElementById("logout-btn").addEventListener("click", logout);
   document.getElementById("settings-btn").addEventListener("click", () => {
     window.location.hash = "#/settings";
@@ -963,14 +1437,19 @@ async function renderProcessList() {
   document.getElementById("save-process").addEventListener("click", async () => {
     const ta = document.getElementById("process-name");
     const text = ta.value.trim();
+    const { department, team } = readDepartmentTeam("pcapture");
     if (!text) return;
+    if (!department || !team) {
+      toast(t("departmentTeamRequiredMsg"));
+      return;
+    }
     const btn = document.getElementById("save-process");
     btn.disabled = true;
-    const proc = await createProcess(text);
+    const proc = await createProcess(text, department, team);
     btn.disabled = false;
     if (proc) {
       ta.value = "";
-      toast("Prozess gespeichert");
+      toast(t("processSavedMsg"));
       processesCache = await loadProcesses();
       renderProcessListItems();
     }
@@ -992,7 +1471,7 @@ function renderProcessListItems() {
   if (!listEl) return;
   const filtered = processesCache.filter((p) => activeProcessFilter === "all" || p.status === activeProcessFilter);
   if (filtered.length === 0) {
-    listEl.innerHTML = `<div class="empty-state">Noch keine Prozesse erfasst. Trag oben den ersten Prozess deines Bereichs ein!</div>`;
+    listEl.innerHTML = `<div class="empty-state">${t("emptyProcesses")}</div>`;
   } else {
     listEl.innerHTML = filtered.map(processCard).join("");
     listEl.querySelectorAll(".idea-item").forEach((el) => {
@@ -1026,72 +1505,72 @@ async function renderProcessDetail(id) {
   $app.innerHTML = `
     <header class="topbar">
       <div class="back-row">
-        <button class="icon-btn" id="back-btn">&larr; Zurück</button>
+        <button class="icon-btn" id="back-btn">${t("backBtn")}</button>
       </div>
-      <button class="icon-btn" id="delete-btn">Löschen</button>
+      <button class="icon-btn" id="delete-btn">${t("deleteBtn")}</button>
     </header>
     <main>
       <div class="card">
-        <label class="field-label">Prozessname</label>
+        <label class="field-label">${t("processNameLabel")}</label>
         <textarea class="field" id="f-name">${escapeHtml(proc.name)}</textarea>
 
-        <label class="field-label">Bereich / Team</label>
-        <input class="field" id="f-department" value="${escapeHtml(proc.department || "")}" placeholder="z.B. Vertrieb, Buchhaltung..." />
+        <label class="field-label">${t("departmentLabel")} / ${t("teamLabel")}</label>
+        ${departmentTeamFields(proc.department, proc.team, "pdetail")}
 
-        <label class="field-label">Übergeordneter Prozess</label>
+        <label class="field-label">${t("parentProcessLabel")}</label>
         <select class="field" id="f-parent-process">
           ${parentProcessOptions(proc.id, proc.parent_process_id)}
         </select>
 
-        <label class="field-label">Status</label>
+        <label class="field-label">${t("statusLabel")}</label>
         <select class="field" id="f-status">
           ${PROCESS_STATUS_ORDER.map(
-            (s) => `<option value="${s}" ${s === proc.status ? "selected" : ""}>${PROCESS_STATUS_LABELS[s]}</option>`
+            (s) => `<option value="${s}" ${s === proc.status ? "selected" : ""}>${t(`pstatus_${s}`)}</option>`
           ).join("")}
         </select>
 
-        <label class="field-label">Beschreibung</label>
-        <textarea class="field" id="f-description" placeholder="Wie läuft der Prozess ab, wer ist beteiligt?">${escapeHtml(proc.description || "")}</textarea>
+        <label class="field-label">${t("descriptionLabel")}</label>
+        <textarea class="field" id="f-description" placeholder="${t("processDescPlaceholder")}">${escapeHtml(proc.description || "")}</textarea>
       </div>
 
       <div class="card">
-        <div class="section-title" style="margin:0 0 10px;">AI-Potenzial</div>
+        <div class="section-title" style="margin:0 0 10px;">${t("aiPotentialTitle")}</div>
         <div id="ai-potential-banner" class="priority-banner"></div>
-        ${sliderRow("ai_potential", "AI-Potenzial", proc.ai_potential)}
-        <label class="field-label">Notizen / Begründung</label>
-        <textarea class="field" id="f-notes" placeholder="Warum viel/wenig Potenzial? Erste Ansätze?">${escapeHtml(proc.notes || "")}</textarea>
+        ${sliderRow("ai_potential", t("aiPotentialLabel"), proc.ai_potential)}
+        <label class="field-label">${t("notesLabel")}</label>
+        <textarea class="field" id="f-notes" placeholder="${t("notesPlaceholder")}">${escapeHtml(proc.notes || "")}</textarea>
       </div>
 
       <div class="card">
-        <div class="section-title" style="margin:0 0 10px;">Teilprozesse</div>
+        <div class="section-title" style="margin:0 0 10px;">${t("subProcessesTitle")}</div>
         <div id="sub-processes">
           ${
             subProcesses.length
               ? subProcesses.map((p) => `<a class="link-item" href="#/process/${p.id}">${escapeHtml(p.name)}</a>`).join("")
-              : `<div class="empty-state" style="padding:16px 4px;">Noch keine Teilprozesse zugeordnet.</div>`
+              : `<div class="empty-state" style="padding:16px 4px;">${t("emptySubProcesses")}</div>`
           }
         </div>
         <div class="row">
-          <button class="btn-secondary" id="add-subprocess-btn" style="width:100%;">+ Neuen Teilprozess anlegen</button>
+          <button class="btn-secondary" id="add-subprocess-btn" style="width:100%;">${t("addSubProcessBtn")}</button>
         </div>
       </div>
 
       <div class="card">
-        <div class="section-title" style="margin:0 0 10px;">Zugehörige Use Cases</div>
+        <div class="section-title" style="margin:0 0 10px;">${t("linkedUseCasesTitle")}</div>
         <div id="linked-ideas">
           ${
             linkedIdeas.length
               ? linkedIdeas.map((i) => `<a class="link-item" href="#/idea/${i.id}">${escapeHtml(i.quick_note)}</a>`).join("")
-              : `<div class="empty-state" style="padding:16px 4px;">Noch keine Idee für diesen Prozess.</div>`
+              : `<div class="empty-state" style="padding:16px 4px;">${t("emptyLinkedIdeas")}</div>`
           }
         </div>
         <div class="row">
-          <button class="btn-secondary" id="add-idea-btn" style="width:100%;">+ Neue Idee für diesen Prozess</button>
+          <button class="btn-secondary" id="add-idea-btn" style="width:100%;">${t("addIdeaBtn")}</button>
         </div>
       </div>
 
       <div class="row">
-        <button class="btn-primary" id="save-process-detail-btn">Speichern</button>
+        <button class="btn-primary" id="save-process-detail-btn">${t("saveBtn")}</button>
       </div>
     </main>
   `;
@@ -1100,7 +1579,7 @@ async function renderProcessDetail(id) {
     const val = Number(document.querySelector('[data-field="ai_potential"]').value);
     const ai = aiPotentialInfo(val);
     document.getElementById("ai-potential-banner").innerHTML =
-      `<span class="priority-dot" style="background:${ai.color}"></span> Einschätzung: <strong>${ai.label}</strong>`;
+      `<span class="priority-dot" style="background:${ai.color}"></span> ${t("assessmentPrefix")}<strong>${ai.label}</strong>`;
   }
 
   document.querySelectorAll('input[type="range"]').forEach((slider) => {
@@ -1116,43 +1595,49 @@ async function renderProcessDetail(id) {
   });
 
   document.getElementById("delete-btn").addEventListener("click", async () => {
-    if (!confirm("Diesen Prozess wirklich löschen? Verknüpfte Ideen bleiben erhalten, verlieren aber die Zuordnung.")) return;
+    if (!confirm(t("deleteProcessConfirm"))) return;
     const ok = await deleteProcess(proc.id);
     if (ok) {
-      toast("Prozess gelöscht");
+      toast(t("processDeletedMsg"));
       window.location.hash = "#/processes";
     }
   });
 
   document.getElementById("add-idea-btn").addEventListener("click", async () => {
-    const text = prompt("Kurznotiz für die neue Idee:");
+    const text = prompt(t("newIdeaPrompt"));
     if (!text || !text.trim()) return;
-    const idea = await createIdea(text.trim(), proc.id);
+    const idea = await createIdea(text.trim(), proc.department, proc.team, proc.id);
     if (idea) {
-      toast("Idee gespeichert");
+      toast(t("ideaSavedMsg"));
       ideasCache = await loadIdeas();
       window.location.hash = `#/idea/${idea.id}`;
     }
   });
 
   document.getElementById("add-subprocess-btn").addEventListener("click", async () => {
-    const text = prompt("Name des neuen Teilprozesses:");
+    const text = prompt(t("newSubProcessPrompt"));
     if (!text || !text.trim()) return;
-    const sub = await createProcess(text.trim(), proc.id);
+    const sub = await createProcess(text.trim(), proc.department, proc.team, proc.id);
     if (sub) {
-      toast("Teilprozess gespeichert");
+      toast(t("subProcessSavedMsg"));
       processesCache = await loadProcesses();
       window.location.hash = `#/process/${sub.id}`;
     }
   });
 
   document.getElementById("save-process-detail-btn").addEventListener("click", async () => {
+    const { department, team } = readDepartmentTeam("pdetail");
+    if (!department || !team) {
+      toast(t("departmentTeamRequiredMsg"));
+      return;
+    }
     const btn = document.getElementById("save-process-detail-btn");
     btn.disabled = true;
-    btn.textContent = "Speichere...";
+    btn.textContent = t("savingBtn");
     const patch = {
       name: document.getElementById("f-name").value.trim(),
-      department: document.getElementById("f-department").value.trim(),
+      department,
+      team,
       parent_process_id: document.getElementById("f-parent-process").value || null,
       status: document.getElementById("f-status").value,
       description: document.getElementById("f-description").value.trim(),
@@ -1161,11 +1646,11 @@ async function renderProcessDetail(id) {
     };
     const updated = await updateProcess(proc.id, patch);
     btn.disabled = false;
-    btn.textContent = "Speichern";
+    btn.textContent = t("saveBtn");
     if (updated) {
       const idx = processesCache.findIndex((p) => p.id === proc.id);
       if (idx >= 0) processesCache[idx] = updated;
-      toast("Gespeichert");
+      toast(t("savedMsg"));
     }
   });
 }
@@ -1180,25 +1665,18 @@ function renderSettings() {
   $app.innerHTML = `
     <header class="topbar">
       <div class="back-row">
-        <button class="icon-btn" id="back-btn">&larr; Zurück</button>
+        <button class="icon-btn" id="back-btn">${t("backBtn")}</button>
       </div>
+      ${langToggleButton()}
     </header>
     <main>
       <div class="card">
-        <div class="section-title" style="margin:0 0 10px;">Eigener KI-API-Key (optional)</div>
+        <div class="section-title" style="margin:0 0 10px;">${t("settingsTitleOptionalKey")}</div>
         <p style="font-size:13.5px; color:var(--text-dim); margin:0 0 10px; line-height:1.5;">
-          Komplett optional: Standardmäßig erzeugt die App einen Prompt zum
-          Kopieren, den du in ein beliebiges KI-Chat-Tool einfügst, das du
-          bereits nutzt (Copilot, ChatGPT, Claude, Gemini, ...) – ganz ohne
-          diesen Key. Nur wer die Ausarbeitung stattdessen automatisch mit
-          einem Klick möchte, braucht hier einen eigenen Key.
+          ${t("settingsIntro1")}
         </p>
         <p style="font-size:13.5px; color:var(--text-dim); margin:0 0 14px; line-height:1.5;">
-          Wichtig: Ein bestehendes Claude- oder ChatGPT-Abo deckt das
-          <strong>nicht</strong> ab – der API-Zugang ist ein separates,
-          eigenständig abgerechnetes Angebot (siehe Anleitung unten) und wird
-          ausschließlich auf diesem Handy gespeichert, nie an Kolleg:innen
-          oder einen eigenen Server geschickt.
+          ${t("settingsIntro2")}
         </p>
         <div class="tabbar">
           ${Object.keys(AI_PROVIDERS)
@@ -1209,16 +1687,16 @@ function renderSettings() {
             .join("")}
         </div>
         <div style="font-size:13.5px; color:var(--text-dim); margin:14px 0; line-height:1.6;">
-          <strong style="color:var(--text);">So kommst du an einen ${info.label}-Key:</strong>
+          <strong style="color:var(--text);">${t("howToTitle").replace("$", info.label)}</strong>
           <ol style="margin:8px 0 0; padding-left:20px;">
-            ${info.howTo.map((step) => `<li style="margin-bottom:4px;">${step}</li>`).join("")}
+            ${info.howTo[currentLang].map((step) => `<li style="margin-bottom:4px;">${step}</li>`).join("")}
           </ol>
         </div>
-        <label class="field-label" style="margin-top:0;">API-Key (${info.label})</label>
+        <label class="field-label" style="margin-top:0;">${t("apiKeyLabelPrefix")}${info.label})</label>
         <input class="field" id="f-api-key" type="password" value="${escapeHtml(existing)}" placeholder="${info.placeholder}" autocomplete="off" />
         <div class="row">
-          <button class="btn-primary" id="save-key-btn">Speichern</button>
-          <button class="btn-secondary" id="remove-key-btn">Entfernen</button>
+          <button class="btn-primary" id="save-key-btn">${t("saveBtn")}</button>
+          <button class="btn-secondary" id="remove-key-btn">${t("removeBtn")}</button>
         </div>
       </div>
     </main>
@@ -1227,6 +1705,8 @@ function renderSettings() {
   document.getElementById("back-btn").addEventListener("click", () => {
     window.location.hash = "";
   });
+
+  bindLangToggle();
 
   document.querySelectorAll(".tabbar button").forEach((btn) => {
     btn.addEventListener("click", () => {
@@ -1239,13 +1719,13 @@ function renderSettings() {
     const key = document.getElementById("f-api-key").value.trim();
     setProviderKey(provider, key);
     setAiProvider(provider);
-    toast(key ? "API-Key gespeichert" : "API-Key entfernt");
+    toast(key ? t("keySavedMsg") : t("keyRemovedMsg"));
   });
 
   document.getElementById("remove-key-btn").addEventListener("click", () => {
     document.getElementById("f-api-key").value = "";
     setProviderKey(provider, "");
-    toast("API-Key entfernt");
+    toast(t("keyRemovedMsg"));
   });
 }
 
@@ -1253,14 +1733,12 @@ function renderPendingApproval() {
   $app.innerHTML = `
     <div class="login-wrap">
       <img src="icons/icon-192.png" alt="Logo" />
-      <h1>Warten auf Freigabe</h1>
-      <p>Dein Konto (${escapeHtml(currentUser.email)}) ist bestätigt, muss aber noch
-      von einem Admin freigegeben werden, bevor du Ideen und Prozesse sehen kannst.
-      Melde dich kurz bei d.goos@house-of-communication.com.</p>
+      <h1>${t("pendingTitle")}</h1>
+      <p>${escapeHtml(currentUser.email)} ${t("pendingDesc")}</p>
       <div class="row" style="width:100%; max-width:320px;">
-        <button class="btn-secondary" id="recheck-btn" style="width:100%;">Status prüfen</button>
+        <button class="btn-secondary" id="recheck-btn" style="width:100%;">${t("checkStatus")}</button>
       </div>
-      <button class="btn-ghost" id="pending-logout-btn" style="margin-top:14px;">Ausloggen</button>
+      <button class="btn-ghost" id="pending-logout-btn" style="margin-top:14px;">${t("logout")}</button>
     </div>
   `;
   document.getElementById("recheck-btn").addEventListener("click", async () => {
@@ -1274,10 +1752,9 @@ function renderProfileError() {
   $app.innerHTML = `
     <div class="login-wrap">
       <img src="icons/icon-192.png" alt="Logo" />
-      <h1>Profil nicht gefunden</h1>
-      <p>Es gab ein Problem beim Laden deines Konto-Profils. Bitte kurz neu laden
-      oder bei d.goos@house-of-communication.com melden.</p>
-      <button class="btn-ghost" id="error-logout-btn">Ausloggen</button>
+      <h1>${t("profileErrorTitle")}</h1>
+      <p>${t("profileErrorDesc")}</p>
+      <button class="btn-ghost" id="error-logout-btn">${t("logout")}</button>
     </div>
   `;
   document.getElementById("error-logout-btn").addEventListener("click", logout);
@@ -1285,7 +1762,7 @@ function renderProfileError() {
 
 function adminNavButton() {
   return currentProfile && currentProfile.is_admin
-    ? `<button class="icon-btn" id="admin-btn">🛡 Freigaben</button>`
+    ? `<button class="icon-btn" id="admin-btn">${t("adminNav")}</button>`
     : "";
 }
 
@@ -1306,11 +1783,12 @@ async function renderAdmin() {
   $app.innerHTML = `
     <header class="topbar">
       <div class="back-row">
-        <button class="icon-btn" id="back-btn">&larr; Zurück</button>
+        <button class="icon-btn" id="back-btn">${t("backBtn")}</button>
       </div>
+      ${langToggleButton()}
     </header>
     <main>
-      <div class="section-title" style="margin:0 4px 8px;">Wartet auf Freigabe (${pending.length})</div>
+      <div class="section-title" style="margin:0 4px 8px;">${t("pendingApprovalTitlePrefix")}${pending.length})</div>
       <div class="idea-list" style="margin-bottom:20px;">
         ${
           pending.length
@@ -1320,17 +1798,17 @@ async function renderAdmin() {
               <div class="idea-item">
                 <div class="idea-title">${escapeHtml(p.email)}</div>
                 <div class="idea-meta">
-                  <button class="btn-primary" data-approve="${p.id}" style="padding:8px 14px; font-size:13px;">Freigeben</button>
+                  <button class="btn-primary" data-approve="${p.id}" style="padding:8px 14px; font-size:13px;">${t("approveBtn")}</button>
                 </div>
               </div>
             `
                 )
                 .join("")
-            : `<div class="empty-state">Aktuell wartet niemand auf Freigabe.</div>`
+            : `<div class="empty-state">${t("noPendingMsg")}</div>`
         }
       </div>
 
-      <div class="section-title" style="margin:0 4px 8px;">Freigegebene Mitglieder (${approved.length})</div>
+      <div class="section-title" style="margin:0 4px 8px;">${t("approvedMembersTitlePrefix")}${approved.length})</div>
       <div class="idea-list">
         ${approved
           .map(
@@ -1338,7 +1816,7 @@ async function renderAdmin() {
             <div class="idea-item">
               <div class="idea-title">${escapeHtml(p.email)}</div>
               <div class="idea-meta">
-                ${p.is_admin ? `<span class="badge">Admin</span>` : ""}
+                ${p.is_admin ? `<span class="badge">${t("adminBadge")}</span>` : ""}
               </div>
             </div>
           `
@@ -1352,12 +1830,14 @@ async function renderAdmin() {
     window.location.hash = "";
   });
 
+  bindLangToggle();
+
   document.querySelectorAll("[data-approve]").forEach((btn) => {
     btn.addEventListener("click", async () => {
       btn.disabled = true;
       const ok = await approveUser(btn.dataset.approve);
       if (ok) {
-        toast("Freigegeben");
+        toast(t("approvedMsg"));
         await renderAdmin();
       } else {
         btn.disabled = false;

@@ -156,6 +156,16 @@ funktioniert die App ganz normal weiter, nur eben ohne die KI-Ausarbeitung.
 - **Use Cases zu Prozessen zuordnen**: Jede Idee kann optional einem Prozess
   zugeordnet werden; in der Prozess-Detailansicht seht ihr alle dazu bereits
   erfassten Use Cases.
+- **Abteilung & Team pflichtig**: Sowohl bei Ideen als auch bei Prozessen
+  müssen Abteilung und Team aus einem Dropdown gewählt werden (auch schon
+  beim schnellen Erfassen). Die erlaubten Werte stehen in `js/app.js` in
+  den Konstanten `DEPARTMENT_OPTIONS` und `TEAM_OPTIONS` – zum Erweitern
+  (z.B. neue Abteilung) einfach dort einen Eintrag ergänzen und die Datei
+  neu deployen (git push), keine Datenbank-Änderung nötig.
+- **Deutsch/Englisch umschalten**: Ein Sprachschalter (DE/EN-Knopf oben
+  rechts, u.a. auf dem Login-Bildschirm und den beiden Haupt-Listen)
+  übersetzt die komplette Oberfläche inkl. der von der KI angefragten
+  Sprache. Die Einstellung wird pro Gerät gespeichert.
 
 ## Projektstruktur
 

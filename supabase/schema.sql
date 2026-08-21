@@ -134,6 +134,12 @@ create table if not exists processes (
 -- Verknüpfung angelegt hatten: Spalte nachträglich ergänzen.
 alter table processes add column if not exists parent_process_id uuid references processes (id) on delete set null;
 
+-- Abteilung/Team sind Pflichtfelder (Dropdown in der App). Die erlaubten
+-- Werte sind bewusst nicht als DB-Constraint hinterlegt, sondern nur in
+-- js/app.js (DEPARTMENT_OPTIONS / TEAM_OPTIONS) - so lässt sich die Liste
+-- erweitern, ohne dieses Skript anzupassen.
+alter table processes add column if not exists team text not null default '';
+
 drop trigger if exists processes_set_updated_at on processes;
 create trigger processes_set_updated_at
   before update on processes
@@ -190,6 +196,11 @@ create table if not exists ideas (
 -- Für Projekte, die die ideas-Tabelle schon vor der Prozess-Verknüpfung
 -- angelegt hatten: Spalte nachträglich ergänzen.
 alter table ideas add column if not exists process_id uuid references processes (id) on delete set null;
+
+-- Abteilung/Team sind Pflichtfelder (Dropdown in der App, siehe Hinweis
+-- bei der processes-Tabelle oben).
+alter table ideas add column if not exists department text not null default '';
+alter table ideas add column if not exists team text not null default '';
 
 drop trigger if exists ideas_set_updated_at on ideas;
 create trigger ideas_set_updated_at
