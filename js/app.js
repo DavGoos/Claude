@@ -143,6 +143,10 @@ const I18N = {
     exportEmpty: "Alle Ideen haben bereits eine Katalog-ID – nichts zu exportieren.",
     copyOneBtn: "📋 Kopieren",
     copyAllBtn: "📋 Alle kopieren",
+    copyTsvOneBtn: "📋 Tab-getrennt (Excel-Zeile)",
+    copyTsvAllBtn: "📋 Alle als Excel-Zeilen",
+    exportTsvNote:
+      "Die Excel-Zeile(n) direkt ab einer neuen Zeile in der Liste einfügen (Strg+V). ID Nr bleibt leer – dort die nächste freie GC-Nummer aus der Liste eintragen. Brand/Agency werden mit \"Shared Service\"/\"Group Controlling\" vorbelegt. Die Übersetzungs-Formelspalten (\"#CONNECT!\") danach aus der Zeile darüber nach unten ziehen.",
 
     evaluationTitle: "Bewertung",
     impactLabel: "Nutzen",
@@ -372,6 +376,10 @@ const I18N = {
     exportEmpty: "Every idea already has a catalog ID - nothing to export.",
     copyOneBtn: "📋 Copy",
     copyAllBtn: "📋 Copy all",
+    copyTsvOneBtn: "📋 Tab-separated (Excel row)",
+    copyTsvAllBtn: "📋 All as Excel rows",
+    exportTsvNote:
+      "Paste the Excel row(s) starting at a new row in the list (Ctrl+V). ID Nr stays blank - fill in the next free GC number from the live list there. Brand/Agency default to \"Shared Service\"/\"Group Controlling\". Afterwards drag the translation formula columns (\"#CONNECT!\") down from the row above.",
 
     evaluationTitle: "Scoring",
     impactLabel: "Impact",
@@ -2148,6 +2156,39 @@ function buildExportBlock(idea) {
     .join("\n");
 }
 
+// Exakte Spaltenreihenfolge des Excel-Katalogs (46 Spalten, A:AT). Leere
+// Positionen sind Formel- ("#CONNECT!"-Übersetzung) oder Leerspalten, die
+// beim Einfügen nicht überschrieben werden sollen. Brand/Agency sind für
+// diesen Katalog (Group Controlling) fix; ID Nr bleibt leer, weil die
+// nächste freie GC-Nummer nur im Blick auf die aktuelle Live-Liste
+// bestimmt werden kann.
+function tsvField(value) {
+  const v = (value || "").toString();
+  return /[\t\n"]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v;
+}
+
+function buildExportRow(idea) {
+  const cols = new Array(46).fill("");
+  cols[1] = "Shared Service"; // Brand
+  cols[2] = "Group Controlling"; // Agency
+  cols[3] = idea.tags || ""; // Bucket NEW
+  cols[4] = idea.quick_note || ""; // Use Case Name
+  cols[6] = idea.problem || ""; // Problem Description
+  cols[8] = idea.goal || ""; // Ziel
+  cols[10] = idea.business_benefit || ""; // Business Benefit
+  cols[12] = idea.ai_role || ""; // KI Rolle
+  cols[14] = idea.tools || ""; // KI Lösung
+  cols[18] = idea.input_source || ""; // Input (Datenquelle)
+  cols[20] = idea.output_result || ""; // Output (Datenausgabe)
+  cols[22] = idea.considerations || ""; // Risks
+  cols[24] = idea.list_priority || ""; // Priority
+  cols[25] = idea.comment || ""; // Comment
+  cols[31] = idea.kpi_kind || ""; // Kind of KPI
+  cols[32] = idea.quantified_benefit || ""; // Description if Quantity
+  cols[33] = idea.qualitative_benefit || ""; // Description if Quality
+  return cols.map(tsvField).join("\t");
+}
+
 async function renderExportSync() {
   ideasCache = await loadIdeas();
   const list = ideasCache.filter((i) => !i.catalog_id);
@@ -2165,7 +2206,13 @@ async function renderExportSync() {
         <p style="font-size:13.5px; color:var(--text-dim); margin:0 0 14px; line-height:1.5;">${t("exportIntro")}</p>
         ${
           list.length
-            ? `<div class="row"><button class="btn-primary" id="copy-all-btn" style="width:100%;">${t("copyAllBtn")} (${list.length})</button></div>`
+            ? `<p style="font-size:12.5px; color:var(--text-dim); margin:0 0 14px; line-height:1.5;">${t("exportTsvNote")}</p>
+               <div class="row">
+                 <button class="btn-primary" id="copy-all-btn" style="width:100%;">${t("copyAllBtn")} (${list.length})</button>
+               </div>
+               <div class="row">
+                 <button class="btn-secondary" id="copy-all-tsv-btn" style="width:100%;">${t("copyTsvAllBtn")} (${list.length})</button>
+               </div>`
             : ""
         }
       </div>
@@ -2184,6 +2231,9 @@ async function renderExportSync() {
                   <div class="row" style="margin-top:10px;">
                     <button class="btn-secondary" data-copy-one="${idea.id}" style="width:100%;">${t("copyOneBtn")}</button>
                   </div>
+                  <div class="row" style="margin-top:6px;">
+                    <button class="btn-secondary" data-copy-tsv-one="${idea.id}" style="width:100%;">${t("copyTsvOneBtn")}</button>
+                  </div>
                 </div>
               `
                 )
@@ -2199,28 +2249,40 @@ async function renderExportSync() {
   });
   bindLangToggle();
 
+  async function copyText(text) {
+    try {
+      await navigator.clipboard.writeText(text);
+      toast(t("copiedMsg"));
+    } catch {
+      toast(t("copyFailedMsg"));
+    }
+  }
+
   document.querySelectorAll("[data-copy-one]").forEach((btn) => {
-    btn.addEventListener("click", async () => {
+    btn.addEventListener("click", () => {
       const idea = list.find((i) => i.id === btn.dataset.copyOne);
-      try {
-        await navigator.clipboard.writeText(buildExportBlock(idea));
-        toast(t("copiedMsg"));
-      } catch {
-        toast(t("copyFailedMsg"));
-      }
+      copyText(buildExportBlock(idea));
+    });
+  });
+
+  document.querySelectorAll("[data-copy-tsv-one]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const idea = list.find((i) => i.id === btn.dataset.copyTsvOne);
+      copyText(buildExportRow(idea));
     });
   });
 
   const copyAllBtn = document.getElementById("copy-all-btn");
   if (copyAllBtn) {
-    copyAllBtn.addEventListener("click", async () => {
-      const text = list.map(buildExportBlock).join("\n\n---\n\n");
-      try {
-        await navigator.clipboard.writeText(text);
-        toast(t("copiedMsg"));
-      } catch {
-        toast(t("copyFailedMsg"));
-      }
+    copyAllBtn.addEventListener("click", () => {
+      copyText(list.map(buildExportBlock).join("\n\n---\n\n"));
+    });
+  }
+
+  const copyAllTsvBtn = document.getElementById("copy-all-tsv-btn");
+  if (copyAllTsvBtn) {
+    copyAllTsvBtn.addEventListener("click", () => {
+      copyText(list.map(buildExportRow).join("\n"));
     });
   }
 }
