@@ -93,11 +93,34 @@ Domain-Sperre + Admin-Freigabe ist das vertretbar.
 **Bleibt eine Einschränkung:** "Passwort vergessen?" schickt weiterhin
 eine E-Mail über denselben eingeschränkten Standardversand – die kommt
 bei Kolleg:innen, die keine Supabase-Org-Mitglieder sind, aktuell nicht
-zuverlässig an. Für eine echte Lösung braucht es einen eigenen SMTP-Dienst
-(z.B. [Resend](https://resend.com), kostenlos für kleine Mengen) unter
-**Authentication -> Sign In / Providers -> SMTP Provider**. Bis dahin:
-betroffene Person meldet sich beim Admin, der das Passwort im
-Supabase-Dashboard unter **Authentication -> Users** manuell zurücksetzt.
+zuverlässig an. Für eine echte, selbstständig nutzbare Lösung braucht es
+einen eigenen SMTP-Dienst (z.B. [Resend](https://resend.com), kostenlos
+für kleine Mengen) unter **Authentication -> Sign In / Providers -> SMTP
+Provider** – dann funktioniert "Passwort vergessen" für alle ohne
+Admin-Beteiligung.
+
+**Bis dahin, als Notlösung:** Der "Passwort zurücksetzen"-Button im
+Supabase-Dashboard hilft *nicht* – der löst genau dieselbe blockierte
+Mail aus. Stattdessen setzt du als Admin das Passwort direkt über die
+Supabase-Admin-API, ganz ohne Mail:
+
+1. Im **SQL Editor** die User-ID der Person ermitteln:
+   ```sql
+   select id from auth.users where email = 'kollege@house-of-communication.com';
+   ```
+2. Unter **Project Settings -> API** deinen **service_role**-Key kopieren
+   (geheim halten, nirgends veröffentlichen).
+3. Auf deinem eigenen Rechner im Terminal (nicht in der App, nicht mit
+   Claude teilen):
+   ```
+   curl -X PUT 'https://<project-ref>.supabase.co/auth/v1/admin/users/<user-id>' \
+     -H 'apikey: <service-role-key>' \
+     -H 'Authorization: Bearer <service-role-key>' \
+     -H 'Content-Type: application/json' \
+     -d '{"password": "EinTemporaeresPasswort123"}'
+   ```
+4. Das temporäre Passwort an die Person weitergeben. Sie kann es nach dem
+   Einloggen unter ⚙ Einstellungen selbst durch ein eigenes ersetzen.
 
 ## Schritt 6: Login-Adresse bei Supabase eintragen
 

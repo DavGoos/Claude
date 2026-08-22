@@ -39,6 +39,9 @@ const I18N = {
     newPasswordPlaceholder: "Neues Passwort",
     savePassword: "Passwort speichern",
     passwordSavedMsg: "Passwort gespeichert, du bist eingeloggt.",
+    changePasswordTitle: "Passwort ändern",
+    changePasswordDesc: "Eigenes Passwort jederzeit selbst setzen – z.B. nach einem vom Admin vergebenen temporären Passwort.",
+    passwordChangedMsg: "Passwort geändert",
 
     pendingTitle: "Warten auf Freigabe",
     pendingDesc:
@@ -271,6 +274,9 @@ const I18N = {
     newPasswordPlaceholder: "New password",
     savePassword: "Save password",
     passwordSavedMsg: "Password saved, you're logged in.",
+    changePasswordTitle: "Change password",
+    changePasswordDesc: "Set your own password any time - e.g. after a temporary one from the admin.",
+    passwordChangedMsg: "Password changed",
 
     pendingTitle: "Waiting for approval",
     pendingDesc:
@@ -2005,6 +2011,17 @@ function renderSettings() {
     </header>
     <main>
       <div class="card">
+        <div class="section-title" style="margin:0 0 10px;">${t("changePasswordTitle")}</div>
+        <p style="font-size:13.5px; color:var(--text-dim); margin:0 0 14px; line-height:1.5;">
+          ${t("changePasswordDesc")}
+        </p>
+        <input class="field" id="f-new-password" type="password" placeholder="${t("newPasswordPlaceholder")}" minlength="6" autocomplete="new-password" />
+        <div class="row">
+          <button class="btn-primary" id="save-password-btn">${t("savePassword")}</button>
+        </div>
+      </div>
+
+      <div class="card">
         <div class="section-title" style="margin:0 0 10px;">${t("settingsTitleOptionalKey")}</div>
         <p style="font-size:13.5px; color:var(--text-dim); margin:0 0 10px; line-height:1.5;">
           ${t("settingsIntro1")}
@@ -2041,6 +2058,22 @@ function renderSettings() {
   });
 
   bindLangToggle();
+
+  document.getElementById("save-password-btn").addEventListener("click", async () => {
+    const input = document.getElementById("f-new-password");
+    const newPassword = input.value;
+    if (!newPassword || newPassword.length < 6) return;
+    const btn = document.getElementById("save-password-btn");
+    btn.disabled = true;
+    const { error } = await sb.auth.updateUser({ password: newPassword });
+    btn.disabled = false;
+    if (error) {
+      toast(t("errorPrefix") + error.message);
+    } else {
+      input.value = "";
+      toast(t("passwordChangedMsg"));
+    }
+  });
 
   document.querySelectorAll(".tabbar button").forEach((btn) => {
     btn.addEventListener("click", () => {
