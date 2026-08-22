@@ -1,4 +1,4 @@
-const CACHE_NAME = "ai-ideen-v4";
+const CACHE_NAME = "ai-ideen-v5";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -30,11 +30,14 @@ self.addEventListener("activate", (event) => {
 });
 
 // Network-first: bei Updates immer die neueste Version holen, nur bei
-// fehlendem Netz (offline) auf den Cache zurückfallen.
+// fehlendem Netz (offline) auf den Cache zurückfallen. "cache: no-store"
+// ist hier wichtig - sonst kann der normale HTTP-Cache des Browsers eine
+// veraltete Antwort liefern, bevor der Request überhaupt ins Netz geht,
+// und Nutzer sehen trotz neuem Deploy weiter die alte Version.
 self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
   event.respondWith(
-    fetch(event.request)
+    fetch(event.request, { cache: "no-store" })
       .then((res) => {
         const resClone = res.clone();
         caches.open(CACHE_NAME).then((cache) => cache.put(event.request, resClone));
