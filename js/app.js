@@ -55,7 +55,7 @@ const I18N = {
     adminNav: "🛡 Freigaben",
     exportNav: "🔄 Export",
     logoutBtn: "Logout",
-    ideasHeaderTitle: "AI Ideen",
+    ideasHeaderTitle: "Ideen",
     processesHeaderTitle: "Prozesse",
 
     newIdeaLabel: "Neue Idee erfassen",
@@ -288,7 +288,7 @@ const I18N = {
     adminNav: "🛡 Approvals",
     exportNav: "🔄 Export",
     logoutBtn: "Log out",
-    ideasHeaderTitle: "AI Ideas",
+    ideasHeaderTitle: "Ideas",
     processesHeaderTitle: "Processes",
 
     newIdeaLabel: "Capture a new idea",
