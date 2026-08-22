@@ -994,9 +994,7 @@ function renderLogin() {
   const isSignup = authMode === "signup";
   $app.innerHTML = `
     <div class="login-wrap">
-      <div class="row" style="width:100%; max-width:320px; justify-content:flex-end; margin-bottom:-8px;">
-        ${langToggleButton()}
-      </div>
+      <div class="login-lang-toggle">${langToggleButton()}</div>
       <img src="icons/icon-192.png" alt="Logo" />
       <h1>${t("appName")}</h1>
       <p>${t("tagline")}</p>

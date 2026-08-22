@@ -98,15 +98,21 @@ header.topbar .actions {
   flex: 0 1 auto;
 }
 
-header.topbar button.icon-btn {
-  background: rgba(255,255,255,0.15);
-  border: none;
-  color: white;
+.icon-btn {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--text);
   border-radius: 10px;
   padding: 7px 10px;
   font-size: 13px;
   white-space: nowrap;
   flex-shrink: 0;
+}
+
+header.topbar button.icon-btn {
+  background: rgba(255,255,255,0.15);
+  border: none;
+  color: white;
 }
 
 main {
@@ -256,6 +262,7 @@ button {
 
 /* Login */
 .login-wrap {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -263,6 +270,12 @@ button {
   min-height: 90vh;
   padding: 24px;
   text-align: center;
+}
+
+.login-lang-toggle {
+  position: absolute;
+  top: calc(env(safe-area-inset-top) + 16px);
+  right: 16px;
 }
 
 .login-wrap img { width: 88px; height: 88px; border-radius: 20px; margin-bottom: 16px; }
