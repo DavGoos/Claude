@@ -70,24 +70,63 @@ der E-Mail auf einer falschen Adresse ("localhost") statt in eurer App.
    `https://dein-name.github.io/dein-repo/**`
 4. Speichern.
 
-## Schritt 5: App aufs Handy holen
+## Schritt 5: E-Mail-Bestätigung bei der Registrierung abschalten
+
+Supabases eingebauter Mailversand (ohne eigenen SMTP-Server) verschickt
+Auth-Mails inzwischen **nur noch an E-Mail-Adressen, die selbst Mitglied
+eurer Supabase-Organisation sind** – nicht an beliebige Kolleg:innen, die
+sich über die App registrieren. Ohne diesen Schritt bekommt so gut wie
+niemand außer dir die Bestätigungsmail, und die Registrierung bleibt
+hängen.
+
+1. Im Supabase-Dashboard zu **Authentication -> Sign In / Providers ->
+   Email**.
+2. **"Confirm email"** deaktivieren und speichern.
+3. Damit läuft die Registrierung sofort ohne Bestätigungsmail – Schutz
+   bleibt trotzdem bestehen durch die Domain-Sperre und die Admin-Freigabe
+   (siehe Schritt 7).
+
+Restrisiko: Damit wird nicht mehr geprüft, ob die eingetippte Adresse
+wirklich der eigenen Person gehört. Für ein kleines internes Team mit
+Domain-Sperre + Admin-Freigabe ist das vertretbar.
+
+**Bleibt eine Einschränkung:** "Passwort vergessen?" schickt weiterhin
+eine E-Mail über denselben eingeschränkten Standardversand – die kommt
+bei Kolleg:innen, die keine Supabase-Org-Mitglieder sind, aktuell nicht
+zuverlässig an. Für eine echte Lösung braucht es einen eigenen SMTP-Dienst
+(z.B. [Resend](https://resend.com), kostenlos für kleine Mengen) unter
+**Authentication -> Sign In / Providers -> SMTP Provider**. Bis dahin:
+betroffene Person meldet sich beim Admin, der das Passwort im
+Supabase-Dashboard unter **Authentication -> Users** manuell zurücksetzt.
+
+## Schritt 6: Login-Adresse bei Supabase eintragen
+
+Ohne diesen Schritt landet der Passwort-Reset-Link aus der E-Mail auf
+einer falschen Adresse ("localhost") statt in eurer App.
+
+1. Im Supabase-Dashboard zu **Authentication -> URL Configuration**.
+2. **Site URL** auf die Adresse aus Schritt 3 setzen, z.B.
+   `https://dein-name.github.io/dein-repo/`.
+3. Unter **Redirect URLs** eine Zeile hinzufügen:
+   `https://dein-name.github.io/dein-repo/**`
+4. Speichern.
+
+## Schritt 7: App aufs Handy holen
 
 1. Öffne den Link aus Schritt 3 im Handy-Browser (Safari bei iPhone, Chrome bei Android).
 2. Tippe auf **"Zum Home-Bildschirm"** (iPhone) bzw. **"App installieren"** (Android).
 3. Fertig – die App hat jetzt ein eigenes Icon auf dem Home-Bildschirm.
 
-## Schritt 6: Login & Kollegen einladen
+## Schritt 8: Login & Kollegen einladen
 
-- Erstanmeldung: Auf **"Registrieren"** tippen, E-Mail + Passwort vergeben.
-  Danach kommt **einmalig** eine Bestätigungsmail – den Link darin antippen.
-- Ab dann läuft der Login rein über E-Mail + Passwort, ganz ohne weitere
-  Mails. Nur bei "Passwort vergessen?" wird nochmal eine E-Mail nötig.
+- Erstanmeldung: Auf **"Registrieren"** tippen, E-Mail + Passwort vergeben
+  – dank Schritt 5 ist man sofort angemeldet, ganz ohne Bestätigungsmail.
 - **Zugriff ist auf zwei Arten geschützt:**
   1. **Domain-Sperre**: Nur E-Mail-Adressen mit `@house-of-communication.com`
      können sich überhaupt registrieren (fest im Datenbank-Skript
      hinterlegt – bei einer anderen Firmendomain in `supabase/schema.sql`
      nach `house-of-communication` suchen und ersetzen).
-  2. **Admin-Freigabe**: Nach der E-Mail-Bestätigung sieht die Person noch
+  2. **Admin-Freigabe**: Nach der Registrierung sieht die Person noch
      keine Daten, sondern einen "Warten auf Freigabe"-Bildschirm. Der Admin
      (**d.goos@house-of-communication.com**, automatisch beim ersten Login
      als Admin markiert) sieht oben rechts einen Button **"🛡 Freigaben"**,
@@ -96,11 +135,6 @@ der E-Mail auf einer falschen Adresse ("localhost") statt in eurer App.
 - Wächst das Team stark oder braucht ihr getrennte Bereiche pro Team, lässt
   sich das später ergänzen (eigene Tabelle/Berechtigungen) – für den Start
   reicht die gemeinsame Liste.
-- Der Mailversand steht weiterhin auf Supabases test-tauglichem,
-  stark gedrosseltem Standardversand (siehe vorheriger Hinweis zum
-  "email rate limit"). Bei mehreren Kolleg:innen, die sich kurz
-  hintereinander registrieren, kann das Limit erneut greifen – dann
-  hilft nur abwarten oder ein eigener SMTP-Dienst wie Resend.
 
 ## KI-Ausarbeitung: Standardweg braucht keinen API-Key
 

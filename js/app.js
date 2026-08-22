@@ -30,8 +30,7 @@ const I18N = {
     loggingIn: "Melde an...",
     signingUp: "Registriere...",
     forgotPassword: "Passwort vergessen?",
-    signupSuccessMsg:
-      "Fast fertig! Bitte bestätige deine E-Mail-Adresse über den Link, den wir dir gerade geschickt haben. Danach kannst du dich hier mit E-Mail + Passwort anmelden.",
+    signupSuccessMsg: "Konto erstellt, du bist angemeldet.",
     errorPrefix: "Fehler: ",
     resetPromptEmail: "Für welche E-Mail-Adresse soll das Passwort zurückgesetzt werden?",
     resetSentMsg: "Falls diese Adresse registriert ist, kommt gleich eine E-Mail mit einem Link zum Zurücksetzen.",
@@ -263,8 +262,7 @@ const I18N = {
     loggingIn: "Logging in...",
     signingUp: "Signing up...",
     forgotPassword: "Forgot password?",
-    signupSuccessMsg:
-      "Almost done! Please confirm your email address via the link we just sent you. After that you can log in here with email + password.",
+    signupSuccessMsg: "Account created, you're signed in.",
     errorPrefix: "Error: ",
     resetPromptEmail: "Which email address should the password be reset for?",
     resetSentMsg: "If this address is registered, an email with a reset link is on its way.",
