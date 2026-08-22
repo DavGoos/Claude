@@ -2114,7 +2114,9 @@ function bindAdminNavButton() {
 }
 
 function exportNavButton() {
-  return `<button class="icon-btn" id="export-btn">${t("exportNav")}</button>`;
+  return currentProfile && currentProfile.is_admin
+    ? `<button class="icon-btn" id="export-btn">${t("exportNav")}</button>`
+    : "";
 }
 
 function bindExportNavButton() {
@@ -2389,7 +2391,7 @@ async function render() {
     renderSettings();
   } else if (route.view === "admin" && currentProfile.is_admin) {
     await renderAdmin();
-  } else if (route.view === "export") {
+  } else if (route.view === "export" && currentProfile.is_admin) {
     await renderExportSync();
   } else {
     await renderList();
