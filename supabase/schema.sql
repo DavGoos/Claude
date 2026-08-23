@@ -160,8 +160,11 @@ from profiles p
 where p.is_approved = true
 on conflict (user_id, kostenstelle_code, team) do nothing;
 
-drop function if exists can_read_kostenstelle(text);
-drop function if exists can_write_kostenstelle(text);
+-- cascade: bestehende Policies auf processes/ideas hängen noch an der alten
+-- 1-Parameter-Signatur - die werden hier mitgelöscht und weiter unten mit
+-- der neuen 2-Parameter-Version (Kostenstelle + Team) neu angelegt.
+drop function if exists can_read_kostenstelle(text) cascade;
+drop function if exists can_write_kostenstelle(text) cascade;
 
 create or replace function can_read_kostenstelle(ks text, tm text)
 returns boolean
