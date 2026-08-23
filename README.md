@@ -224,31 +224,42 @@ funktioniert die App ganz normal weiter, nur eben ohne die KI-Ausarbeitung.
   übersetzt die komplette Oberfläche inkl. der von der KI angefragten
   Sprache. Die Einstellung wird pro Gerät gespeichert.
 - **Problem / Ziel / Business Benefit getrennt**: Statt einem einzigen
-  Beschreibungsfeld gibt es drei eigene Felder, die exakt den Spalten des
-  Excel-Use-Case-Katalogs entsprechen. Das macht den Export in die Liste
-  eindeutig (kein Raten mehr nötig, wie der Text aufzuteilen ist).
+  Beschreibungsfeld gibt es drei eigene Felder, die exakt den Spalten der
+  zentralen AI Ambassadors Usecase-Collection entsprechen. Das macht das
+  spätere Übertragen eindeutig (kein Raten mehr nötig, wie der Text
+  aufzuteilen ist).
 - **Katalog-Abgleich (optional)**: In der Idee-Detailansicht gibt es einen
   ausklappbaren Bereich "Weitere Katalog-Felder" (Katalog-ID, KI-Rolle,
   Input, Output, Kind of KPI, quantifizierter/qualitativer Nutzen,
-  Kommentar, Priorität laut Liste) – für den geplanten Abgleich mit dem
-  bestehenden Excel-Use-Case-Katalog. Optional, nicht nötig für die
-  normale Nutzung. Die Katalog-ID (z.B. "GC29") muss eindeutig sein und
-  dient als Schlüssel für spätere Abgleiche zwischen App und Liste.
+  Kommentar, Priorität laut Liste) – für den Abgleich mit der zentralen
+  AI Ambassadors Usecase-Collection (der SharePoint-Excel-Datei). Optional,
+  nicht nötig für die normale Nutzung. Die Katalog-ID (z.B. "GC29") muss
+  eindeutig sein und dient als Schlüssel für spätere Abgleiche zwischen
+  App und Collection.
 - **Usecase-Geber / Ansprechpartner**: Direkt im Hauptbereich jeder Idee
   lässt sich der Name der verantwortlichen Person hinterlegen, damit klar
   ist, wer bei Rückfragen anzusprechen ist.
-- **Export für den Excel-Katalog (🔄 Export)**: Zeigt alle Ideen ohne
-  Katalog-ID, also solche, die noch nicht in der Excel-Liste stehen. Über
-  "Kopieren" (einzeln oder "Alle kopieren") wird ein fertig formatierter
-  Text mit den bereits getrennten Feldern Problem/Ziel/Business Benefit in
-  die Zwischenablage kopiert. Diesen Text postet man in den Chat mit
-  Claude – Claude bereitet daraus die passende Zeile fürs Einfügen in die
-  SharePoint-Excel-Liste vor (Claude kann die Datei aus technischen Gründen
-  nicht direkt beschreiben, nur vorbereiten). Nach dem Eintragen die
-  vergebene GC-Nummer als Katalog-ID bei der Idee eintragen, danach taucht
-  sie hier nicht mehr auf. Der umgekehrte Weg (Import aus der Liste in die
-  App) läuft genauso über den Chat: Case-Nummer(n) nennen, Claude liest sie
-  aus der Liste und erzeugt SQL zum Einfügen in Supabase.
+- **In die AI Ambassadors Usecase-Collection kopieren (🔄 Export, für alle
+  sichtbar)**: Zeigt alle Ideen ohne Katalog-ID, also solche, die noch
+  nicht in der Collection stehen. **Reines Copy & Paste** – nichts wird
+  automatisch geschrieben oder synchronisiert. Über "Tab-getrennt
+  (Excel-Zeile)" wird eine fertige Zeile in der exakten Spaltenreihenfolge
+  der Collection in die Zwischenablage kopiert, zum direkten Einfügen
+  (Strg+V) in eine neue Zeile dort. Alternativ "Kopieren" für einen
+  lesbaren Textblock, z.B. zum Posten in den Chat mit Claude, wenn man
+  beim Einordnen Unterstützung möchte (Claude kann die Datei aus
+  technischen Gründen nicht selbst beschreiben, nur den Text dafür
+  vorbereiten). Nach dem Eintragen die vergebene GC-Nummer als Katalog-ID
+  bei der Idee eintragen, danach taucht sie hier nicht mehr auf. Der
+  umgekehrte Weg (Import aus der Collection in die App) läuft über den
+  Chat mit Claude: Case-Nummer(n) nennen, Claude liest sie aus der
+  Collection und erzeugt SQL zum Einfügen in Supabase.
+- **Onboarding-Anleitung fest im Login-Screen**: Der Button "📋 Anleitung"
+  oben im Login-Bildschirm verlinkt auf eine kurze, für Kolleg:innen
+  gedachte Erklärseite (was die App kann, wie man Zugriff bekommt, wie man
+  sie aufs eigene Gerät holt). Damit der Link für alle ohne eigenen
+  Claude-Zugang funktioniert, muss die Seite einmalig über deren eigenes
+  Teilen-Menü auf "Für alle mit Link zugänglich" gestellt werden.
 
 ## Projektstruktur
 

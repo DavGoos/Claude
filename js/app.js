@@ -31,6 +31,7 @@ const I18N = {
     signingUp: "Registriere...",
     forgotPassword: "Passwort vergessen?",
     signupSuccessMsg: "Konto erstellt, du bist angemeldet.",
+    onboardingBannerText: "📋 Anleitung: Was die App kann & wie du startest",
     errorPrefix: "Fehler: ",
     resetPromptEmail: "Für welche E-Mail-Adresse soll das Passwort zurückgesetzt werden?",
     resetSentMsg: "Falls diese Adresse registriert ist, kommt gleich eine E-Mail mit einem Link zum Zurücksetzen.",
@@ -121,7 +122,7 @@ const I18N = {
 
     catalogFieldsTitle: "Weitere Katalog-Felder (optional)",
     catalogFieldsDesc:
-      "Zusätzliche Felder für den Abgleich mit dem bestehenden Excel-Use-Case-Katalog. Nicht nötig für die tägliche Nutzung.",
+      "Zusätzliche Felder für den Abgleich mit der zentralen AI Ambassadors Usecase-Collection. Nicht nötig für die tägliche Nutzung.",
     aiRoleLabel: "KI-Rolle",
     inputSourceLabel: "Input (Datenquelle)",
     inputSourcePlaceholder: "Woher kommen die Daten/Eingaben?",
@@ -139,16 +140,16 @@ const I18N = {
     ownerNameLabel: "Usecase-Geber / Ansprechpartner",
     ownerNamePlaceholder: "Name der verantwortlichen Person",
 
-    exportTitle: "Neue Ideen für die Excel-Liste exportieren",
+    exportTitle: "Neue Ideen für die AI Ambassadors Usecase-Collection kopieren",
     exportIntro:
-      "Hier stehen alle Ideen, die noch keine Katalog-ID haben (also noch nicht in der Excel-Liste stehen). Kopiere eine Idee (oder alle) und poste den Text in den Chat mit Claude – Claude trägt sie dann als neue Zeile(n) in die Liste ein und nennt dir die vergebene GC-Nummer. Trag diese anschließend als Katalog-ID bei der Idee ein, dann verschwindet sie hier aus der Liste.",
-    exportEmpty: "Alle Ideen haben bereits eine Katalog-ID – nichts zu exportieren.",
+      "Hier stehen alle Ideen, die noch keine Katalog-ID haben – also noch nicht in der zentralen AI Ambassadors Usecase-Collection stehen. Wichtig: Das ist reines Copy & Paste, hier wird nichts automatisch geschrieben oder synchronisiert. Kopiere eine Idee (oder alle) und füge sie selbst als neue Zeile in die Usecase-Collection ein (am einfachsten mit der Tab-getrennt-Option unten), oder poste den Text stattdessen in den Chat mit Claude, wenn du beim Einordnen Unterstützung möchtest. Trag die dort vergebene Katalog-ID (z.B. GC30) anschließend hier bei der Idee ein, dann verschwindet sie aus dieser Liste.",
+    exportEmpty: "Alle Ideen haben bereits eine Katalog-ID – nichts zu kopieren.",
     copyOneBtn: "📋 Kopieren",
     copyAllBtn: "📋 Alle kopieren",
     copyTsvOneBtn: "📋 Tab-getrennt (Excel-Zeile)",
     copyTsvAllBtn: "📋 Alle als Excel-Zeilen",
     exportTsvNote:
-      "Die Excel-Zeile(n) direkt ab einer neuen Zeile in der Liste einfügen (Strg+V). ID Nr bleibt leer – dort die nächste freie GC-Nummer aus der Liste eintragen. Brand/Agency werden mit \"Shared Service\"/\"Group Controlling\" vorbelegt. Die Übersetzungs-Formelspalten (\"#CONNECT!\") danach aus der Zeile darüber nach unten ziehen.",
+      "Reines Copy & Paste: die Excel-Zeile(n) direkt ab einer neuen Zeile in der AI Ambassadors Usecase-Collection einfügen (Strg+V) – nichts davon läuft automatisch. ID Nr bleibt leer – dort die nächste freie GC-Nummer aus der Collection eintragen. Brand/Agency werden mit \"Shared Service\"/\"Group Controlling\" vorbelegt. Die Übersetzungs-Formelspalten (\"#CONNECT!\") danach aus der Zeile darüber nach unten ziehen.",
 
     evaluationTitle: "Bewertung",
     impactLabel: "Nutzen",
@@ -266,6 +267,7 @@ const I18N = {
     signingUp: "Signing up...",
     forgotPassword: "Forgot password?",
     signupSuccessMsg: "Account created, you're signed in.",
+    onboardingBannerText: "📋 Guide: What the app does & how to get started",
     errorPrefix: "Error: ",
     resetPromptEmail: "Which email address should the password be reset for?",
     resetSentMsg: "If this address is registered, an email with a reset link is on its way.",
@@ -356,7 +358,7 @@ const I18N = {
 
     catalogFieldsTitle: "Additional catalog fields (optional)",
     catalogFieldsDesc:
-      "Extra fields to align with the existing Excel use-case catalog. Not needed for everyday use.",
+      "Extra fields to align with the central AI Ambassadors Usecase Collection. Not needed for everyday use.",
     aiRoleLabel: "AI role",
     inputSourceLabel: "Input (data source)",
     inputSourcePlaceholder: "Where does the data/input come from?",
@@ -374,16 +376,16 @@ const I18N = {
     ownerNameLabel: "Use case owner / contact",
     ownerNamePlaceholder: "Name of the responsible person",
 
-    exportTitle: "Export new ideas for the Excel list",
+    exportTitle: "Copy new ideas into the AI Ambassadors Usecase Collection",
     exportIntro:
-      "This lists every idea that doesn't have a catalog ID yet (i.e. isn't in the Excel list yet). Copy one idea (or all of them) and post the text into the chat with Claude - Claude will add it as a new row / rows in the list and tell you the assigned GC number. Enter that back as the catalog ID on the idea afterwards, then it disappears from this list.",
-    exportEmpty: "Every idea already has a catalog ID - nothing to export.",
+      "This lists every idea that doesn't have a catalog ID yet - i.e. isn't in the central AI Ambassadors Usecase Collection yet. Important: this is plain copy & paste, nothing here writes or syncs anything automatically. Copy one idea (or all of them) and paste it yourself as a new row into the Usecase Collection (easiest with the tab-separated option below), or post the text into the chat with Claude instead if you'd like help sorting it out. Enter the catalog ID assigned there (e.g. GC30) back on the idea afterwards, then it disappears from this list.",
+    exportEmpty: "Every idea already has a catalog ID - nothing to copy.",
     copyOneBtn: "📋 Copy",
     copyAllBtn: "📋 Copy all",
     copyTsvOneBtn: "📋 Tab-separated (Excel row)",
     copyTsvAllBtn: "📋 All as Excel rows",
     exportTsvNote:
-      "Paste the Excel row(s) starting at a new row in the list (Ctrl+V). ID Nr stays blank - fill in the next free GC number from the live list there. Brand/Agency default to \"Shared Service\"/\"Group Controlling\". Afterwards drag the translation formula columns (\"#CONNECT!\") down from the row above.",
+      "Plain copy & paste: paste the Excel row(s) starting at a new row in the AI Ambassadors Usecase Collection (Ctrl+V) - none of this happens automatically. ID Nr stays blank - fill in the next free GC number from the Collection there. Brand/Agency default to \"Shared Service\"/\"Group Controlling\". Afterwards drag the translation formula columns (\"#CONNECT!\") down from the row above.",
 
     evaluationTitle: "Scoring",
     impactLabel: "Impact",
@@ -1002,6 +1004,7 @@ function renderLogin() {
       <img src="icons/icon-192.png" alt="Logo" />
       <h1>${t("appName")}</h1>
       <p>${t("tagline")}</p>
+      <a class="onboarding-banner" href="https://claude.ai/code/artifact/a5713396-1a29-499d-9edb-4b642a6f1ace" target="_blank" rel="noopener">${t("onboardingBannerText")}</a>
       <div class="tabbar" style="max-width:320px;">
         <button data-mode="login" class="${!isSignup ? "active" : ""}">${t("login")}</button>
         <button data-mode="signup" class="${isSignup ? "active" : ""}">${t("signup")}</button>
@@ -2143,9 +2146,7 @@ function bindAdminNavButton() {
 }
 
 function exportNavButton() {
-  return currentProfile && currentProfile.is_admin
-    ? `<button class="icon-btn" id="export-btn">${t("exportNav")}</button>`
-    : "";
+  return `<button class="icon-btn" id="export-btn">${t("exportNav")}</button>`;
 }
 
 function bindExportNavButton() {
@@ -2420,7 +2421,7 @@ async function render() {
     renderSettings();
   } else if (route.view === "admin" && currentProfile.is_admin) {
     await renderAdmin();
-  } else if (route.view === "export" && currentProfile.is_admin) {
+  } else if (route.view === "export") {
     await renderExportSync();
   } else {
     await renderList();
