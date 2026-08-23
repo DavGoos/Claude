@@ -31,7 +31,7 @@ const I18N = {
     signingUp: "Registriere...",
     forgotPassword: "Passwort vergessen?",
     signupSuccessMsg: "Konto erstellt, du bist angemeldet.",
-    onboardingBannerText: "📋 Anleitung: Was die App kann & wie du startest",
+    onboardingBannerText: "📋 Anleitung",
     errorPrefix: "Fehler: ",
     resetPromptEmail: "Für welche E-Mail-Adresse soll das Passwort zurückgesetzt werden?",
     resetSentMsg: "Falls diese Adresse registriert ist, kommt gleich eine E-Mail mit einem Link zum Zurücksetzen.",
@@ -269,7 +269,7 @@ const I18N = {
     signingUp: "Signing up...",
     forgotPassword: "Forgot password?",
     signupSuccessMsg: "Account created, you're signed in.",
-    onboardingBannerText: "📋 Guide: What the app does & how to get started",
+    onboardingBannerText: "📋 Guide",
     errorPrefix: "Error: ",
     resetPromptEmail: "Which email address should the password be reset for?",
     resetSentMsg: "If this address is registered, an email with a reset link is on its way.",
@@ -1008,7 +1008,6 @@ function renderLogin() {
       <img src="icons/icon-192.png" alt="Logo" />
       <h1>${t("appName")}</h1>
       <p>${t("tagline")}</p>
-      <a class="onboarding-banner" href="https://claude.ai/code/artifact/a5713396-1a29-499d-9edb-4b642a6f1ace" target="_blank" rel="noopener">${t("onboardingBannerText")}</a>
       <div class="tabbar" style="max-width:320px;">
         <button data-mode="login" class="${!isSignup ? "active" : ""}">${t("login")}</button>
         <button data-mode="signup" class="${isSignup ? "active" : ""}">${t("signup")}</button>
@@ -1237,6 +1236,7 @@ async function renderList() {
       <div class="actions">
         ${langToggleButton()}
         ${exportNavButton()}
+        ${onboardingNavButton()}
         ${adminNavButton()}
         <button class="icon-btn" id="settings-btn">⚙</button>
         <button class="icon-btn" id="logout-btn">${t("logoutBtn")}</button>
@@ -1300,17 +1300,55 @@ async function renderList() {
   renderIdeaList();
 }
 
+let expandedIdeaIds = new Set();
+
+// Eine Idee ist "Kopf" ihrer Stufenkette, wenn keine andere Idee sie als
+// vorherige Stufe (parent_idea_id) referenziert - also die jeweils
+// neueste Entwicklungsstufe. Nur Köpfe erscheinen oben in der Liste, die
+// Vorstufen hängen als ein-/ausklappbare Kinder darunter.
+function ideaIsChainHead(idea) {
+  return !ideasCache.some((i) => i.parent_idea_id === idea.id);
+}
+
+function ideaChainNodeHtml(idea) {
+  const parent = idea.parent_idea_id ? ideasCache.find((i) => i.id === idea.parent_idea_id) : null;
+  const isExpanded = expandedIdeaIds.has(idea.id);
+  return `
+    <div class="tree-node">
+      <div class="tree-row">
+        ${
+          parent
+            ? `<button class="tree-toggle" data-toggle-idea="${idea.id}">${isExpanded ? "▾" : "▸"}</button>`
+            : `<span class="tree-toggle-spacer"></span>`
+        }
+        <div class="tree-row-content">${ideaCard(idea)}</div>
+      </div>
+      ${parent && isExpanded ? `<div class="tree-children">${ideaChainNodeHtml(parent)}</div>` : ""}
+    </div>
+  `;
+}
+
 function renderIdeaList() {
   const listEl = document.getElementById("idea-list");
   if (!listEl) return;
-  const filtered = ideasCache.filter((i) => activeFilter === "all" || i.status === activeFilter);
+  const heads = ideasCache.filter(ideaIsChainHead);
+  const filtered = heads.filter((i) => activeFilter === "all" || i.status === activeFilter);
   if (filtered.length === 0) {
     listEl.innerHTML = `<div class="empty-state">${t("emptyIdeas")}</div>`;
   } else {
-    listEl.innerHTML = filtered.map(ideaCard).join("");
+    listEl.innerHTML = filtered.map(ideaChainNodeHtml).join("");
     listEl.querySelectorAll(".idea-item").forEach((el) => {
       el.addEventListener("click", () => {
         window.location.hash = `#/idea/${el.dataset.id}`;
+      });
+    });
+    listEl.querySelectorAll("[data-toggle-idea]").forEach((btn) => {
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const id = btn.dataset.toggleIdea;
+        if (expandedIdeaIds.has(id)) expandedIdeaIds.delete(id);
+        else expandedIdeaIds.add(id);
+        renderIdeaList();
       });
     });
   }
@@ -1750,6 +1788,7 @@ async function renderProcessList() {
       <div class="actions">
         ${langToggleButton()}
         ${exportNavButton()}
+        ${onboardingNavButton()}
         ${adminNavButton()}
         <button class="icon-btn" id="settings-btn">⚙</button>
         <button class="icon-btn" id="logout-btn">${t("logoutBtn")}</button>
@@ -1813,6 +1852,31 @@ async function renderProcessList() {
   renderProcessListItems();
 }
 
+let expandedProcessIds = new Set();
+
+function processTreeNodeHtml(proc, filteredIds) {
+  const children = processesCache.filter((p) => p.parent_process_id === proc.id && filteredIds.has(p.id));
+  const hasChildren = children.length > 0;
+  const isExpanded = expandedProcessIds.has(proc.id);
+  return `
+    <div class="tree-node">
+      <div class="tree-row">
+        ${
+          hasChildren
+            ? `<button class="tree-toggle" data-toggle-process="${proc.id}">${isExpanded ? "▾" : "▸"}</button>`
+            : `<span class="tree-toggle-spacer"></span>`
+        }
+        <div class="tree-row-content">${processCard(proc)}</div>
+      </div>
+      ${
+        hasChildren && isExpanded
+          ? `<div class="tree-children">${children.map((c) => processTreeNodeHtml(c, filteredIds)).join("")}</div>`
+          : ""
+      }
+    </div>
+  `;
+}
+
 function renderProcessListItems() {
   const listEl = document.getElementById("process-list");
   if (!listEl) return;
@@ -1820,10 +1884,21 @@ function renderProcessListItems() {
   if (filtered.length === 0) {
     listEl.innerHTML = `<div class="empty-state">${t("emptyProcesses")}</div>`;
   } else {
-    listEl.innerHTML = filtered.map(processCard).join("");
+    const filteredIds = new Set(filtered.map((p) => p.id));
+    const roots = filtered.filter((p) => !p.parent_process_id || !filteredIds.has(p.parent_process_id));
+    listEl.innerHTML = roots.map((p) => processTreeNodeHtml(p, filteredIds)).join("");
     listEl.querySelectorAll(".idea-item").forEach((el) => {
       el.addEventListener("click", () => {
         window.location.hash = `#/process/${el.dataset.id}`;
+      });
+    });
+    listEl.querySelectorAll("[data-toggle-process]").forEach((btn) => {
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const id = btn.dataset.toggleProcess;
+        if (expandedProcessIds.has(id)) expandedProcessIds.delete(id);
+        else expandedProcessIds.add(id);
+        renderProcessListItems();
       });
     });
   }
@@ -2151,6 +2226,10 @@ function bindAdminNavButton() {
 
 function exportNavButton() {
   return `<button class="icon-btn" id="export-btn">${t("exportNav")}</button>`;
+}
+
+function onboardingNavButton() {
+  return `<a class="icon-btn" href="https://claude.ai/code/artifact/a5713396-1a29-499d-9edb-4b642a6f1ace" target="_blank" rel="noopener">${t("onboardingBannerText")}</a>`;
 }
 
 function bindExportNavButton() {

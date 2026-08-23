@@ -256,12 +256,18 @@ funktioniert die App ganz normal weiter, nur eben ohne die KI-Ausarbeitung.
   umgekehrte Weg (Import aus der Collection in die App) läuft über den
   Chat mit Claude: Case-Nummer(n) nennen, Claude liest sie aus der
   Collection und erzeugt SQL zum Einfügen in Supabase.
-- **Onboarding-Anleitung fest im Login-Screen**: Der Button "📋 Anleitung"
-  oben im Login-Bildschirm verlinkt auf eine kurze, für Kolleg:innen
-  gedachte Erklärseite (was die App kann, wie man Zugriff bekommt, wie man
-  sie aufs eigene Gerät holt). Damit der Link für alle ohne eigenen
-  Claude-Zugang funktioniert, muss die Seite einmalig über deren eigenes
-  Teilen-Menü auf "Für alle mit Link zugänglich" gestellt werden.
+- **Onboarding-Anleitung fest in der Kopfzeile**: Der Button "📋 Anleitung"
+  oben bei den Ideen und Prozessen (nach der Anmeldung) verlinkt auf eine
+  kurze, für Kolleg:innen gedachte Erklärseite (was die App kann, wie man
+  Zugriff bekommt, wie man sie aufs eigene Gerät holt). Damit der Link für
+  alle ohne eigenen Claude-Zugang funktioniert, muss die Seite einmalig
+  über deren eigenes Teilen-Menü auf "Für alle mit Link zugänglich"
+  gestellt werden.
+- **Prozesse und Ideen als ein-/ausklappbarer Baum**: Teilprozesse hängen
+  in der Prozess-Liste sichtbar unter ihrem übergeordneten Prozess und
+  lassen sich per Pfeil ein-/ausklappen. Bei Ideen gilt das Gleiche für die
+  Stufenkette, nur umgekehrt: die jeweils neueste Entwicklungsstufe steht
+  oben in der Liste, die Vorstufen hängen als ausklappbare Kinder darunter.
 
 ## Projektstruktur
 
