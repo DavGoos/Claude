@@ -40,8 +40,13 @@ create table if not exists profiles (
   email text not null,
   is_approved boolean not null default false,
   is_admin boolean not null default false,
+  is_rejected boolean not null default false,
   created_at timestamptz not null default now()
 );
+
+-- Für Projekte, die die profiles-Tabelle schon vor der Ablehnen-Funktion
+-- angelegt hatten: Spalte nachträglich ergänzen.
+alter table profiles add column if not exists is_rejected boolean not null default false;
 
 create or replace function handle_new_user()
 returns trigger as $$

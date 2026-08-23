@@ -150,7 +150,12 @@ umgestellt werden.
      (**d.goos@house-of-communication.com**, automatisch beim ersten Login
      als Admin markiert) sieht oben rechts einen Button **"🛡 Freigaben"**,
      dort die wartende Person freischalten – danach hat sie normalen
-     Zugriff.
+     Zugriff. Statt "Freigeben" kann der Admin auch **"Ablehnen"** wählen
+     (mit Sicherheitsabfrage) – die Registrierung verschwindet dann
+     dauerhaft aus der Warteliste, die Person bleibt ohne Zugriff. Das ist
+     nicht rückgängig zu machen: Rückgängig wäre nur über einen direkten
+     Datenbank-Eingriff möglich (`update profiles set is_rejected = false
+     where email = '...'` im SQL Editor).
 - Wächst das Team stark oder ihr braucht mehr als die 5 vorgesehenen Teams,
   lässt sich das jederzeit erweitern (`TEAM_OPTIONS` in `js/app.js`, siehe
   "Was die App kann" unten) – für die feingranulare Zugriffssteuerung pro

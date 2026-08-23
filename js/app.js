@@ -244,6 +244,9 @@ const I18N = {
     pendingApprovalTitlePrefix: "Wartet auf Freigabe (",
     noPendingMsg: "Aktuell wartet niemand auf Freigabe.",
     approveBtn: "Freigeben",
+    rejectBtn: "Ablehnen",
+    rejectConfirmMsg: "Diese Registrierung ablehnen? Die Person verschwindet dauerhaft aus dieser Liste und bleibt ohne Zugriff.",
+    rejectedMsg: "Abgelehnt",
     approvedMembersTitlePrefix: "Freigegebene Mitglieder (",
     adminBadge: "Admin",
     approvedMsg: "Freigegeben",
@@ -267,6 +270,7 @@ const I18N = {
     deleteErrorPrefix: "Fehler beim Löschen: ",
     profileLoadErrorPrefix: "Fehler beim Laden des Profils: ",
     approveErrorPrefix: "Fehler beim Freigeben: ",
+    rejectErrorPrefix: "Fehler beim Ablehnen: ",
     noApiKeyError: "Kein eigener API-Key hinterlegt. Bitte unter Einstellungen eintragen.",
     claudeApiError: "Claude API Fehler: ",
     openaiApiError: "OpenAI API Fehler: ",
@@ -495,6 +499,9 @@ const I18N = {
     pendingApprovalTitlePrefix: "Waiting for approval (",
     noPendingMsg: "No one is currently waiting for approval.",
     approveBtn: "Approve",
+    rejectBtn: "Reject",
+    rejectConfirmMsg: "Reject this registration? The person disappears from this list permanently and stays without access.",
+    rejectedMsg: "Rejected",
     approvedMembersTitlePrefix: "Approved members (",
     adminBadge: "Admin",
     approvedMsg: "Approved",
@@ -518,6 +525,7 @@ const I18N = {
     deleteErrorPrefix: "Error deleting: ",
     profileLoadErrorPrefix: "Error loading profile: ",
     approveErrorPrefix: "Error approving: ",
+    rejectErrorPrefix: "Error rejecting: ",
     noApiKeyError: "No personal API key set. Please add one under Settings.",
     claudeApiError: "Claude API error: ",
     openaiApiError: "OpenAI API error: ",
@@ -657,6 +665,15 @@ async function approveUser(id) {
   const { error } = await sb.from("profiles").update({ is_approved: true }).eq("id", id);
   if (error) {
     toast(t("approveErrorPrefix") + error.message);
+    return false;
+  }
+  return true;
+}
+
+async function rejectUser(id) {
+  const { error } = await sb.from("profiles").update({ is_rejected: true }).eq("id", id);
+  if (error) {
+    toast(t("rejectErrorPrefix") + error.message);
     return false;
   }
   return true;
@@ -2587,7 +2604,7 @@ function accessLevelOptions(selected) {
 
 async function renderAdmin() {
   profilesCache = await loadAllProfiles();
-  const pending = profilesCache.filter((p) => !p.is_approved);
+  const pending = profilesCache.filter((p) => !p.is_approved && !p.is_rejected);
   const approved = profilesCache.filter((p) => p.is_approved);
   const nonAdminApproved = approved.filter((p) => !p.is_admin);
   if (kostenstellenCache.length === 0) kostenstellenCache = await loadKostenstellen();
@@ -2612,6 +2629,7 @@ async function renderAdmin() {
                 <div class="idea-title">${escapeHtml(p.email)}</div>
                 <div class="idea-meta">
                   <button class="btn-primary" data-approve="${p.id}" style="padding:8px 14px; font-size:13px;">${t("approveBtn")}</button>
+                  <button class="btn-danger" data-reject="${p.id}" style="padding:8px 14px; font-size:13px;">${t("rejectBtn")}</button>
                 </div>
               </div>
             `
@@ -2705,6 +2723,20 @@ async function renderAdmin() {
       const ok = await approveUser(btn.dataset.approve);
       if (ok) {
         toast(t("approvedMsg"));
+        await renderAdmin();
+      } else {
+        btn.disabled = false;
+      }
+    });
+  });
+
+  document.querySelectorAll("[data-reject]").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      if (!window.confirm(t("rejectConfirmMsg"))) return;
+      btn.disabled = true;
+      const ok = await rejectUser(btn.dataset.reject);
+      if (ok) {
+        toast(t("rejectedMsg"));
         await renderAdmin();
       } else {
         btn.disabled = false;
