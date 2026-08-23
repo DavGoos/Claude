@@ -34,6 +34,13 @@ function updateThemeColorMeta() {
 }
 updateThemeColorMeta();
 
+// Das echte App-/Homescreen-Icon bleibt fix (dort nicht per JS umschaltbar,
+// siehe manifest.json/apple-touch-icon) - nur das Logo auf den
+// Login-/Status-Bildschirmen zeigt hier gezielt die passende Akzentfarbe.
+function loginLogoSrc() {
+  return currentTheme === "light" ? "icons/icon-light-192.png" : "icons/icon-192.png";
+}
+
 function setTheme(theme) {
   currentTheme = theme;
   localStorage.setItem(THEME_STORAGE, theme);
@@ -1247,7 +1254,7 @@ function renderLogin() {
   $app.innerHTML = `
     <div class="login-wrap">
       <div class="login-lang-toggle">${langToggleButton()}${themeToggleButton()}</div>
-      <img src="icons/icon-192.png" alt="Logo" />
+      <img src="${loginLogoSrc()}" alt="Logo" />
       <h1>${t("appName")}</h1>
       <p>${t("tagline")}</p>
       <div class="tabbar" style="max-width:320px;">
@@ -1320,7 +1327,7 @@ function renderLogin() {
 function renderSetNewPassword() {
   $app.innerHTML = `
     <div class="login-wrap">
-      <img src="icons/icon-192.png" alt="Logo" />
+      <img src="${loginLogoSrc()}" alt="Logo" />
       <h1>${t("setNewPasswordTitle")}</h1>
       <p>${t("setNewPasswordDesc")}</p>
       <form id="new-password-form" style="width:100%; max-width:320px;">
@@ -2478,7 +2485,7 @@ function renderSettings() {
 function renderPendingApproval() {
   $app.innerHTML = `
     <div class="login-wrap">
-      <img src="icons/icon-192.png" alt="Logo" />
+      <img src="${loginLogoSrc()}" alt="Logo" />
       <h1>${t("pendingTitle")}</h1>
       <p>${escapeHtml(currentUser.email)} ${t("pendingDesc")}</p>
       <div class="row" style="width:100%; max-width:320px;">
@@ -2497,7 +2504,7 @@ function renderPendingApproval() {
 function renderProfileError() {
   $app.innerHTML = `
     <div class="login-wrap">
-      <img src="icons/icon-192.png" alt="Logo" />
+      <img src="${loginLogoSrc()}" alt="Logo" />
       <h1>${t("profileErrorTitle")}</h1>
       <p>${t("profileErrorDesc")}</p>
       <button class="btn-ghost" id="error-logout-btn">${t("logout")}</button>

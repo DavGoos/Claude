@@ -1,4 +1,4 @@
-const CACHE_NAME = "ai-ideen-v10";
+const CACHE_NAME = "ai-ideen-v11";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -9,6 +9,7 @@ const APP_SHELL = [
   "./manifest.json",
   "./icons/icon-192.png",
   "./icons/icon-512.png",
+  "./icons/icon-light-192.png",
 ];
 
 self.addEventListener("install", (event) => {
