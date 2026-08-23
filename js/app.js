@@ -87,6 +87,8 @@ const I18N = {
 
     ideasTab: "Ideen",
     processesTab: "Prozesse",
+    dashboardTab: "Auswertungen",
+    dashboardHeaderTitle: "Auswertungen",
     adminNav: "🛡 Freigaben",
     exportNav: "🔄 Export",
     logoutBtn: "Logout",
@@ -300,6 +302,32 @@ const I18N = {
     translatedReadonlyTitle: "Übersetzte Ansicht – zum Bearbeiten auf Deutsch (DE) umschalten.",
     themeToggleTitle: "Hell-/Dunkelmodus umschalten",
 
+    dashFilterAllDept: "Alle Kostenstellen",
+    dashFilterAllTeam: "Alle Teams",
+
+    dashMatrixTitle: "Nutzen × Aufwand",
+    dashMatrixEmpty: "Noch keine bewertbaren Use Cases in dieser Auswahl.",
+    dashMatrixDiscardedHint: "{n} verworfene Idee(n) sind hier ausgeblendet.",
+    dashMatrixCellLabel: "Use Case(s) in dieser Zelle:",
+    dashAxisCaption: "→ Aufwand (1–5) · ↑ Nutzen (1–5)",
+
+    dashTreeTitle: "Einheiten, Prozesse & Use Cases",
+    dashTreeEmpty: "Noch keine Prozesse in dieser Auswahl.",
+
+    dashStatusTitle: "Status je Team",
+    dashStatusEmpty: "Noch keine Ideen in dieser Auswahl.",
+
+    dashHeatmapTitle: "AI-Potenzial der Prozesse",
+    dashHeatmapEmpty: "Noch keine Prozesse in dieser Auswahl.",
+
+    dashRankingTitle: "Top Quick-Wins",
+    dashRankingEmpty: "Keine offenen Use Cases in dieser Auswahl.",
+    dashShowMore: "Mehr anzeigen",
+    dashShowLess: "Weniger anzeigen",
+
+    dashTimelineTitle: "Erfassungsverlauf",
+    dashTimelineEmpty: "Noch keine Daten für einen Verlauf.",
+
     loadErrorPrefix: "Fehler beim Laden: ",
     saveErrorPrefix: "Fehler beim Speichern: ",
     deleteErrorPrefix: "Fehler beim Löschen: ",
@@ -347,6 +375,8 @@ const I18N = {
 
     ideasTab: "Ideas",
     processesTab: "Processes",
+    dashboardTab: "Analytics",
+    dashboardHeaderTitle: "Analytics",
     adminNav: "🛡 Approvals",
     exportNav: "🔄 Export",
     logoutBtn: "Log out",
@@ -559,6 +589,32 @@ const I18N = {
     translatedReadonlyTitle: "Translated view – switch to German (DE) to edit.",
     themeToggleTitle: "Toggle light/dark mode",
 
+    dashFilterAllDept: "All cost centers",
+    dashFilterAllTeam: "All teams",
+
+    dashMatrixTitle: "Impact × effort",
+    dashMatrixEmpty: "No assessable use cases in this selection yet.",
+    dashMatrixDiscardedHint: "{n} discarded idea(s) are hidden here.",
+    dashMatrixCellLabel: "Use case(s) in this cell:",
+    dashAxisCaption: "→ Effort (1–5) · ↑ Impact (1–5)",
+
+    dashTreeTitle: "Units, processes & use cases",
+    dashTreeEmpty: "No processes in this selection yet.",
+
+    dashStatusTitle: "Status by team",
+    dashStatusEmpty: "No ideas in this selection yet.",
+
+    dashHeatmapTitle: "AI potential of the processes",
+    dashHeatmapEmpty: "No processes in this selection yet.",
+
+    dashRankingTitle: "Top quick wins",
+    dashRankingEmpty: "No open use cases in this selection.",
+    dashShowMore: "Show more",
+    dashShowLess: "Show less",
+
+    dashTimelineTitle: "Collection progress over time",
+    dashTimelineEmpty: "No data for a timeline yet.",
+
     loadErrorPrefix: "Error loading: ",
     saveErrorPrefix: "Error saving: ",
     deleteErrorPrefix: "Error deleting: ",
@@ -720,6 +776,7 @@ function currentRoute() {
   m = hash.match(/^#\/process\/([^/]+)$/);
   if (m) return { view: "process-detail", id: m[1] };
   if (hash === "#/processes") return { view: "process-list" };
+  if (hash === "#/dashboard") return { view: "dashboard" };
   if (hash === "#/settings") return { view: "settings" };
   if (hash === "#/admin") return { view: "admin" };
   if (hash === "#/export") return { view: "export" };
@@ -1169,14 +1226,17 @@ function tabBar(active) {
     <div class="tabbar">
       <button data-tab="ideas" class="${active === "ideas" ? "active" : ""}">${t("ideasTab")}</button>
       <button data-tab="processes" class="${active === "processes" ? "active" : ""}">${t("processesTab")}</button>
+      <button data-tab="dashboard" class="${active === "dashboard" ? "active" : ""}">${t("dashboardTab")}</button>
     </div>
   `;
 }
 
+const TAB_HASHES = { ideas: "", processes: "#/processes", dashboard: "#/dashboard" };
+
 function bindTabBar() {
   document.querySelectorAll(".tabbar button").forEach((btn) => {
     btn.addEventListener("click", () => {
-      window.location.hash = btn.dataset.tab === "processes" ? "#/processes" : "";
+      window.location.hash = TAB_HASHES[btn.dataset.tab] ?? "";
     });
   });
 }
@@ -2900,6 +2960,555 @@ async function renderAdmin() {
   });
 }
 
+// ---------- View: Dashboard (Auswertungen) ----------
+
+let dashDept = "all";
+let dashTeam = "all";
+let dashSelectedCell = null;
+let dashExpandedTreeIds = new Set();
+let dashRankingShowAll = false;
+
+function groupByKey(arr, key) {
+  const map = {};
+  arr.forEach((item) => {
+    const k = item[key] || "—";
+    (map[k] = map[k] || []).push(item);
+  });
+  return map;
+}
+
+function dashboardDepartments() {
+  const set = new Set();
+  ideasCache.forEach((i) => i.department && set.add(i.department));
+  processesCache.forEach((p) => p.department && set.add(p.department));
+  return Array.from(set).sort();
+}
+
+function dashboardTeamsForDept(dept) {
+  const set = new Set();
+  ideasCache.forEach((i) => {
+    if (dept === "all" || i.department === dept) i.team && set.add(i.team);
+  });
+  processesCache.forEach((p) => {
+    if (dept === "all" || p.department === dept) p.team && set.add(p.team);
+  });
+  return Array.from(set).sort();
+}
+
+function dashboardFilteredIdeas() {
+  return ideasCache.filter(
+    (i) => (dashDept === "all" || i.department === dashDept) && (dashTeam === "all" || i.team === dashTeam)
+  );
+}
+
+function dashboardFilteredProcesses() {
+  return processesCache.filter(
+    (p) => (dashDept === "all" || p.department === dashDept) && (dashTeam === "all" || p.team === dashTeam)
+  );
+}
+
+function dashCard(title, bodyHtml) {
+  return `<div class="card"><div class="section-title" style="margin:0 0 10px;">${title}</div>${bodyHtml}</div>`;
+}
+
+function dashLegendHtml(items) {
+  return `<div class="dash-legend">${items
+    .map((it) => `<span class="dash-legend-item"><span class="dash-legend-dot" style="background:${it.color}"></span>${it.label}</span>`)
+    .join("")}</div>`;
+}
+
+function priorityZoneLegendHtml() {
+  const zones = [
+    { impact: 5, effort: 1 },
+    { impact: 5, effort: 5 },
+    { impact: 1, effort: 1 },
+    { impact: 1, effort: 5 },
+    { impact: 3, effort: 3 },
+  ];
+  return dashLegendHtml(zones.map((z) => priorityInfo(z)));
+}
+
+function statusLegendHtml(statuses = STATUS_ORDER) {
+  return dashLegendHtml(statuses.map((s) => ({ color: `var(--status-${s})`, label: t(`status_${s}`) })));
+}
+
+function majorityStatus(ideasInCell) {
+  const counts = {};
+  ideasInCell.forEach((i) => {
+    counts[i.status] = (counts[i.status] || 0) + 1;
+  });
+  let best = STATUS_ORDER[0];
+  let bestCount = -1;
+  STATUS_ORDER.forEach((s) => {
+    if ((counts[s] || 0) > bestCount) {
+      bestCount = counts[s] || 0;
+      best = s;
+    }
+  });
+  return best;
+}
+
+function dashboardFiltersHtml() {
+  const depts = dashboardDepartments();
+  const teams = dashboardTeamsForDept(dashDept);
+  return `
+    <div class="row dash-filters">
+      <select class="field" id="dash-dept" style="flex:1;">
+        <option value="all" ${dashDept === "all" ? "selected" : ""}>${t("dashFilterAllDept")}</option>
+        ${depts.map((d) => `<option value="${escapeHtml(d)}" ${d === dashDept ? "selected" : ""}>${escapeHtml(d)}</option>`).join("")}
+      </select>
+      <select class="field" id="dash-team" style="flex:1;">
+        <option value="all" ${dashTeam === "all" ? "selected" : ""}>${t("dashFilterAllTeam")}</option>
+        ${teams.map((tm) => `<option value="${escapeHtml(tm)}" ${tm === dashTeam ? "selected" : ""}>${escapeHtml(tm)}</option>`).join("")}
+      </select>
+    </div>
+  `;
+}
+
+function bindDashboardFilters() {
+  document.getElementById("dash-dept").addEventListener("change", (e) => {
+    dashDept = e.target.value;
+    dashTeam = "all";
+    renderDashboardBody();
+  });
+  document.getElementById("dash-team").addEventListener("change", (e) => {
+    dashTeam = e.target.value;
+    renderDashboardBody();
+  });
+}
+
+function dashboardMatrixSection(ideas) {
+  const active = ideas.filter((i) => i.status !== "discarded");
+  const discardedCount = ideas.length - active.length;
+  if (active.length === 0) {
+    return dashCard(t("dashMatrixTitle"), `<div class="empty-state">${t("dashMatrixEmpty")}</div>`);
+  }
+
+  const CELL = 50;
+  const PAD_L = 22;
+  const PAD_T = 8;
+  const PAD_B = 8;
+  const PAD_R = 8;
+  const plot = CELL * 5;
+  const W = PAD_L + plot + PAD_R;
+  const H = PAD_T + plot + PAD_B;
+
+  const cellsHtml = [];
+  const bubblesHtml = [];
+  for (let impact = 1; impact <= 5; impact++) {
+    for (let effort = 1; effort <= 5; effort++) {
+      const x = PAD_L + (effort - 1) * CELL;
+      const y = PAD_T + (5 - impact) * CELL;
+      const zoneColor = priorityInfo({ impact, effort }).color;
+      cellsHtml.push(
+        `<rect x="${x}" y="${y}" width="${CELL}" height="${CELL}" fill="${zoneColor}" fill-opacity="0.14" stroke="var(--border)" stroke-width="0.5" />`
+      );
+      const cellIdeas = active.filter((i) => (i.impact || 3) === impact && (i.effort || 3) === effort);
+      if (cellIdeas.length > 0) {
+        const cx = x + CELL / 2;
+        const cy = y + CELL / 2;
+        const r = Math.min(21, 9 + Math.sqrt(cellIdeas.length) * 5);
+        const majority = majorityStatus(cellIdeas);
+        const isSelected = dashSelectedCell === `${effort}-${impact}`;
+        bubblesHtml.push(`
+          <g class="dash-matrix-bubble" data-effort="${effort}" data-impact="${impact}">
+            <circle cx="${cx}" cy="${cy}" r="${r}" fill="var(--status-${majority})" stroke="${isSelected ? "var(--text)" : "var(--surface)"}" stroke-width="${isSelected ? 3 : 2}" />
+            <text x="${cx}" y="${cy}" text-anchor="middle" dominant-baseline="central" font-size="11" font-weight="700" fill="#fff">${cellIdeas.length}</text>
+          </g>
+        `);
+      }
+    }
+  }
+
+  const axisImpact = [1, 2, 3, 4, 5]
+    .map((v) => `<text x="${PAD_L - 6}" y="${PAD_T + (5 - v) * CELL + CELL / 2 + 4}" text-anchor="end" font-size="10" fill="var(--text-dim)">${v}</text>`)
+    .join("");
+  const axisEffort = [1, 2, 3, 4, 5]
+    .map((v) => `<text x="${PAD_L + (v - 1) * CELL + CELL / 2}" y="${H - 2}" text-anchor="middle" font-size="10" fill="var(--text-dim)">${v}</text>`)
+    .join("");
+
+  const svg = `
+    <svg viewBox="0 0 ${W} ${H}" class="dash-matrix-svg">
+      ${cellsHtml.join("")}
+      ${bubblesHtml.join("")}
+      ${axisImpact}
+      ${axisEffort}
+    </svg>
+    <div class="dash-axis-caption">${t("dashAxisCaption")}</div>
+  `;
+
+  let detail = "";
+  if (dashSelectedCell) {
+    const [selEffort, selImpact] = dashSelectedCell.split("-").map(Number);
+    const selected = active.filter((i) => (i.effort || 3) === selEffort && (i.impact || 3) === selImpact);
+    detail = `
+      <div class="dash-matrix-detail">
+        <div class="dash-matrix-detail-head">
+          <span>${selected.length} ${t("dashMatrixCellLabel")}</span>
+          <button class="btn-ghost" id="dash-matrix-close">✕</button>
+        </div>
+        ${selected
+          .map(
+            (i) =>
+              `<a class="link-item" href="#/idea/${i.id}">${i.catalog_id ? `<span class="badge">🏷 ${escapeHtml(i.catalog_id)}</span> ` : ""}${escapeHtml(trValue(i, "quick_note"))}</a>`
+          )
+          .join("")}
+      </div>
+    `;
+  }
+
+  return dashCard(
+    t("dashMatrixTitle"),
+    priorityZoneLegendHtml() +
+      svg +
+      statusLegendHtml(STATUS_ORDER.filter((s) => s !== "discarded")) +
+      (discardedCount > 0 ? `<div class="dash-hint">${t("dashMatrixDiscardedHint").replace("{n}", discardedCount)}</div>` : "") +
+      detail
+  );
+}
+
+function bindDashboardMatrix() {
+  document.querySelectorAll(".dash-matrix-bubble").forEach((el) => {
+    el.addEventListener("click", () => {
+      const key = `${el.dataset.effort}-${el.dataset.impact}`;
+      dashSelectedCell = dashSelectedCell === key ? null : key;
+      renderDashboardBody();
+    });
+  });
+  const closeBtn = document.getElementById("dash-matrix-close");
+  if (closeBtn) {
+    closeBtn.addEventListener("click", () => {
+      dashSelectedCell = null;
+      renderDashboardBody();
+    });
+  }
+}
+
+function dashIdeaLeafHtml(idea) {
+  return `
+    <div class="tree-node">
+      <div class="tree-row">
+        <span class="tree-toggle-spacer"></span>
+        <div class="tree-row-content">
+          <a class="link-item dash-tree-leaf" href="#/idea/${idea.id}">
+            <span class="dash-legend-dot" style="background:var(--status-${idea.status})"></span>
+            ${idea.catalog_id ? `<span class="badge">🏷 ${escapeHtml(idea.catalog_id)}</span> ` : ""}${escapeHtml(trValue(idea, "quick_note"))}
+          </a>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function dashProcessNodeHtml(proc, teamProcesses, ideas) {
+  const children = teamProcesses.filter((p) => p.parent_process_id === proc.id);
+  const linkedIdeas = ideas.filter((i) => i.process_id === proc.id);
+  const hasChildren = children.length > 0 || linkedIdeas.length > 0;
+  const key = `p-${proc.id}`;
+  const isExpanded = dashExpandedTreeIds.has(key);
+  const ai = aiPotentialInfo(proc.ai_potential);
+  return `
+    <div class="tree-node">
+      <div class="tree-row">
+        ${
+          hasChildren
+            ? `<button class="tree-toggle" data-dash-toggle="${key}">${isExpanded ? "▾" : "▸"}</button>`
+            : `<span class="tree-toggle-spacer"></span>`
+        }
+        <div class="tree-row-content">
+          <a class="link-item dash-tree-process" href="#/process/${proc.id}">
+            <span class="priority-dot" style="background:${ai.color}"></span>
+            ${escapeHtml(trValue(proc, "name"))}
+            <span class="badge">${linkedIdeas.length} 💡</span>
+          </a>
+        </div>
+      </div>
+      ${
+        hasChildren && isExpanded
+          ? `<div class="tree-children">
+              ${children.map((c) => dashProcessNodeHtml(c, teamProcesses, ideas)).join("")}
+              ${linkedIdeas.map((i) => dashIdeaLeafHtml(i)).join("")}
+            </div>`
+          : ""
+      }
+    </div>
+  `;
+}
+
+function dashboardTreeSection(ideas, processes) {
+  if (processes.length === 0) {
+    return dashCard(t("dashTreeTitle"), `<div class="empty-state">${t("dashTreeEmpty")}</div>`);
+  }
+  const byDept = groupByKey(processes, "department");
+  const body = Object.keys(byDept)
+    .sort()
+    .map((dept) => {
+      const deptProcesses = byDept[dept];
+      const byTeam = groupByKey(deptProcesses, "team");
+      const teamsHtml = Object.keys(byTeam)
+        .sort()
+        .map((team) => {
+          const teamProcesses = byTeam[team];
+          const idsInTeam = new Set(teamProcesses.map((p) => p.id));
+          const roots = teamProcesses.filter((p) => !p.parent_process_id || !idsInTeam.has(p.parent_process_id));
+          return `
+            <div class="dash-tree-team">
+              <div class="dash-tree-team-title">${escapeHtml(team)}</div>
+              ${roots.map((p) => dashProcessNodeHtml(p, teamProcesses, ideas)).join("")}
+            </div>
+          `;
+        })
+        .join("");
+      return `
+        <div class="dash-tree-dept">
+          <div class="dash-tree-dept-title">${escapeHtml(dept)}</div>
+          ${teamsHtml}
+        </div>
+      `;
+    })
+    .join("");
+  return dashCard(t("dashTreeTitle"), body);
+}
+
+function bindDashboardTree() {
+  document.querySelectorAll("[data-dash-toggle]").forEach((btn) => {
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      e.preventDefault();
+      const key = btn.dataset.dashToggle;
+      if (dashExpandedTreeIds.has(key)) dashExpandedTreeIds.delete(key);
+      else dashExpandedTreeIds.add(key);
+      renderDashboardBody();
+    });
+  });
+}
+
+function dashboardStatusSection(ideas) {
+  if (ideas.length === 0) {
+    return dashCard(t("dashStatusTitle"), `<div class="empty-state">${t("dashStatusEmpty")}</div>`);
+  }
+  const byTeam = groupByKey(ideas, "team");
+  const rows = Object.keys(byTeam)
+    .sort()
+    .map((team) => {
+      const teamIdeas = byTeam[team];
+      const total = teamIdeas.length;
+      const segments = STATUS_ORDER.map((s) => {
+        const count = teamIdeas.filter((i) => i.status === s).length;
+        if (count === 0) return "";
+        const pct = (count / total) * 100;
+        return `<div class="dash-bar-seg" style="width:${pct}%; background:var(--status-${s});" title="${escapeHtml(t(`status_${s}`))}: ${count}"></div>`;
+      }).join("");
+      return `
+        <div class="dash-bar-row">
+          <div class="dash-bar-label">${escapeHtml(team)} <span class="dash-bar-total">(${total})</span></div>
+          <div class="dash-bar-track">${segments}</div>
+        </div>
+      `;
+    })
+    .join("");
+  return dashCard(t("dashStatusTitle"), statusLegendHtml() + rows);
+}
+
+function dashboardHeatmapSection(processes) {
+  if (processes.length === 0) {
+    return dashCard(t("dashHeatmapTitle"), `<div class="empty-state">${t("dashHeatmapEmpty")}</div>`);
+  }
+  const sorted = [...processes].sort((a, b) => (b.ai_potential || 3) - (a.ai_potential || 3));
+  const tiles = sorted
+    .map((p) => {
+      const level = Math.min(5, Math.max(1, p.ai_potential || 3));
+      return `
+        <a class="dash-heat-tile heat-${level}" href="#/process/${p.id}">
+          <span class="dash-heat-name">${escapeHtml(trValue(p, "name"))}</span>
+          <span class="dash-heat-value">${level}</span>
+        </a>
+      `;
+    })
+    .join("");
+  return dashCard(t("dashHeatmapTitle"), `<div class="dash-heat-grid">${tiles}</div>`);
+}
+
+function dashMeter(label, value) {
+  const v = value || 3;
+  return `
+    <span class="dash-meter" title="${escapeHtml(label)}: ${v}/5">
+      <span class="dash-meter-label">${escapeHtml(label)}</span>
+      <span class="dash-meter-track"><span class="dash-meter-fill" style="width:${v * 20}%"></span></span>
+    </span>
+  `;
+}
+
+function dashboardRankingSection(ideas) {
+  const active = ideas.filter((i) => i.status !== "done" && i.status !== "discarded");
+  if (active.length === 0) {
+    return dashCard(t("dashRankingTitle"), `<div class="empty-state">${t("dashRankingEmpty")}</div>`);
+  }
+  const ranked = [...active].sort((a, b) => {
+    const scoreA = (a.impact || 3) - (a.effort || 3);
+    const scoreB = (b.impact || 3) - (b.effort || 3);
+    return scoreB - scoreA || (b.impact || 3) - (a.impact || 3);
+  });
+  const shown = dashRankingShowAll ? ranked : ranked.slice(0, 8);
+  const rows = shown
+    .map(
+      (idea, idx) => `
+        <a class="dash-rank-row" href="#/idea/${idea.id}">
+          <span class="dash-rank-num">${idx + 1}</span>
+          <span class="dash-rank-body">
+            <span class="dash-rank-title">${idea.catalog_id ? `<span class="badge">🏷 ${escapeHtml(idea.catalog_id)}</span> ` : ""}${escapeHtml(trValue(idea, "quick_note"))}</span>
+            <span class="dash-rank-meters">
+              ${dashMeter(t("impactLabel"), idea.impact)}
+              ${dashMeter(t("effortLabel"), idea.effort)}
+            </span>
+          </span>
+        </a>
+      `
+    )
+    .join("");
+  const toggle =
+    ranked.length > 8
+      ? `<button class="btn-ghost" id="dash-rank-toggle">${dashRankingShowAll ? t("dashShowLess") : t("dashShowMore")}</button>`
+      : "";
+  return dashCard(t("dashRankingTitle"), rows + toggle);
+}
+
+function bindDashboardRanking() {
+  const btn = document.getElementById("dash-rank-toggle");
+  if (btn) {
+    btn.addEventListener("click", () => {
+      dashRankingShowAll = !dashRankingShowAll;
+      renderDashboardBody();
+    });
+  }
+}
+
+function dashFormatDay(dayStr) {
+  return new Date(`${dayStr}T00:00:00`).toLocaleDateString(currentLang === "en" ? "en-GB" : "de-DE", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "2-digit",
+  });
+}
+
+function dashboardTimelineSection(ideas, processes) {
+  if (ideas.length === 0 && processes.length === 0) {
+    return dashCard(t("dashTimelineTitle"), `<div class="empty-state">${t("dashTimelineEmpty")}</div>`);
+  }
+  const dayKey = (iso) => iso.slice(0, 10);
+  const ideaDays = ideas.map((i) => dayKey(i.created_at)).sort();
+  const procDays = processes.map((p) => dayKey(p.created_at)).sort();
+  const allDays = Array.from(new Set([...ideaDays, ...procDays])).sort();
+
+  function cumulative(sortedDays) {
+    let idx = 0;
+    return allDays.map((d) => {
+      while (idx < sortedDays.length && sortedDays[idx] <= d) idx++;
+      return idx;
+    });
+  }
+  const ideaCum = cumulative(ideaDays);
+  const procCum = cumulative(procDays);
+  const maxVal = Math.max(1, ideaCum[ideaCum.length - 1] || 0, procCum[procCum.length - 1] || 0);
+
+  const W = 300;
+  const H = 140;
+  const PAD_L = 26;
+  const PAD_T = 10;
+  const PAD_B = 10;
+  const PAD_R = 6;
+  const plotW = W - PAD_L - PAD_R;
+  const plotH = H - PAD_T - PAD_B;
+  const stepX = allDays.length > 1 ? plotW / (allDays.length - 1) : 0;
+
+  function pathFor(cum) {
+    return cum
+      .map((v, idx) => {
+        const x = PAD_L + idx * stepX;
+        const y = PAD_T + plotH - (v / maxVal) * plotH;
+        return `${idx === 0 ? "M" : "L"}${x.toFixed(1)},${y.toFixed(1)}`;
+      })
+      .join(" ");
+  }
+
+  const svg = `
+    <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" class="dash-timeline-svg">
+      <line x1="${PAD_L}" y1="${PAD_T}" x2="${PAD_L}" y2="${PAD_T + plotH}" stroke="var(--border)" stroke-width="1" />
+      <line x1="${PAD_L}" y1="${PAD_T + plotH}" x2="${PAD_L + plotW}" y2="${PAD_T + plotH}" stroke="var(--border)" stroke-width="1" />
+      <path d="${pathFor(ideaCum)}" fill="none" stroke="var(--accent)" stroke-width="2" />
+      <path d="${pathFor(procCum)}" fill="none" stroke="var(--accent-2)" stroke-width="2" />
+      <text x="2" y="${PAD_T + 4}" font-size="9" fill="var(--text-dim)">${maxVal}</text>
+      <text x="${PAD_L}" y="${H - 1}" font-size="9" fill="var(--text-dim)">${escapeHtml(dashFormatDay(allDays[0]))}</text>
+      <text x="${PAD_L + plotW}" y="${H - 1}" font-size="9" fill="var(--text-dim)" text-anchor="end">${escapeHtml(dashFormatDay(allDays[allDays.length - 1]))}</text>
+    </svg>
+  `;
+
+  const legend = `
+    <div class="dash-legend">
+      <span class="dash-legend-item"><span class="dash-legend-dot" style="background:var(--accent)"></span>${t("ideasTab")}</span>
+      <span class="dash-legend-item"><span class="dash-legend-dot" style="background:var(--accent-2)"></span>${t("processesTab")}</span>
+    </div>
+  `;
+
+  return dashCard(t("dashTimelineTitle"), svg + legend);
+}
+
+function renderDashboardBody() {
+  const el = document.getElementById("dash-body");
+  if (!el) return;
+  const ideas = dashboardFilteredIdeas();
+  const processes = dashboardFilteredProcesses();
+  el.innerHTML = `
+    ${dashboardFiltersHtml()}
+    ${dashboardMatrixSection(ideas)}
+    ${dashboardTreeSection(ideas, processes)}
+    ${dashboardStatusSection(ideas)}
+    ${dashboardHeatmapSection(processes)}
+    ${dashboardRankingSection(ideas)}
+    ${dashboardTimelineSection(ideas, processes)}
+  `;
+  bindDashboardFilters();
+  bindDashboardMatrix();
+  bindDashboardTree();
+  bindDashboardRanking();
+}
+
+async function renderDashboard() {
+  $app.innerHTML = `
+    <header class="topbar">
+      <h1>${t("dashboardHeaderTitle")}</h1>
+      <div class="actions">
+        ${langToggleButton()}${themeToggleButton()}
+        ${exportNavButton()}
+        ${onboardingNavButton()}
+        ${adminNavButton()}
+        <button class="icon-btn" id="settings-btn">⚙</button>
+        <button class="icon-btn" id="logout-btn">${t("logoutBtn")}</button>
+      </div>
+    </header>
+    <main>
+      ${tabBar("dashboard")}
+      <div id="dash-body">
+        <div class="empty-state">${t("loadingIdeas")}</div>
+      </div>
+    </main>
+  `;
+
+  bindTabBar();
+  bindAdminNavButton();
+  bindExportNavButton();
+  bindLangToggle();
+  bindThemeToggle();
+  document.getElementById("logout-btn").addEventListener("click", logout);
+  document.getElementById("settings-btn").addEventListener("click", () => {
+    window.location.hash = "#/settings";
+  });
+
+  ideasCache = await loadIdeas();
+  processesCache = await loadProcesses();
+  renderDashboardBody();
+}
+
 async function render() {
   if (passwordRecoveryMode) {
     renderSetNewPassword();
@@ -2931,6 +3540,8 @@ async function render() {
     await renderProcessList();
   } else if (route.view === "process-detail") {
     await renderProcessDetail(route.id);
+  } else if (route.view === "dashboard") {
+    await renderDashboard();
   } else if (route.view === "settings") {
     renderSettings();
   } else if (route.view === "admin" && currentProfile.is_admin) {

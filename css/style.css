@@ -11,6 +11,17 @@
   --danger: #ef4444;
   --success: #22c55e;
   --radius: 14px;
+
+  /* Status-Farben (Ideen-Workflow) - eigenes, vom Akzent unabhängiges Set,
+     damit Status und Kostenstellen-Akzent nie kollidieren. Für Auswertungen
+     zusätzlich als CSS-Variablen verfügbar, damit Diagramme dieselben Farben
+     wie die Badges verwenden. */
+  --status-idea: #3987e5;
+  --status-evaluating: #d95926;
+  --status-planned: #199e70;
+  --status-in_progress: #c98500;
+  --status-done: #008300;
+  --status-discarded: #9aa1af;
 }
 
 /* Hellmodus (über den Umschalter oben rechts) - Akzent: Azurblau. */
@@ -25,6 +36,13 @@
   --accent-2: #0ea5e9;
   --danger: #dc2626;
   --success: #16a34a;
+
+  --status-idea: #2a78d6;
+  --status-evaluating: #eb6834;
+  --status-planned: #1baf7a;
+  --status-in_progress: #eda100;
+  --status-done: #008300;
+  --status-discarded: #626b78;
 }
 
 * { box-sizing: border-box; }
@@ -348,12 +366,12 @@ button {
   border: 1px solid var(--border);
 }
 
-.badge.status-idea { color: #a5b4fc; border-color: #4c4f8a; background: #23243a; }
-.badge.status-evaluating { color: #fcd34d; border-color: #6b5a2a; background: #2e2712; }
-.badge.status-planned { color: #93c5fd; border-color: #2c4a72; background: #142334; }
-.badge.status-in_progress { color: #6ee7b7; border-color: #1f5c47; background: #0f2c22; }
-.badge.status-done { color: #86efac; border-color: #275c37; background: #12291a; }
-.badge.status-discarded { color: #9aa1af; border-color: var(--border); background: var(--surface-2); text-decoration: line-through; }
+.badge.status-idea { color: var(--status-idea); border-color: color-mix(in srgb, var(--status-idea) 45%, var(--border)); background: color-mix(in srgb, var(--status-idea) 16%, var(--surface-2)); }
+.badge.status-evaluating { color: var(--status-evaluating); border-color: color-mix(in srgb, var(--status-evaluating) 45%, var(--border)); background: color-mix(in srgb, var(--status-evaluating) 16%, var(--surface-2)); }
+.badge.status-planned { color: var(--status-planned); border-color: color-mix(in srgb, var(--status-planned) 45%, var(--border)); background: color-mix(in srgb, var(--status-planned) 16%, var(--surface-2)); }
+.badge.status-in_progress { color: var(--status-in_progress); border-color: color-mix(in srgb, var(--status-in_progress) 45%, var(--border)); background: color-mix(in srgb, var(--status-in_progress) 16%, var(--surface-2)); }
+.badge.status-done { color: var(--status-done); border-color: color-mix(in srgb, var(--status-done) 45%, var(--border)); background: color-mix(in srgb, var(--status-done) 16%, var(--surface-2)); }
+.badge.status-discarded { color: var(--status-discarded); border-color: var(--border); background: var(--surface-2); text-decoration: line-through; }
 
 .priority-dot {
   width: 8px;
@@ -612,4 +630,257 @@ textarea.field { min-height: 70px; resize: vertical; }
   align-items: center;
   gap: 10px;
   margin-bottom: 4px;
+}
+
+/* ---------- Dashboard (Auswertungen) ---------- */
+
+.dash-filters {
+  margin-bottom: 14px;
+}
+
+.dash-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  margin: 8px 0;
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+.dash-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.dash-legend-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.dash-hint {
+  font-size: 12px;
+  color: var(--text-dim);
+  margin-top: 6px;
+}
+
+/* Matrix */
+
+.dash-matrix-svg {
+  display: block;
+  width: 100%;
+  max-width: 320px;
+  height: auto;
+  margin: 4px auto 0;
+}
+
+.dash-matrix-bubble {
+  cursor: pointer;
+}
+
+.dash-axis-caption {
+  text-align: center;
+  font-size: 11.5px;
+  color: var(--text-dim);
+  margin-top: 2px;
+}
+
+.dash-matrix-detail {
+  margin-top: 12px;
+}
+
+.dash-matrix-detail-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 13px;
+  color: var(--text-dim);
+  margin-bottom: 8px;
+}
+
+/* Baum: Einheit -> Prozess -> Use Case */
+
+.dash-tree-dept {
+  margin-bottom: 16px;
+}
+
+.dash-tree-dept:last-child {
+  margin-bottom: 0;
+}
+
+.dash-tree-dept-title {
+  font-size: 14px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.dash-tree-team {
+  margin: 0 0 12px 4px;
+}
+
+.dash-tree-team-title {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--text-dim);
+  margin-bottom: 6px;
+}
+
+.dash-tree-process,
+.dash-tree-leaf {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* Status je Team */
+
+.dash-bar-row {
+  margin-bottom: 12px;
+}
+
+.dash-bar-row:last-child {
+  margin-bottom: 0;
+}
+
+.dash-bar-label {
+  font-size: 13px;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+
+.dash-bar-total {
+  color: var(--text-dim);
+}
+
+.dash-bar-track {
+  display: flex;
+  gap: 2px;
+  height: 16px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--surface-2);
+}
+
+.dash-bar-seg {
+  height: 100%;
+}
+
+/* AI-Potential-Heatmap */
+
+.dash-heat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(112px, 1fr));
+  gap: 8px;
+}
+
+.dash-heat-tile {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 64px;
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  color: var(--text);
+  text-decoration: none;
+}
+
+.dash-heat-name {
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.dash-heat-value {
+  font-size: 16px;
+  font-weight: 700;
+  align-self: flex-end;
+}
+
+.heat-1 { background: color-mix(in srgb, var(--surface-2) 85%, var(--accent) 15%); }
+.heat-2 { background: color-mix(in srgb, var(--surface-2) 60%, var(--accent) 40%); }
+.heat-3 { background: color-mix(in srgb, var(--surface-2) 35%, var(--accent) 65%); color: #fff; }
+.heat-4 { background: color-mix(in srgb, var(--surface-2) 15%, var(--accent) 85%); color: #fff; }
+.heat-5 { background: var(--accent); color: #fff; }
+
+/* Top-Ranking */
+
+.dash-rank-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 4px;
+  border-bottom: 1px solid var(--border);
+  text-decoration: none;
+  color: var(--text);
+}
+
+.dash-rank-row:last-of-type {
+  border-bottom: none;
+}
+
+.dash-rank-num {
+  flex: 0 0 22px;
+  text-align: center;
+  font-weight: 700;
+  color: var(--text-dim);
+}
+
+.dash-rank-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.dash-rank-title {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.dash-rank-meters {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.dash-meter {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  color: var(--text-dim);
+}
+
+.dash-meter-track {
+  width: 48px;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--surface-2);
+  overflow: hidden;
+}
+
+.dash-meter-fill {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+}
+
+/* Zeitverlauf */
+
+.dash-timeline-svg {
+  display: block;
+  width: 100%;
+  height: 150px;
 }
