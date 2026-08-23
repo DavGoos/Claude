@@ -247,7 +247,29 @@ funktioniert die App ganz normal weiter, nur eben ohne die KI-Ausarbeitung.
 - **Deutsch/Englisch umschalten**: Ein Sprachschalter (DE/EN-Knopf oben
   rechts, u.a. auf dem Login-Bildschirm und den beiden Haupt-Listen)
   übersetzt die komplette Oberfläche inkl. der von der KI angefragten
-  Sprache. Die Einstellung wird pro Gerät gespeichert.
+  Sprache. Die Einstellung wird pro Gerät gespeichert. Zusätzlich zeigt
+  der Schalter für Ideen/Prozesse mit hinterlegter Übersetzung (siehe
+  "Zweisprachige Inhalte" unten) auch die erfassten Inhalte selbst auf
+  Englisch, nicht nur Buttons/Bezeichnungen.
+- **Zweisprachige Inhalte**: Die wichtigsten Freitextfelder (Kurznotiz,
+  Problem, Ziel, Business Benefit, Wichtige Gedanken vorab, Qualitativer
+  Nutzen, Kommentar bei Ideen; Name, Beschreibung, Notizen bei Prozessen)
+  haben im Hintergrund eine zusätzliche, unsichtbare Übersetzungsspalte.
+  Es gibt **keine automatische Live-Übersetzung** in der App – dafür
+  reicht es einfach im Chat mit Claude Bescheid zu geben (z.B. "Übersetze
+  bitte den Case GC29 ins Englische" oder "Übersetze alle offenen
+  Ideen"), Claude liefert dann fertige `update`-Statements zum Einfügen
+  im SQL Editor. Ist eine Übersetzung hinterlegt, zeigt die App sie bei
+  EN automatisch an – das jeweilige Feld ist dann aber nur lesbar (kein
+  versehentliches Überschreiben des deutschen Originals); zum Bearbeiten
+  einfach auf Deutsch (DE) umschalten. Ohne Übersetzung wird ganz normal
+  das deutsche Original angezeigt, auch auf Englisch – nichts bleibt je
+  leer. Der 🔄 Export in die AI Ambassadors Usecase-Collection nutzt
+  bewusst immer das deutsche Original, unabhängig vom Sprachschalter.
+- **Hell-/Dunkelmodus umschalten**: Ein weiterer Knopf oben rechts (☀️/🌙)
+  wechselt zwischen Dunkelmodus (Standard, Akzent Smaragdgrün) und
+  Hellmodus (Akzent Sonnengelb/Bernstein). Die Einstellung wird ebenfalls
+  pro Gerät gespeichert.
 - **Problem / Ziel / Business Benefit getrennt**: Statt einem einzigen
   Beschreibungsfeld gibt es drei eigene Felder, die exakt den Spalten der
   zentralen AI Ambassadors Usecase-Collection entsprechen. Das macht das

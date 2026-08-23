@@ -252,6 +252,14 @@ alter table processes add column if not exists parent_process_id uuid references
 -- lässt sich diese Liste erweitern, ohne dieses Skript anzupassen.
 alter table processes add column if not exists team text not null default '';
 
+-- Zweisprachige Inhalte: optionale "_en"-Spalten für eine vom Admin auf
+-- Zuruf im Chat gepflegte Übersetzung (siehe README "Zweisprachige
+-- Inhalte"). Leer = noch keine Übersetzung hinterlegt, die App zeigt dann
+-- automatisch das Original an.
+alter table processes add column if not exists name_en text not null default '';
+alter table processes add column if not exists description_en text not null default '';
+alter table processes add column if not exists notes_en text not null default '';
+
 drop trigger if exists processes_set_updated_at on processes;
 create trigger processes_set_updated_at
   before update on processes
@@ -360,6 +368,18 @@ update ideas set problem = description where problem = '' and description <> '';
 -- js/app.js aus dieser Kette berechnet, nicht separat gespeichert.
 alter table ideas add column if not exists parent_idea_id uuid references ideas (id) on delete set null;
 create index if not exists ideas_parent_idea_id_idx on ideas (parent_idea_id);
+
+-- Zweisprachige Inhalte: optionale "_en"-Spalten für eine vom Admin auf
+-- Zuruf im Chat gepflegte Übersetzung (siehe README "Zweisprachige
+-- Inhalte"). Leer = noch keine Übersetzung hinterlegt, die App zeigt dann
+-- automatisch das Original an.
+alter table ideas add column if not exists quick_note_en text not null default '';
+alter table ideas add column if not exists problem_en text not null default '';
+alter table ideas add column if not exists goal_en text not null default '';
+alter table ideas add column if not exists business_benefit_en text not null default '';
+alter table ideas add column if not exists considerations_en text not null default '';
+alter table ideas add column if not exists qualitative_benefit_en text not null default '';
+alter table ideas add column if not exists comment_en text not null default '';
 
 drop trigger if exists ideas_set_updated_at on ideas;
 create trigger ideas_set_updated_at

@@ -18,6 +18,30 @@ function t(key) {
   return value === undefined ? key : value;
 }
 
+// ============================================================
+// Hell-/Dunkelmodus
+// ============================================================
+
+const THEME_STORAGE = "ai_ideen_theme";
+let currentTheme = localStorage.getItem(THEME_STORAGE) === "light" ? "light" : "dark";
+document.documentElement.setAttribute("data-theme", currentTheme);
+
+// Spiegelt die Akzentfarbe des aktuellen Modus in der Browser-/OS-Oberfläche
+// (z.B. Android-Statusleiste), damit sie zum jeweiligen Modus passt.
+function updateThemeColorMeta() {
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if (meta) meta.content = currentTheme === "light" ? "#b45309" : "#047857";
+}
+updateThemeColorMeta();
+
+function setTheme(theme) {
+  currentTheme = theme;
+  localStorage.setItem(THEME_STORAGE, theme);
+  document.documentElement.setAttribute("data-theme", theme);
+  updateThemeColorMeta();
+  render();
+}
+
 const I18N = {
   de: {
     appName: "Process- & AI-Usecase Management",
@@ -264,6 +288,8 @@ const I18N = {
     emptyKostenstellen: "Noch keine Kostenstellen angelegt.",
     noApprovedForAccessMsg: "Noch keine freigegebenen Kolleg:innen zum Zuweisen.",
     allTeamsScope: "Alle Teams (ganze Kostenstelle)",
+    translatedReadonlyTitle: "Übersetzte Ansicht – zum Bearbeiten auf Deutsch (DE) umschalten.",
+    themeToggleTitle: "Hell-/Dunkelmodus umschalten",
 
     loadErrorPrefix: "Fehler beim Laden: ",
     saveErrorPrefix: "Fehler beim Speichern: ",
@@ -519,6 +545,8 @@ const I18N = {
     emptyKostenstellen: "No cost centers set up yet.",
     noApprovedForAccessMsg: "No approved colleagues to assign yet.",
     allTeamsScope: "All teams (whole cost center)",
+    translatedReadonlyTitle: "Translated view – switch to German (DE) to edit.",
+    themeToggleTitle: "Toggle light/dark mode",
 
     loadErrorPrefix: "Error loading: ",
     saveErrorPrefix: "Error saving: ",
@@ -551,6 +579,19 @@ const AI_ROLE_OPTIONS = ["Automatisieren", "Ergänzen", "Ersetzen", "Intelligent
 const KPI_KIND_OPTIONS = ["Quantity", "Quality", "Hybrid"];
 const LIST_PRIORITY_OPTIONS = ["in using", "ungültig", "High", "Medium", "Low"];
 
+// Freitext-Felder mit optionaler "_en"-Übersetzungsspalte (vom Admin auf
+// Zuruf im Chat gepflegt, siehe README "Zweisprachige Inhalte").
+const TRANSLATABLE_IDEA_FIELDS = [
+  "quick_note",
+  "problem",
+  "goal",
+  "business_benefit",
+  "considerations",
+  "qualitative_benefit",
+  "comment",
+];
+const TRANSLATABLE_PROCESS_FIELDS = ["name", "description", "notes"];
+
 let currentUser = null;
 let currentProfile = null;
 let ideasCache = [];
@@ -569,6 +610,28 @@ function escapeHtml(str) {
   return (str || "").replace(/[&<>"']/g, (c) => ({
     "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
   })[c]);
+}
+
+// Manche Freitext-Felder (siehe TRANSLATABLE_IDEA_FIELDS/TRANSLATABLE_PROCESS_FIELDS)
+// haben eine "_en"-Spalte für eine vom Admin gepflegte Übersetzung (auf
+// Zuruf im Chat übersetzt und per SQL eingetragen, siehe README). Ist die
+// UI-Sprache Englisch und eine Übersetzung vorhanden, wird sie angezeigt;
+// sonst automatisch das Original, damit nie ein Feld leer wirkt.
+function trValue(obj, field) {
+  if (currentLang === "en" && obj[`${field}_en`]) return obj[`${field}_en`];
+  return obj[field] || "";
+}
+
+// Ein Feld, das gerade die (vom Admin gepflegte) Übersetzung zeigt, wird
+// nicht bearbeitbar - sonst würde ein Speichern versehentlich die
+// englische Anzeige in die deutsche Originalspalte zurückschreiben. Zum
+// Bearbeiten einfach auf Deutsch (DE) umschalten.
+function isTranslatedReadonly(obj, field) {
+  return currentLang === "en" && !!obj[`${field}_en`];
+}
+
+function trReadonlyAttr(obj, field) {
+  return isTranslatedReadonly(obj, field) ? ` readonly title="${escapeHtml(t("translatedReadonlyTitle"))}"` : "";
 }
 
 function formatDateTime(iso) {
@@ -621,6 +684,19 @@ function bindLangToggle() {
   const btn = document.getElementById("lang-btn");
   if (btn) {
     btn.addEventListener("click", () => setLang(btn.dataset.nextLang));
+  }
+}
+
+function themeToggleButton() {
+  const nextTheme = currentTheme === "dark" ? "light" : "dark";
+  const icon = currentTheme === "dark" ? "☀️" : "🌙";
+  return `<button class="icon-btn" id="theme-btn" data-next-theme="${nextTheme}" title="${t("themeToggleTitle")}">${icon}</button>`;
+}
+
+function bindThemeToggle() {
+  const btn = document.getElementById("theme-btn");
+  if (btn) {
+    btn.addEventListener("click", () => setTheme(btn.dataset.nextTheme));
   }
 }
 
@@ -801,7 +877,7 @@ async function logout() {
 
 // ---------- Data: Ideas ----------
 
-const IDEA_SELECT = "*, processes(id, name), parent:parent_idea_id(id, quick_note, catalog_id, status)";
+const IDEA_SELECT = "*, processes(id, name, name_en), parent:parent_idea_id(id, quick_note, quick_note_en, catalog_id, status)";
 
 async function loadIdeas() {
   const { data, error } = await sb
@@ -945,10 +1021,10 @@ function ideaContextMessage(idea) {
       ? { note: "Quick note", problem: "Problem", goal: "Goal", benefit: "Business benefit" }
       : { note: "Kurznotiz", problem: "Problem", goal: "Ziel", benefit: "Business Benefit" };
   return [
-    `${labels.note}: ${idea.quick_note}`,
-    `${labels.problem}: ${idea.problem || none}`,
-    `${labels.goal}: ${idea.goal || none}`,
-    `${labels.benefit}: ${idea.business_benefit || none}`,
+    `${labels.note}: ${trValue(idea, "quick_note")}`,
+    `${labels.problem}: ${trValue(idea, "problem") || none}`,
+    `${labels.goal}: ${trValue(idea, "goal") || none}`,
+    `${labels.benefit}: ${trValue(idea, "business_benefit") || none}`,
   ].join("\n\n");
 }
 
@@ -1037,7 +1113,7 @@ async function elaborateWithAI(idea) {
 async function loadProcesses() {
   const { data, error } = await sb
     .from("processes")
-    .select("*, parent:parent_process_id(id, name)")
+    .select("*, parent:parent_process_id(id, name, name_en)")
     .order("created_at", { ascending: false });
   if (error) {
     toast(t("loadErrorPrefix") + error.message);
@@ -1052,7 +1128,7 @@ async function createProcess(name, department, team, parentProcessId) {
   const { data, error } = await sb
     .from("processes")
     .insert(payload)
-    .select("*, parent:parent_process_id(id, name)")
+    .select("*, parent:parent_process_id(id, name, name_en)")
     .single();
   if (error) {
     toast(t("saveErrorPrefix") + error.message);
@@ -1066,7 +1142,7 @@ async function updateProcess(id, patch) {
     .from("processes")
     .update(patch)
     .eq("id", id)
-    .select("*, parent:parent_process_id(id, name)")
+    .select("*, parent:parent_process_id(id, name, name_en)")
     .single();
   if (error) {
     toast(t("saveErrorPrefix") + error.message);
@@ -1165,7 +1241,7 @@ function renderLogin() {
   const isSignup = authMode === "signup";
   $app.innerHTML = `
     <div class="login-wrap">
-      <div class="login-lang-toggle">${langToggleButton()}</div>
+      <div class="login-lang-toggle">${langToggleButton()}${themeToggleButton()}</div>
       <img src="icons/icon-192.png" alt="Logo" />
       <h1>${t("appName")}</h1>
       <p>${t("tagline")}</p>
@@ -1191,6 +1267,7 @@ function renderLogin() {
   `;
 
   bindLangToggle();
+  bindThemeToggle();
 
   document.querySelectorAll(".tabbar button").forEach((btn) => {
     btn.addEventListener("click", () => {
@@ -1324,7 +1401,8 @@ function ideaStageNumber(idea) {
 }
 
 function ideaLabel(idea) {
-  return idea.catalog_id ? `${idea.catalog_id} – ${idea.quick_note}` : idea.quick_note;
+  const note = trValue(idea, "quick_note");
+  return idea.catalog_id ? `${idea.catalog_id} – ${note}` : note;
 }
 
 function parentIdeaOptions(idea) {
@@ -1372,14 +1450,14 @@ function ideaCard(idea) {
   const isChained = idea.parent_idea_id || ideaFollowUpStages(idea).length > 0;
   return `
     <div class="idea-item" data-id="${idea.id}">
-      <div class="idea-title">${idea.catalog_id ? `<span class="badge">🏷 ${escapeHtml(idea.catalog_id)}</span> ` : ""}${escapeHtml(idea.quick_note)}</div>
+      <div class="idea-title">${idea.catalog_id ? `<span class="badge">🏷 ${escapeHtml(idea.catalog_id)}</span> ` : ""}${escapeHtml(trValue(idea, "quick_note"))}</div>
       <div class="idea-meta">
         <span class="badge status-${idea.status}">${t(`status_${idea.status}`)}</span>
         <span class="badge"><span class="priority-dot" style="background:${p.color}"></span> ${p.label}</span>
         ${isChained ? `<span class="badge">🔗 ${t("stagePrefix")}${ideaStageNumber(idea)}</span>` : ""}
         ${idea.owner_name ? `<span class="badge">👤 ${escapeHtml(idea.owner_name)}</span>` : ""}
         ${idea.team ? `<span class="badge">${escapeHtml(idea.team)}</span>` : ""}
-        ${idea.processes ? `<span class="badge">⚙ ${escapeHtml(idea.processes.name)}</span>` : ""}
+        ${idea.processes ? `<span class="badge">⚙ ${escapeHtml(trValue(idea.processes, "name"))}</span>` : ""}
         ${tags.map((tag) => `<span class="badge">#${escapeHtml(tag)}</span>`).join("")}
         <span class="badge" title="${t("lastSavedTitle")}">🕒 ${formatDateTime(idea.updated_at)}</span>
       </div>
@@ -1392,7 +1470,7 @@ async function renderList() {
     <header class="topbar">
       <h1>${t("ideasHeaderTitle")}</h1>
       <div class="actions">
-        ${langToggleButton()}
+        ${langToggleButton()}${themeToggleButton()}
         ${exportNavButton()}
         ${onboardingNavButton()}
         ${adminNavButton()}
@@ -1421,6 +1499,7 @@ async function renderList() {
   bindAdminNavButton();
   bindExportNavButton();
   bindLangToggle();
+  bindThemeToggle();
   bindDepartmentTeamFields("capture");
   document.getElementById("logout-btn").addEventListener("click", logout);
   document.getElementById("settings-btn").addEventListener("click", () => {
@@ -1529,7 +1608,7 @@ function sliderRow(name, label, value) {
 function processOptions(selectedId) {
   const options = [`<option value="">${t("noneOption")}</option>`];
   processesCache.forEach((p) => {
-    options.push(`<option value="${p.id}" ${p.id === selectedId ? "selected" : ""}>${escapeHtml(p.name)}</option>`);
+    options.push(`<option value="${p.id}" ${p.id === selectedId ? "selected" : ""}>${escapeHtml(trValue(p, "name"))}</option>`);
   });
   return options.join("");
 }
@@ -1539,7 +1618,7 @@ function parentProcessOptions(excludeId, selectedId) {
   processesCache
     .filter((p) => p.id !== excludeId)
     .forEach((p) => {
-      options.push(`<option value="${p.id}" ${p.id === selectedId ? "selected" : ""}>${escapeHtml(p.name)}</option>`);
+      options.push(`<option value="${p.id}" ${p.id === selectedId ? "selected" : ""}>${escapeHtml(trValue(p, "name"))}</option>`);
     });
   return options.join("");
 }
@@ -1574,7 +1653,7 @@ async function renderDetail(id) {
       }
       <div class="card">
         <label class="field-label">${t("quickNoteLabel")}</label>
-        <textarea class="field" id="f-quick-note">${escapeHtml(idea.quick_note)}</textarea>
+        <textarea class="field" id="f-quick-note"${trReadonlyAttr(idea, "quick_note")}>${escapeHtml(trValue(idea, "quick_note"))}</textarea>
 
         <label class="field-label">${t("ownerNameLabel")}</label>
         <input class="field" id="f-owner-name" value="${escapeHtml(idea.owner_name || "")}" placeholder="${t("ownerNamePlaceholder")}" />
@@ -1598,13 +1677,13 @@ async function renderDetail(id) {
         <input class="field" id="f-tags" value="${escapeHtml(idea.tags || "")}" placeholder="${t("tagsPlaceholder")}" />
 
         <label class="field-label">${t("problemLabel")}</label>
-        <textarea class="field" id="f-problem" placeholder="${t("problemPlaceholder")}">${escapeHtml(idea.problem || "")}</textarea>
+        <textarea class="field" id="f-problem" placeholder="${t("problemPlaceholder")}"${trReadonlyAttr(idea, "problem")}>${escapeHtml(trValue(idea, "problem"))}</textarea>
 
         <label class="field-label">${t("goalLabel")}</label>
-        <textarea class="field" id="f-goal" placeholder="${t("goalPlaceholder")}">${escapeHtml(idea.goal || "")}</textarea>
+        <textarea class="field" id="f-goal" placeholder="${t("goalPlaceholder")}"${trReadonlyAttr(idea, "goal")}>${escapeHtml(trValue(idea, "goal"))}</textarea>
 
         <label class="field-label">${t("businessBenefitLabel")}</label>
-        <textarea class="field" id="f-business-benefit" placeholder="${t("businessBenefitPlaceholder")}">${escapeHtml(idea.business_benefit || "")}</textarea>
+        <textarea class="field" id="f-business-benefit" placeholder="${t("businessBenefitPlaceholder")}"${trReadonlyAttr(idea, "business_benefit")}>${escapeHtml(trValue(idea, "business_benefit"))}</textarea>
       </div>
 
       <div class="card">
@@ -1676,7 +1755,7 @@ async function renderDetail(id) {
         <textarea class="field" id="f-tools" placeholder="${t("toolsPlaceholder")}">${escapeHtml(idea.tools || "")}</textarea>
 
         <label class="field-label">${t("considerationsLabel")}</label>
-        <textarea class="field" id="f-considerations" placeholder="${t("considerationsPlaceholder")}">${escapeHtml(idea.considerations || "")}</textarea>
+        <textarea class="field" id="f-considerations" placeholder="${t("considerationsPlaceholder")}"${trReadonlyAttr(idea, "considerations")}>${escapeHtml(trValue(idea, "considerations"))}</textarea>
 
         <label class="field-label">${t("startPromptLabel")}</label>
         <textarea class="field" id="f-initial-prompt" placeholder="${t("startPromptPlaceholder")}">${escapeHtml(idea.initial_prompt || "")}</textarea>
@@ -1712,10 +1791,10 @@ async function renderDetail(id) {
         <textarea class="field" id="f-quantified-benefit" placeholder="${t("quantifiedBenefitPlaceholder")}">${escapeHtml(idea.quantified_benefit || "")}</textarea>
 
         <label class="field-label">${t("qualitativeBenefitLabel")}</label>
-        <textarea class="field" id="f-qualitative-benefit" placeholder="${t("qualitativeBenefitPlaceholder")}">${escapeHtml(idea.qualitative_benefit || "")}</textarea>
+        <textarea class="field" id="f-qualitative-benefit" placeholder="${t("qualitativeBenefitPlaceholder")}"${trReadonlyAttr(idea, "qualitative_benefit")}>${escapeHtml(trValue(idea, "qualitative_benefit"))}</textarea>
 
         <label class="field-label">${t("commentLabel")}</label>
-        <textarea class="field" id="f-comment">${escapeHtml(idea.comment || "")}</textarea>
+        <textarea class="field" id="f-comment"${trReadonlyAttr(idea, "comment")}>${escapeHtml(trValue(idea, "comment"))}</textarea>
 
         <label class="field-label">${t("listPriorityLabel")}</label>
         <select class="field" id="f-list-priority">
@@ -1787,37 +1866,49 @@ async function renderDetail(id) {
     }
   });
 
+  const TRANSLATABLE_IDEA_FIELD_INPUT_IDS = {
+    quick_note: "f-quick-note",
+    problem: "f-problem",
+    goal: "f-goal",
+    business_benefit: "f-business-benefit",
+    considerations: "f-considerations",
+    qualitative_benefit: "f-qualitative-benefit",
+    comment: "f-comment",
+  };
+
   function collectPatch() {
     const { department, team } = readDepartmentTeam("detail");
-    return {
-      quick_note: document.getElementById("f-quick-note").value.trim(),
+    const patch = {
       status: document.getElementById("f-status").value,
       process_id: document.getElementById("f-process").value || null,
       parent_idea_id: document.getElementById("f-parent-idea").value || null,
       department,
       team,
       tags: document.getElementById("f-tags").value.trim(),
-      problem: document.getElementById("f-problem").value.trim(),
-      goal: document.getElementById("f-goal").value.trim(),
-      business_benefit: document.getElementById("f-business-benefit").value.trim(),
       impact: Number(document.querySelector('[data-field="impact"]').value),
       feasibility: Number(document.querySelector('[data-field="feasibility"]').value),
       effort: Number(document.querySelector('[data-field="effort"]').value),
       risk: Number(document.querySelector('[data-field="risk"]').value),
       tools: document.getElementById("f-tools").value.trim(),
-      considerations: document.getElementById("f-considerations").value.trim(),
       initial_prompt: document.getElementById("f-initial-prompt").value.trim(),
       ai_role: document.getElementById("f-ai-role").value,
       input_source: document.getElementById("f-input-source").value.trim(),
       output_result: document.getElementById("f-output-result").value.trim(),
       kpi_kind: document.getElementById("f-kpi-kind").value,
       quantified_benefit: document.getElementById("f-quantified-benefit").value.trim(),
-      qualitative_benefit: document.getElementById("f-qualitative-benefit").value.trim(),
-      comment: document.getElementById("f-comment").value.trim(),
       list_priority: document.getElementById("f-list-priority").value,
       catalog_id: document.getElementById("f-catalog-id").value.trim() || null,
       owner_name: document.getElementById("f-owner-name").value.trim(),
     };
+    // Felder, die aktuell die (vom Admin gepflegte) Übersetzung anzeigen,
+    // werden nicht mitgespeichert - sonst würde die englische Anzeige das
+    // deutsche Original überschreiben (siehe isTranslatedReadonly).
+    TRANSLATABLE_IDEA_FIELDS.forEach((field) => {
+      if (!isTranslatedReadonly(idea, field)) {
+        patch[field] = document.getElementById(TRANSLATABLE_IDEA_FIELD_INPUT_IDS[field]).value.trim();
+      }
+    });
+    return patch;
   }
 
   document.getElementById("save-detail-btn").addEventListener("click", async () => {
@@ -1941,12 +2032,12 @@ function processCard(proc) {
   const ai = aiPotentialInfo(proc.ai_potential);
   return `
     <div class="idea-item" data-id="${proc.id}">
-      <div class="idea-title">${escapeHtml(proc.name)}</div>
+      <div class="idea-title">${escapeHtml(trValue(proc, "name"))}</div>
       <div class="idea-meta">
         <span class="badge status-${proc.status === "reviewed" ? "done" : "idea"}">${t(`pstatus_${proc.status}`)}</span>
         <span class="badge"><span class="priority-dot" style="background:${ai.color}"></span> ${ai.label}</span>
         ${proc.team ? `<span class="badge">${escapeHtml(proc.team)}</span>` : ""}
-        ${proc.parent ? `<span class="badge">↳ ${escapeHtml(proc.parent.name)}</span>` : ""}
+        ${proc.parent ? `<span class="badge">↳ ${escapeHtml(trValue(proc.parent, "name"))}</span>` : ""}
       </div>
     </div>
   `;
@@ -1959,7 +2050,7 @@ async function renderProcessList() {
     <header class="topbar">
       <h1>${t("processesHeaderTitle")}</h1>
       <div class="actions">
-        ${langToggleButton()}
+        ${langToggleButton()}${themeToggleButton()}
         ${exportNavButton()}
         ${onboardingNavButton()}
         ${adminNavButton()}
@@ -1988,6 +2079,7 @@ async function renderProcessList() {
   bindAdminNavButton();
   bindExportNavButton();
   bindLangToggle();
+  bindThemeToggle();
   bindDepartmentTeamFields("pcapture");
   document.getElementById("logout-btn").addEventListener("click", logout);
   document.getElementById("settings-btn").addEventListener("click", () => {
@@ -2114,7 +2206,7 @@ async function renderProcessDetail(id) {
       }
       <div class="card">
         <label class="field-label">${t("processNameLabel")}</label>
-        <textarea class="field" id="f-name">${escapeHtml(proc.name)}</textarea>
+        <textarea class="field" id="f-name"${trReadonlyAttr(proc, "name")}>${escapeHtml(trValue(proc, "name"))}</textarea>
 
         <label class="field-label">${t("departmentLabel")} / ${t("teamLabel")}</label>
         ${departmentTeamFields(proc.department, proc.team, "pdetail")}
@@ -2132,7 +2224,7 @@ async function renderProcessDetail(id) {
         </select>
 
         <label class="field-label">${t("descriptionLabel")}</label>
-        <textarea class="field" id="f-description" placeholder="${t("processDescPlaceholder")}">${escapeHtml(proc.description || "")}</textarea>
+        <textarea class="field" id="f-description" placeholder="${t("processDescPlaceholder")}"${trReadonlyAttr(proc, "description")}>${escapeHtml(trValue(proc, "description"))}</textarea>
       </div>
 
       <div class="card">
@@ -2140,7 +2232,7 @@ async function renderProcessDetail(id) {
         <div id="ai-potential-banner" class="priority-banner"></div>
         ${sliderRow("ai_potential", t("aiPotentialLabel"), proc.ai_potential)}
         <label class="field-label">${t("notesLabel")}</label>
-        <textarea class="field" id="f-notes" placeholder="${t("notesPlaceholder")}">${escapeHtml(proc.notes || "")}</textarea>
+        <textarea class="field" id="f-notes" placeholder="${t("notesPlaceholder")}"${trReadonlyAttr(proc, "notes")}>${escapeHtml(trValue(proc, "notes"))}</textarea>
       </div>
 
       <div class="card">
@@ -2162,7 +2254,7 @@ async function renderProcessDetail(id) {
         <div id="linked-ideas">
           ${
             linkedIdeas.length
-              ? linkedIdeas.map((i) => `<a class="link-item" href="#/idea/${i.id}">${escapeHtml(i.quick_note)}</a>`).join("")
+              ? linkedIdeas.map((i) => `<a class="link-item" href="#/idea/${i.id}">${escapeHtml(trValue(i, "quick_note"))}</a>`).join("")
               : `<div class="empty-state" style="padding:16px 4px;">${t("emptyLinkedIdeas")}</div>`
           }
         </div>
@@ -2245,15 +2337,21 @@ async function renderProcessDetail(id) {
     btn.disabled = true;
     btn.textContent = t("savingBtn");
     const patch = {
-      name: document.getElementById("f-name").value.trim(),
       department,
       team,
       parent_process_id: document.getElementById("f-parent-process").value || null,
       status: document.getElementById("f-status").value,
-      description: document.getElementById("f-description").value.trim(),
       ai_potential: Number(document.querySelector('[data-field="ai_potential"]').value),
-      notes: document.getElementById("f-notes").value.trim(),
     };
+    // Felder, die aktuell die (vom Admin gepflegte) Übersetzung anzeigen,
+    // werden nicht mitgespeichert - sonst würde die englische Anzeige das
+    // deutsche Original überschreiben (siehe isTranslatedReadonly).
+    const processFieldInputIds = { name: "f-name", description: "f-description", notes: "f-notes" };
+    TRANSLATABLE_PROCESS_FIELDS.forEach((field) => {
+      if (!isTranslatedReadonly(proc, field)) {
+        patch[field] = document.getElementById(processFieldInputIds[field]).value.trim();
+      }
+    });
     const updated = await updateProcess(proc.id, patch);
     btn.disabled = false;
     btn.textContent = t("saveBtn");
@@ -2277,7 +2375,7 @@ function renderSettings() {
       <div class="back-row">
         <button class="icon-btn" id="back-btn">${t("backBtn")}</button>
       </div>
-      ${langToggleButton()}
+      ${langToggleButton()}${themeToggleButton()}
     </header>
     <main>
       <div class="card">
@@ -2328,6 +2426,7 @@ function renderSettings() {
   });
 
   bindLangToggle();
+  bindThemeToggle();
 
   document.getElementById("save-password-btn").addEventListener("click", async () => {
     const input = document.getElementById("f-new-password");
@@ -2501,7 +2600,7 @@ async function renderExportSync() {
       <div class="back-row">
         <button class="icon-btn" id="back-btn">${t("backBtn")}</button>
       </div>
-      ${langToggleButton()}
+      ${langToggleButton()}${themeToggleButton()}
     </header>
     <main>
       <div class="card">
@@ -2552,6 +2651,7 @@ async function renderExportSync() {
     window.location.hash = "";
   });
   bindLangToggle();
+  bindThemeToggle();
 
   async function copyText(text) {
     try {
@@ -2615,7 +2715,7 @@ async function renderAdmin() {
       <div class="back-row">
         <button class="icon-btn" id="back-btn">${t("backBtn")}</button>
       </div>
-      ${langToggleButton()}
+      ${langToggleButton()}${themeToggleButton()}
     </header>
     <main>
       <div class="section-title" style="margin:0 4px 8px;">${t("pendingApprovalTitlePrefix")}${pending.length})</div>
@@ -2716,6 +2816,7 @@ async function renderAdmin() {
   });
 
   bindLangToggle();
+  bindThemeToggle();
 
   document.querySelectorAll("[data-approve]").forEach((btn) => {
     btn.addEventListener("click", async () => {
