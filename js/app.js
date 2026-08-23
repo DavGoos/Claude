@@ -48,13 +48,15 @@ const I18N = {
     tagline:
       "Dokumentiere eure Prozesse, prüft sie auf AI-Potenzial und erfasst AI-Use-Cases in Sekunden – inklusive Bewertung und KI-gestützter Ausarbeitung.",
     login: "Anmelden",
-    signup: "Registrieren",
+    requestAccessTab: "Zugang anfragen",
     emailPlaceholder: "deine@email.de",
     passwordPlaceholder: "Passwort",
     loggingIn: "Melde an...",
-    signingUp: "Registriere...",
     forgotPassword: "Passwort vergessen?",
-    signupSuccessMsg: "Konto erstellt, du bist angemeldet.",
+    requestAccessDesc:
+      "Aus Sicherheitsgründen gibt es keine offene Registrierung mehr. Schick mir kurz deinen Namen und die gewünschte E-Mail-Adresse – ich lege dir dann ein Konto an und schicke dir ein Start-Passwort.",
+    requestAccessMailBtn: "📧 Mail an den Admin öffnen",
+    requestAccessTeamsNote: "Geht auch ganz einfach per Nachricht in Teams.",
     onboardingBannerText: "📋 Anleitung",
     errorPrefix: "Fehler: ",
     forgotPasswordContactMsg: "Bitte melde dich bei d.goos@house-of-communication.com – dein Passwort wird manuell zurückgesetzt.",
@@ -306,13 +308,15 @@ const I18N = {
     tagline:
       "Document your team's processes, screen them for AI potential, and capture AI use cases in seconds - including scoring and AI-assisted elaboration.",
     login: "Log in",
-    signup: "Sign up",
+    requestAccessTab: "Request access",
     emailPlaceholder: "you@email.com",
     passwordPlaceholder: "Password",
     loggingIn: "Logging in...",
-    signingUp: "Signing up...",
     forgotPassword: "Forgot password?",
-    signupSuccessMsg: "Account created, you're signed in.",
+    requestAccessDesc:
+      "For security reasons there's no open self-registration anymore. Just send me your name and the email address you'd like to use - I'll set up an account and send you a starting password.",
+    requestAccessMailBtn: "📧 Open email to admin",
+    requestAccessTeamsNote: "A quick Teams message works just as well.",
     onboardingBannerText: "📋 Guide",
     errorPrefix: "Error: ",
     forgotPasswordContactMsg: "Please contact d.goos@house-of-communication.com - your password will be reset manually.",
@@ -856,15 +860,6 @@ async function init() {
   render();
 }
 
-async function signUpWithPassword(email, password) {
-  const { error } = await sb.auth.signUp({
-    email,
-    password,
-    options: { emailRedirectTo: window.location.origin + window.location.pathname },
-  });
-  return error;
-}
-
 async function signInWithPassword(email, password) {
   const { error } = await sb.auth.signInWithPassword({ email, password });
   return error;
@@ -1237,8 +1232,18 @@ function readDepartmentTeam(idPrefix) {
 
 // ---------- Views ----------
 
+// Kein offenes Self-Signup mehr (Sicherheitslücke: niemand prüfte, ob die
+// registrierende Person wirklich Zugriff auf die angegebene Mailadresse
+// hat). Stattdessen: Zugang per Mail/Teams beim Admin anfragen, der die
+// Person über einen ihm bekannten, vertrauten Kanal identifiziert und das
+// Konto danach selbst über die Supabase-Admin-API anlegt (siehe README).
+const ACCESS_REQUEST_MAILTO =
+  "mailto:d.goos@house-of-communication.com" +
+  "?subject=" + encodeURIComponent("Zugang zur Process- & AI-Usecase App") +
+  "&body=" + encodeURIComponent("Hallo,\n\nich hätte gern Zugang zur App.\n\nName: \nE-Mail-Adresse (für den Zugang): \n\nDanke!");
+
 function renderLogin() {
-  const isSignup = authMode === "signup";
+  const isRequest = authMode === "request";
   $app.innerHTML = `
     <div class="login-wrap">
       <div class="login-lang-toggle">${langToggleButton()}${themeToggleButton()}</div>
@@ -1246,22 +1251,27 @@ function renderLogin() {
       <h1>${t("appName")}</h1>
       <p>${t("tagline")}</p>
       <div class="tabbar" style="max-width:320px;">
-        <button data-mode="login" class="${!isSignup ? "active" : ""}">${t("login")}</button>
-        <button data-mode="signup" class="${isSignup ? "active" : ""}">${t("signup")}</button>
+        <button data-mode="login" class="${!isRequest ? "active" : ""}">${t("login")}</button>
+        <button data-mode="request" class="${isRequest ? "active" : ""}">${t("requestAccessTab")}</button>
       </div>
-      <form id="auth-form" style="width:100%; max-width:320px;">
-        <input type="email" id="auth-email" placeholder="${t("emailPlaceholder")}" required autocomplete="email" />
-        <input
-          type="password"
-          id="auth-password"
-          placeholder="${t("passwordPlaceholder")}"
-          required
-          minlength="6"
-          autocomplete="${isSignup ? "new-password" : "current-password"}"
-        />
-        <button type="submit" class="btn-primary" style="width:100%;">${isSignup ? t("signup") : t("login")}</button>
-      </form>
-      ${!isSignup ? `<button class="btn-ghost" id="forgot-btn" style="margin-top:10px;">${t("forgotPassword")}</button>` : ""}
+      ${
+        isRequest
+          ? `
+        <div class="card" style="text-align:left; max-width:320px;">
+          <p style="margin:0 0 12px; font-size:13.5px; color:var(--text); line-height:1.55;">${t("requestAccessDesc")}</p>
+          <a class="btn-primary" style="display:block; text-align:center; text-decoration:none;" href="${ACCESS_REQUEST_MAILTO}">${t("requestAccessMailBtn")}</a>
+          <p style="margin:12px 0 0; font-size:12.5px; color:var(--text-dim);">${t("requestAccessTeamsNote")}</p>
+        </div>
+      `
+          : `
+        <form id="auth-form" style="width:100%; max-width:320px;">
+          <input type="email" id="auth-email" placeholder="${t("emailPlaceholder")}" required autocomplete="email" />
+          <input type="password" id="auth-password" placeholder="${t("passwordPlaceholder")}" required minlength="6" autocomplete="current-password" />
+          <button type="submit" class="btn-primary" style="width:100%;">${t("login")}</button>
+        </form>
+        <button class="btn-ghost" id="forgot-btn" style="margin-top:10px;">${t("forgotPassword")}</button>
+      `
+      }
       <p id="login-msg" style="margin-top:14px; font-size:13px;"></p>
     </div>
   `;
@@ -1276,26 +1286,26 @@ function renderLogin() {
     });
   });
 
-  document.getElementById("auth-form").addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const email = document.getElementById("auth-email").value.trim();
-    const password = document.getElementById("auth-password").value;
-    const btn = e.target.querySelector("button");
-    const msg = document.getElementById("login-msg");
-    btn.disabled = true;
-    btn.textContent = isSignup ? t("signingUp") : t("loggingIn");
-    const error = isSignup ? await signUpWithPassword(email, password) : await signInWithPassword(email, password);
-    btn.disabled = false;
-    btn.textContent = isSignup ? t("signup") : t("login");
-    if (error) {
-      msg.textContent = t("errorPrefix") + error.message;
-      msg.style.color = "#ef4444";
-    } else if (isSignup) {
-      msg.textContent = t("signupSuccessMsg");
-      msg.style.color = "#22c55e";
-    }
-    // Bei erfolgreichem Login übernimmt onAuthStateChange das Weiterleiten in die App.
-  });
+  const authForm = document.getElementById("auth-form");
+  if (authForm) {
+    authForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const email = document.getElementById("auth-email").value.trim();
+      const password = document.getElementById("auth-password").value;
+      const btn = e.target.querySelector("button");
+      const msg = document.getElementById("login-msg");
+      btn.disabled = true;
+      btn.textContent = t("loggingIn");
+      const error = await signInWithPassword(email, password);
+      btn.disabled = false;
+      btn.textContent = t("login");
+      if (error) {
+        msg.textContent = t("errorPrefix") + error.message;
+        msg.style.color = "#ef4444";
+      }
+      // Bei erfolgreichem Login übernimmt onAuthStateChange das Weiterleiten in die App.
+    });
+  }
 
   const forgotBtn = document.getElementById("forgot-btn");
   if (forgotBtn) {

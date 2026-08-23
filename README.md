@@ -74,43 +74,78 @@ Schritt kannst du also auch erst später nachholen.
    `https://dein-name.github.io/dein-repo/**`
 4. Speichern.
 
-## Schritt 5: E-Mail-Bestätigung bei der Registrierung abschalten
+## Schritt 5: Registrierung schließen – Konten nur durch dich anlegen
 
-Supabases eingebauter Mailversand (ohne eigenen SMTP-Server) verschickt
-Auth-Mails inzwischen **nur noch an E-Mail-Adressen, die selbst Mitglied
-eurer Supabase-Organisation sind** – nicht an beliebige Kolleg:innen, die
-sich über die App registrieren. Ohne diesen Schritt bekommt so gut wie
-niemand außer dir die Bestätigungsmail, und die Registrierung bleibt
-hängen.
+**Sicherheitshintergrund:** Solange Supabase keine Bestätigungsmail
+verschicken kann (siehe unten), prüft niemand, ob die Person, die sich
+registriert, wirklich Zugriff auf die eingetippte Adresse hat. Die
+Domain-Sperre verhindert nur fremde Domains – ein erfundener Name wie
+`chef@house-of-communication.com` würde die Sperre trotzdem passieren.
+Deshalb gibt es in der App gar keine offene Registrierung mehr: Kolleg:innen
+können nur noch **Zugang anfragen** (Mail/Teams an dich), das Konto legst
+du danach selbst an, nachdem du die Person über einen dir bekannten,
+vertrauten Kanal identifiziert hast (z.B. Namenssuche im Teams-/
+Outlook-Firmenverzeichnis – nicht einfach die im Request angegebene
+Adresse blind übernehmen).
 
 1. Im Supabase-Dashboard zu **Authentication -> Sign In / Providers ->
    Email**.
-2. **"Confirm email"** deaktivieren und speichern.
-3. Damit läuft die Registrierung sofort ohne Bestätigungsmail – Schutz
-   bleibt trotzdem bestehen durch die Domain-Sperre und die Admin-Freigabe
-   (siehe Schritt 7).
+2. **"Confirm email"** deaktivieren und speichern (Supabases eingebauter
+   Mailversand ohne eigenen SMTP-Server verschickt Auth-Mails ohnehin nur
+   an Adressen, die selbst Mitglied eurer Supabase-Organisation sind –
+   diese Einstellung ist für von dir angelegte Konten nicht mehr relevant,
+   schadet aber nicht).
+3. Direkt darüber/darunter die Option zum offenen Registrieren
+   deaktivieren – je nach Dashboard-Version heißt sie **"Allow new users
+   to sign up"** oder **"Enable email signups"**. Damit ist der komplette
+   öffentliche Registrierungs-Endpunkt geschlossen, nicht nur der Button
+   in der App – niemand kann sich mehr selbst ein Konto anlegen, auch nicht
+   über einen direkten API-Aufruf an Supabase vorbei an der App.
 
-Restrisiko: Damit wird nicht mehr geprüft, ob die eingetippte Adresse
-wirklich der eigenen Person gehört. Für ein kleines internes Team mit
-Domain-Sperre + Admin-Freigabe ist das vertretbar.
+Ab jetzt läuft die Aufnahme neuer Kolleg:innen in drei Schritten:
 
-**Passwort vergessen läuft komplett ohne E-Mail:** Der
-"Passwort vergessen?"-Button in der App versucht erst gar nicht, eine
-Mail zu versenden (die würde ohnehin an derselben Einschränkung
-scheitern) – er zeigt direkt einen Hinweis, sich bei dir als Admin zu
-melden. Der "Passwort zurücksetzen"-Button im Supabase-Dashboard selbst
-hilft dabei *nicht*, der löst genau die blockierte Mail aus. Stattdessen
-setzt du als Admin das Passwort direkt über die Supabase-Admin-API, ganz
-ohne Mail:
+1. **Anfrage erhalten**: Die Person tippt in der App auf "Zugang
+   anfragen" – das öffnet eine vorausgefüllte Mail an dich (oder sie
+   schreibt dir direkt in Teams).
+2. **Identität prüfen**: Bevor du irgendetwas anlegst, prüfe über einen
+   dir vertrauten Kanal, dass es sich wirklich um die angegebene Person
+   handelt – z.B. sie im Teams-/Outlook-Firmenverzeichnis nach Namen
+   suchen und die dort hinterlegte Adresse mit der angefragten
+   vergleichen, statt die selbst eingetippte Adresse blind zu übernehmen.
+3. **Konto anlegen** über die Supabase-Admin-API, ganz ohne Mailversand:
+   1. Unter **Project Settings -> API** deinen **service_role**-Key
+      kopieren (geheim halten, nirgends veröffentlichen, niemals mit
+      Claude teilen).
+   2. Auf deinem eigenen Rechner im Terminal (nicht in der App):
+      ```
+      curl -X POST 'https://<project-ref>.supabase.co/auth/v1/admin/users' \
+        -H 'apikey: <service-role-key>' \
+        -H 'Authorization: Bearer <service-role-key>' \
+        -H 'Content-Type: application/json' \
+        -d '{"email": "kollege@house-of-communication.com", "password": "EinStartPasswort123", "email_confirm": true}'
+      ```
+   3. Das Start-Passwort über den gleichen (verifizierten) Kanal an die
+      Person weitergeben. Sie kann es nach dem Einloggen unter
+      ⚙ Einstellungen selbst durch ein eigenes ersetzen.
+   4. Im 🛡 Freigaben-Bereich wartet danach automatisch ein neuer Eintrag
+      (der `handle_new_user`-Trigger legt bei jedem neuen Konto ein
+      Profil an) – dort noch auf **"Freigeben"** tippen. Das ist bewusst
+      ein zweiter, unabhängiger Schritt (Konto anlegen + Freigeben), auch
+      wenn du die Person schon geprüft hast – doppelte Absicherung, falls
+      die Registrierung versehentlich doch mal wieder offen sein sollte.
+
+**Passwort vergessen** läuft nach demselben Prinzip komplett ohne
+E-Mail-Versand durch Supabase: Der "Passwort vergessen?"-Button in der
+App zeigt nur einen Hinweis, sich bei dir zu melden. Der
+"Passwort zurücksetzen"-Button im Supabase-Dashboard selbst hilft dabei
+*nicht*, der löst genau die blockierte Mail aus. Stattdessen setzt du das
+Passwort direkt über die Admin-API:
 
 1. Im **SQL Editor** die User-ID der Person ermitteln:
    ```sql
    select id from auth.users where email = 'kollege@house-of-communication.com';
    ```
-2. Unter **Project Settings -> API** deinen **service_role**-Key kopieren
-   (geheim halten, nirgends veröffentlichen).
-3. Auf deinem eigenen Rechner im Terminal (nicht in der App, nicht mit
-   Claude teilen):
+2. Auf deinem eigenen Rechner im Terminal:
    ```
    curl -X PUT 'https://<project-ref>.supabase.co/auth/v1/admin/users/<user-id>' \
      -H 'apikey: <service-role-key>' \
@@ -118,17 +153,16 @@ ohne Mail:
      -H 'Content-Type: application/json' \
      -d '{"password": "EinTemporaeresPasswort123"}'
    ```
-4. Das temporäre Passwort an die Person weitergeben. Sie kann es nach dem
-   Einloggen unter ⚙ Einstellungen selbst durch ein eigenes ersetzen.
+3. Das temporäre Passwort über den verifizierten Kanal weitergeben.
 
 Optional für später: Mit einem eigenen SMTP-Dienst (z.B.
 [Resend](https://resend.com), kostenlos für kleine Mengen) unter
 **Authentication -> Sign In / Providers -> SMTP Provider** ließe sich
-"Passwort vergessen" auch wieder auf echten, selbstständigen
-E-Mail-Versand umstellen, ganz ohne Admin-Beteiligung – dafür müsste der
-"Passwort vergessen?"-Button in `js/app.js` (`forgotBtn`-Handler in
-`renderLogin`) wieder auf `sb.auth.resetPasswordForEmail(...)`
-umgestellt werden.
+echter, automatischer E-Mail-Versand (Bestätigung, Passwort-Reset)
+wieder aktivieren, ganz ohne Admin-Beteiligung bei jedem einzelnen Fall –
+dann könnte auch "Allow new users to sign up" wieder aktiviert werden,
+weil eine echte Bestätigungsmail dieselbe Identitätsprüfung übernehmen
+würde.
 
 ## Schritt 6: App aufs Handy holen
 
@@ -138,24 +172,36 @@ umgestellt werden.
 
 ## Schritt 7: Login & Kollegen einladen
 
-- Erstanmeldung: Auf **"Registrieren"** tippen, E-Mail + Passwort vergeben
-  – dank Schritt 5 ist man sofort angemeldet, ganz ohne Bestätigungsmail.
-- **Zugriff ist auf zwei Arten geschützt:**
-  1. **Domain-Sperre**: Nur E-Mail-Adressen mit `@house-of-communication.com`
-     können sich überhaupt registrieren (fest im Datenbank-Skript
-     hinterlegt – bei einer anderen Firmendomain in `supabase/schema.sql`
-     nach `house-of-communication` suchen und ersetzen).
-  2. **Admin-Freigabe**: Nach der Registrierung sieht die Person noch
+- Erstanmeldung: Es gibt keine offene Registrierung mehr (siehe Schritt 5).
+  Kolleg:innen tippen auf **"Zugang anfragen"** – das öffnet eine
+  vorausgefüllte Mail an dich (oder sie schreiben dir direkt in Teams).
+  Du prüfst die Identität, legst das Konto über die Admin-API an und
+  gibst das Start-Passwort weiter (siehe Schritt 5) – die Person meldet
+  sich damit an und kann es unter ⚙ Einstellungen selbst ändern.
+- **Zugriff ist auf drei Arten geschützt:**
+  1. **Kein offenes Self-Signup**: Registrierungen entstehen ausschließlich
+     durch dich als Admin über die Supabase-Admin-API, nachdem du die
+     Person identifiziert hast – das schließt die frühere Lücke, dass sich
+     theoretisch jede:r mit einer erfundenen
+     `@house-of-communication.com`-Adresse hätte anmelden können.
+  2. **Domain-Sperre**: Zusätzlich lässt die Datenbank ohnehin nur
+     E-Mail-Adressen mit `@house-of-communication.com` zu (fest im
+     Datenbank-Skript hinterlegt – bei einer anderen Firmendomain in
+     `supabase/schema.sql` nach `house-of-communication` suchen und
+     ersetzen) – als zweite Absicherung, falls das offene Signup doch mal
+     aus Versehen wieder aktiviert wird.
+  3. **Admin-Freigabe**: Auch ein von dir angelegtes Konto sieht zunächst
      keine Daten, sondern einen "Warten auf Freigabe"-Bildschirm. Der Admin
      (**d.goos@house-of-communication.com**, automatisch beim ersten Login
      als Admin markiert) sieht oben rechts einen Button **"🛡 Freigaben"**,
      dort die wartende Person freischalten – danach hat sie normalen
      Zugriff. Statt "Freigeben" kann der Admin auch **"Ablehnen"** wählen
-     (mit Sicherheitsabfrage) – die Registrierung verschwindet dann
-     dauerhaft aus der Warteliste, die Person bleibt ohne Zugriff. Das ist
-     nicht rückgängig zu machen: Rückgängig wäre nur über einen direkten
-     Datenbank-Eingriff möglich (`update profiles set is_rejected = false
-     where email = '...'` im SQL Editor).
+     (mit Sicherheitsabfrage) – z.B. falls sich doch mal jemand über einen
+     versehentlich offenen Signup-Endpunkt registriert hat. Das entfernt
+     die Registrierung dauerhaft aus der Warteliste, die Person bleibt
+     ohne Zugriff. Nicht rückgängig zu machen über die Oberfläche – nur
+     über einen direkten Datenbank-Eingriff (`update profiles set
+     is_rejected = false where email = '...'` im SQL Editor).
 - Wächst das Team stark oder ihr braucht mehr als die 5 vorgesehenen Teams,
   lässt sich das jederzeit erweitern (`TEAM_OPTIONS` in `js/app.js`, siehe
   "Was die App kann" unten) – für die feingranulare Zugriffssteuerung pro
