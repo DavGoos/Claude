@@ -60,8 +60,12 @@ bewusst öffentlich nutzbar, siehe Schritt 2), das ist also unbedenklich.
 
 ## Schritt 4: Login-Adresse bei Supabase eintragen
 
-Ohne diesen Schritt landet der Bestätigungs- bzw. Passwort-Reset-Link aus
-der E-Mail auf einer falschen Adresse ("localhost") statt in eurer App.
+Relevant, sobald irgendein Auth-Link per E-Mail versendet wird (z.B. bei
+einem später ergänzten eigenen SMTP-Dienst, siehe Schritt 5) – ohne
+diesen Schritt würde ein solcher Link auf eine falsche Adresse
+("localhost") zeigen statt in eure App. Mit dem Standard-Ablauf ohne
+eigenen SMTP-Dienst schickt die App aktuell keine solchen Links; diesen
+Schritt kannst du also auch erst später nachholen.
 
 1. Im Supabase-Dashboard zu **Authentication -> URL Configuration**.
 2. **Site URL** auf die Adresse aus Schritt 3 setzen, z.B.
@@ -90,19 +94,14 @@ Restrisiko: Damit wird nicht mehr geprüft, ob die eingetippte Adresse
 wirklich der eigenen Person gehört. Für ein kleines internes Team mit
 Domain-Sperre + Admin-Freigabe ist das vertretbar.
 
-**Bleibt eine Einschränkung:** "Passwort vergessen?" schickt weiterhin
-eine E-Mail über denselben eingeschränkten Standardversand – die kommt
-bei Kolleg:innen, die keine Supabase-Org-Mitglieder sind, aktuell nicht
-zuverlässig an. Für eine echte, selbstständig nutzbare Lösung braucht es
-einen eigenen SMTP-Dienst (z.B. [Resend](https://resend.com), kostenlos
-für kleine Mengen) unter **Authentication -> Sign In / Providers -> SMTP
-Provider** – dann funktioniert "Passwort vergessen" für alle ohne
-Admin-Beteiligung.
-
-**Bis dahin, als Notlösung:** Der "Passwort zurücksetzen"-Button im
-Supabase-Dashboard hilft *nicht* – der löst genau dieselbe blockierte
-Mail aus. Stattdessen setzt du als Admin das Passwort direkt über die
-Supabase-Admin-API, ganz ohne Mail:
+**Passwort vergessen läuft komplett ohne E-Mail:** Der
+"Passwort vergessen?"-Button in der App versucht erst gar nicht, eine
+Mail zu versenden (die würde ohnehin an derselben Einschränkung
+scheitern) – er zeigt direkt einen Hinweis, sich bei dir als Admin zu
+melden. Der "Passwort zurücksetzen"-Button im Supabase-Dashboard selbst
+hilft dabei *nicht*, der löst genau die blockierte Mail aus. Stattdessen
+setzt du als Admin das Passwort direkt über die Supabase-Admin-API, ganz
+ohne Mail:
 
 1. Im **SQL Editor** die User-ID der Person ermitteln:
    ```sql
@@ -122,25 +121,22 @@ Supabase-Admin-API, ganz ohne Mail:
 4. Das temporäre Passwort an die Person weitergeben. Sie kann es nach dem
    Einloggen unter ⚙ Einstellungen selbst durch ein eigenes ersetzen.
 
-## Schritt 6: Login-Adresse bei Supabase eintragen
+Optional für später: Mit einem eigenen SMTP-Dienst (z.B.
+[Resend](https://resend.com), kostenlos für kleine Mengen) unter
+**Authentication -> Sign In / Providers -> SMTP Provider** ließe sich
+"Passwort vergessen" auch wieder auf echten, selbstständigen
+E-Mail-Versand umstellen, ganz ohne Admin-Beteiligung – dafür müsste der
+"Passwort vergessen?"-Button in `js/app.js` (`forgotBtn`-Handler in
+`renderLogin`) wieder auf `sb.auth.resetPasswordForEmail(...)`
+umgestellt werden.
 
-Ohne diesen Schritt landet der Passwort-Reset-Link aus der E-Mail auf
-einer falschen Adresse ("localhost") statt in eurer App.
-
-1. Im Supabase-Dashboard zu **Authentication -> URL Configuration**.
-2. **Site URL** auf die Adresse aus Schritt 3 setzen, z.B.
-   `https://dein-name.github.io/dein-repo/`.
-3. Unter **Redirect URLs** eine Zeile hinzufügen:
-   `https://dein-name.github.io/dein-repo/**`
-4. Speichern.
-
-## Schritt 7: App aufs Handy holen
+## Schritt 6: App aufs Handy holen
 
 1. Öffne den Link aus Schritt 3 im Handy-Browser (Safari bei iPhone, Chrome bei Android).
 2. Tippe auf **"Zum Home-Bildschirm"** (iPhone) bzw. **"App installieren"** (Android).
 3. Fertig – die App hat jetzt ein eigenes Icon auf dem Home-Bildschirm.
 
-## Schritt 8: Login & Kollegen einladen
+## Schritt 7: Login & Kollegen einladen
 
 - Erstanmeldung: Auf **"Registrieren"** tippen, E-Mail + Passwort vergeben
   – dank Schritt 5 ist man sofort angemeldet, ganz ohne Bestätigungsmail.
@@ -202,7 +198,7 @@ funktioniert die App ganz normal weiter, nur eben ohne die KI-Ausarbeitung.
   Beschreibung, Tools, wichtige Punkte vorab und einen Start-Prompt.
   Optional geht das auch automatisch mit einem eigenen API-Key (siehe unten).
 - **Gemeinsam nutzen**: Mehrere Kolleg:innen loggen sich ein und sehen/bearbeiten dieselbe Liste
-  – geschützt durch Domain-Sperre + Admin-Freigabe (siehe Schritt 6).
+  – geschützt durch Domain-Sperre + Admin-Freigabe (siehe Schritt 7).
 - **Am PC nutzen**: Läuft genauso im Desktop-Browser, das Layout passt sich
   automatisch an breitere Bildschirme an.
 - **Prozesse dokumentieren**: Im Tab "Prozesse" alle Abläufe eures Bereichs

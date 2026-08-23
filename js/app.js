@@ -33,8 +33,7 @@ const I18N = {
     signupSuccessMsg: "Konto erstellt, du bist angemeldet.",
     onboardingBannerText: "📋 Anleitung",
     errorPrefix: "Fehler: ",
-    resetPromptEmail: "Für welche E-Mail-Adresse soll das Passwort zurückgesetzt werden?",
-    resetSentMsg: "Falls diese Adresse registriert ist, kommt gleich eine E-Mail mit einem Link zum Zurücksetzen.",
+    forgotPasswordContactMsg: "Bitte melde dich bei d.goos@house-of-communication.com – dein Passwort wird manuell zurückgesetzt.",
     setNewPasswordTitle: "Neues Passwort setzen",
     setNewPasswordDesc: "Vergib ein neues Passwort für dein Konto.",
     newPasswordPlaceholder: "Neues Passwort",
@@ -285,8 +284,7 @@ const I18N = {
     signupSuccessMsg: "Account created, you're signed in.",
     onboardingBannerText: "📋 Guide",
     errorPrefix: "Error: ",
-    resetPromptEmail: "Which email address should the password be reset for?",
-    resetSentMsg: "If this address is registered, an email with a reset link is on its way.",
+    forgotPasswordContactMsg: "Please contact d.goos@house-of-communication.com - your password will be reset manually.",
     setNewPasswordTitle: "Set a new password",
     setNewPasswordDesc: "Choose a new password for your account.",
     newPasswordPlaceholder: "New password",
@@ -753,13 +751,6 @@ async function signInWithPassword(email, password) {
   return error;
 }
 
-async function requestPasswordReset(email) {
-  const { error } = await sb.auth.resetPasswordForEmail(email, {
-    redirectTo: window.location.origin + window.location.pathname,
-  });
-  return error;
-}
-
 async function logout() {
   await sb.auth.signOut();
   window.location.hash = "";
@@ -1172,13 +1163,10 @@ function renderLogin() {
 
   const forgotBtn = document.getElementById("forgot-btn");
   if (forgotBtn) {
-    forgotBtn.addEventListener("click", async () => {
-      const email = prompt(t("resetPromptEmail"));
-      if (!email || !email.trim()) return;
-      const error = await requestPasswordReset(email.trim());
+    forgotBtn.addEventListener("click", () => {
       const msg = document.getElementById("login-msg");
-      msg.textContent = error ? t("errorPrefix") + error.message : t("resetSentMsg");
-      msg.style.color = error ? "#ef4444" : "#22c55e";
+      msg.textContent = t("forgotPasswordContactMsg");
+      msg.style.color = "";
     });
   }
 }
