@@ -151,9 +151,10 @@ umgestellt werden.
      als Admin markiert) sieht oben rechts einen Button **"🛡 Freigaben"**,
      dort die wartende Person freischalten – danach hat sie normalen
      Zugriff.
-- Wächst das Team stark oder braucht ihr getrennte Bereiche pro Team, lässt
-  sich das später ergänzen (eigene Tabelle/Berechtigungen) – für den Start
-  reicht die gemeinsame Liste.
+- Wächst das Team stark oder ihr braucht mehr als die 5 vorgesehenen Teams,
+  lässt sich das jederzeit erweitern (`TEAM_OPTIONS` in `js/app.js`, siehe
+  "Was die App kann" unten) – für die feingranulare Zugriffssteuerung pro
+  Kostenstelle/Team siehe den Punkt "Kostenstellen- & Team-Zugriff" unten.
 
 ## KI-Ausarbeitung: Standardweg braucht keinen API-Key
 
@@ -217,20 +218,27 @@ funktioniert die App ganz normal weiter, nur eben ohne die KI-Ausarbeitung.
   Datenbank-Änderung nötig. Kostenstellen kommen dagegen aus der
   Datenbank (Tabelle `kostenstellen`) und werden über die
   Verwaltungsoberfläche gepflegt, siehe nächster Punkt.
-- **Kostenstellen-Zugriff (🛡 Freigaben)**: Der Admin legt im
+- **Kostenstellen- & Team-Zugriff (🛡 Freigaben)**: Der Admin legt im
   Freigaben-Bereich neue Kostenstellen an und weist jeder freigegebenen
-  Person pro Kostenstelle einen Zugriffslevel zu: **Kein Zugriff**
-  (Standard – die Person sieht diese Kostenstelle gar nicht),
-  **Nur Lesen** (sieht die Ideen/Prozesse dieser Kostenstelle, das
-  Speichern ist deaktiviert) oder **Lesen & Schreiben** (volles
-  Bearbeiten, inkl. neue Ideen/Prozesse in dieser Kostenstelle anlegen).
-  Der Admin selbst sieht und bearbeitet unabhängig davon immer alles.
-  **Wichtig für den Ablauf:** Freigeben (🛡 Freigaben → "Freigeben") reicht
-  allein nicht mehr aus – ohne mindestens eine zugewiesene Kostenstelle
-  sieht eine frisch freigegebene Person eine leere Ideen-/Prozessliste
-  und kann nichts anlegen. Zugriffs-Änderungen wirken bei bereits
-  eingeloggten Personen erst nach einem Neuladen der Seite bzw. erneuten
-  Login.
+  Person Zugriff zu – und zwar pro Kombination aus Kostenstelle **und**
+  Team, nicht nur pro Kostenstelle. Jede Kostenstellen-Karte zeigt dafür
+  mehrere Unterbereiche: **"Alle Teams (ganze Kostenstelle)"** ganz oben,
+  darunter je ein Unterbereich pro einzelnem Team (Group Controlling,
+  Treasury, Cost Allocation, Workforce Controlling, BI-Strategy). Pro
+  Person und Unterbereich lässt sich einstellen: **Kein Zugriff**
+  (Standard – nichts sichtbar), **Nur Lesen** oder **Lesen & Schreiben**.
+  Ein Zugriff im Unterbereich "Alle Teams" gilt automatisch für alle
+  Teams dieser Kostenstelle; ein zusätzlicher Zugriff bei einem einzelnen
+  Team wirkt nur für genau dieses Team. Damit lässt sich z.B. jemandem
+  Schreibzugriff nur für "BI-Strategy" innerhalb der Kostenstelle
+  "050005 CO" geben, ohne die übrigen vier Teams dieser Kostenstelle
+  mitzugeben. Der Admin selbst sieht und bearbeitet unabhängig davon
+  immer alles. **Wichtig für den Ablauf:** Freigeben (🛡 Freigaben →
+  "Freigeben") reicht allein nicht mehr aus – ohne mindestens einen
+  zugewiesenen Kostenstelle/Team-Zugriff sieht eine frisch freigegebene
+  Person eine leere Ideen-/Prozessliste und kann nichts anlegen.
+  Zugriffs-Änderungen wirken bei bereits eingeloggten Personen erst nach
+  einem Neuladen der Seite bzw. erneuten Login.
 - **Deutsch/Englisch umschalten**: Ein Sprachschalter (DE/EN-Knopf oben
   rechts, u.a. auf dem Login-Bildschirm und den beiden Haupt-Listen)
   übersetzt die komplette Oberfläche inkl. der von der KI angefragten

@@ -260,6 +260,7 @@ const I18N = {
     accessWriteOption: "Lesen & Schreiben",
     emptyKostenstellen: "Noch keine Kostenstellen angelegt.",
     noApprovedForAccessMsg: "Noch keine freigegebenen Kolleg:innen zum Zuweisen.",
+    allTeamsScope: "Alle Teams (ganze Kostenstelle)",
 
     loadErrorPrefix: "Fehler beim Laden: ",
     saveErrorPrefix: "Fehler beim Speichern: ",
@@ -510,6 +511,7 @@ const I18N = {
     accessWriteOption: "Read & write",
     emptyKostenstellen: "No cost centers set up yet.",
     noApprovedForAccessMsg: "No approved colleagues to assign yet.",
+    allTeamsScope: "All teams (whole cost center)",
 
     loadErrorPrefix: "Error loading: ",
     saveErrorPrefix: "Error saving: ",
@@ -527,10 +529,11 @@ const PROCESS_STATUS_ORDER = ["open", "reviewed"];
 
 // Kostenstelle (das Pflichtfeld "department" bei ideas/processes) kommt
 // jetzt aus der Tabelle "kostenstellen" + individuellem Zugriffslevel pro
-// Person (siehe kostenstellenCache/myWriteCodes) statt aus einer festen
-// Liste. Team bleibt bewusst nur hier in der App gepflegt (nicht als
-// DB-Constraint) - Liste einfach erweitern.
+// Person und Team (siehe kostenstellenCache/myGrants) statt aus einer
+// festen Liste. Team bleibt bewusst nur hier in der App gepflegt (nicht
+// als DB-Constraint) - Liste einfach erweitern.
 const TEAM_OPTIONS = ["Group Controlling", "Treasury", "Cost Allocation", "Workforce Controlling", "BI-Strategy"];
+const TEAM_SCOPES = ["*", ...TEAM_OPTIONS];
 
 // Zusätzliche, optionale Katalog-Felder für den Abgleich mit dem
 // bestehenden Excel-Use-Case-Katalog. Werte bewusst nicht übersetzt
@@ -546,7 +549,7 @@ let ideasCache = [];
 let processesCache = [];
 let profilesCache = [];
 let kostenstellenCache = [];
-let myWriteCodes = [];
+let myGrants = [];
 let accessCache = [];
 let activeFilter = "all";
 let passwordRecoveryMode = false;
@@ -670,18 +673,40 @@ async function loadKostenstellen() {
   return data || [];
 }
 
-async function loadMyWriteCodes() {
-  if (currentProfile.is_admin) return kostenstellenCache.map((k) => k.code);
+async function loadMyGrants() {
+  if (currentProfile.is_admin) return [];
   const { data, error } = await sb
     .from("kostenstelle_access")
-    .select("kostenstelle_code")
-    .eq("user_id", currentUser.id)
-    .eq("access_level", "write");
+    .select("kostenstelle_code, team, access_level")
+    .eq("user_id", currentUser.id);
   if (error) {
     toast(t("loadErrorPrefix") + error.message);
     return [];
   }
-  return (data || []).map((r) => r.kostenstelle_code);
+  return data || [];
+}
+
+// Kostenstellen, für die die aktuelle Person irgendein Team schreiben darf.
+function writableCodes() {
+  if (currentProfile.is_admin) return kostenstellenCache.map((k) => k.code);
+  return Array.from(new Set(myGrants.filter((g) => g.access_level === "write").map((g) => g.kostenstelle_code)));
+}
+
+// Teams, für die die aktuelle Person innerhalb einer bestimmten Kostenstelle
+// schreiben darf (team = "*" bei einem Grant deckt alle Teams ab).
+function writableTeamsForCode(code) {
+  if (!code) return TEAM_OPTIONS.slice();
+  if (currentProfile.is_admin) return TEAM_OPTIONS.slice();
+  const grants = myGrants.filter((g) => g.kostenstelle_code === code && g.access_level === "write");
+  if (grants.some((g) => g.team === "*")) return TEAM_OPTIONS.slice();
+  return TEAM_OPTIONS.filter((team) => grants.some((g) => g.team === team));
+}
+
+function canWriteCombo(code, team) {
+  if (currentProfile.is_admin) return true;
+  return myGrants.some(
+    (g) => g.kostenstelle_code === code && g.access_level === "write" && (g.team === "*" || g.team === team)
+  );
 }
 
 async function loadAllAccess() {
@@ -702,13 +727,14 @@ async function createKostenstelle(code, name) {
   return data;
 }
 
-async function setKostenstelleAccess(userId, code, level) {
+async function setKostenstelleAccess(userId, code, team, level) {
   if (!level) {
     const { error } = await sb
       .from("kostenstelle_access")
       .delete()
       .eq("user_id", userId)
-      .eq("kostenstelle_code", code);
+      .eq("kostenstelle_code", code)
+      .eq("team", team);
     if (error) {
       toast(t("saveErrorPrefix") + error.message);
       return false;
@@ -717,7 +743,7 @@ async function setKostenstelleAccess(userId, code, level) {
   }
   const { error } = await sb
     .from("kostenstelle_access")
-    .upsert({ user_id: userId, kostenstelle_code: code, access_level: level });
+    .upsert({ user_id: userId, kostenstelle_code: code, team, access_level: level });
   if (error) {
     toast(t("saveErrorPrefix") + error.message);
     return false;
@@ -1079,18 +1105,34 @@ function kostenstelleOptionsFrom(codes, selectedValue) {
 }
 
 function departmentTeamFields(department, team, idPrefix) {
-  const codes = new Set(myWriteCodes);
+  const codes = new Set(writableCodes());
   if (department) codes.add(department);
+  const teams = new Set(writableTeamsForCode(department));
+  if (team) teams.add(team);
   return `
     <div class="row">
       <select class="field" id="${idPrefix}-department" style="flex:1;">
         ${kostenstelleOptionsFrom(Array.from(codes), department)}
       </select>
       <select class="field" id="${idPrefix}-team" style="flex:1;">
-        ${selectOptionsFrom(TEAM_OPTIONS, team)}
+        ${selectOptionsFrom(Array.from(teams), team)}
       </select>
     </div>
   `;
+}
+
+// Team-Dropdown ist von der gewählten Kostenstelle abhängig (unterschiedliche
+// Kostenstellen können unterschiedliche Teams freigeschaltet haben) - bei
+// jedem Wechsel der Kostenstelle die Team-Optionen neu berechnen.
+function bindDepartmentTeamFields(idPrefix) {
+  const deptSel = document.getElementById(`${idPrefix}-department`);
+  const teamSel = document.getElementById(`${idPrefix}-team`);
+  if (!deptSel || !teamSel) return;
+  deptSel.addEventListener("change", () => {
+    const currentTeam = teamSel.value;
+    const teams = writableTeamsForCode(deptSel.value);
+    teamSel.innerHTML = selectOptionsFrom(teams, teams.includes(currentTeam) ? currentTeam : "");
+  });
 }
 
 function readDepartmentTeam(idPrefix) {
@@ -1362,6 +1404,7 @@ async function renderList() {
   bindAdminNavButton();
   bindExportNavButton();
   bindLangToggle();
+  bindDepartmentTeamFields("capture");
   document.getElementById("logout-btn").addEventListener("click", logout);
   document.getElementById("settings-btn").addEventListener("click", () => {
     window.location.hash = "#/settings";
@@ -1497,7 +1540,7 @@ async function renderDetail(id) {
   if (processesCache.length === 0) {
     processesCache = await loadProcesses();
   }
-  const canWrite = currentProfile.is_admin || myWriteCodes.includes(idea.department);
+  const canWrite = canWriteCombo(idea.department, idea.team);
 
   $app.innerHTML = `
     <header class="topbar">
@@ -1668,6 +1711,8 @@ async function renderDetail(id) {
       </div>
     </main>
   `;
+
+  bindDepartmentTeamFields("detail");
 
   if (!canWrite) {
     document.querySelectorAll("main input, main textarea, main select, main button").forEach((el) => {
@@ -1926,6 +1971,7 @@ async function renderProcessList() {
   bindAdminNavButton();
   bindExportNavButton();
   bindLangToggle();
+  bindDepartmentTeamFields("pcapture");
   document.getElementById("logout-btn").addEventListener("click", logout);
   document.getElementById("settings-btn").addEventListener("click", () => {
     window.location.hash = "#/settings";
@@ -2034,7 +2080,7 @@ async function renderProcessDetail(id) {
     : (ideasCache = await loadIdeas()).filter((i) => i.process_id === proc.id);
 
   const subProcesses = processesCache.filter((p) => p.parent_process_id === proc.id);
-  const canWrite = currentProfile.is_admin || myWriteCodes.includes(proc.department);
+  const canWrite = canWriteCombo(proc.department, proc.team);
 
   $app.innerHTML = `
     <header class="topbar">
@@ -2113,6 +2159,8 @@ async function renderProcessDetail(id) {
       </div>
     </main>
   `;
+
+  bindDepartmentTeamFields("pdetail");
 
   if (!canWrite) {
     document.querySelectorAll("main input, main textarea, main select, main button").forEach((el) => {
@@ -2610,19 +2658,30 @@ async function renderAdmin() {
               <div class="section-title" style="margin:0 0 10px;">${escapeHtml(k.code)}${k.name ? ` – ${escapeHtml(k.name)}` : ""}</div>
               ${
                 nonAdminApproved.length
-                  ? nonAdminApproved
-                      .map((u) => {
-                        const grant = accessCache.find((a) => a.user_id === u.id && a.kostenstelle_code === k.code);
-                        return `
-                      <div class="row" style="justify-content:space-between; align-items:center; margin-bottom:8px;">
-                        <span style="font-size:13.5px;">${escapeHtml(u.email)}</span>
-                        <select class="field" data-access-user="${u.id}" data-access-ks="${escapeHtml(k.code)}" style="max-width:220px; flex:none;">
-                          ${accessLevelOptions(grant ? grant.access_level : "")}
-                        </select>
+                  ? TEAM_SCOPES.map(
+                      (scope) => `
+                      <div style="margin-bottom:14px;">
+                        <div style="font-size:12px; color:var(--text-dim); margin-bottom:6px;">${
+                          scope === "*" ? t("allTeamsScope") : escapeHtml(scope)
+                        }</div>
+                        ${nonAdminApproved
+                          .map((u) => {
+                            const grant = accessCache.find(
+                              (a) => a.user_id === u.id && a.kostenstelle_code === k.code && a.team === scope
+                            );
+                            return `
+                          <div class="row" style="justify-content:space-between; align-items:center; margin-bottom:8px;">
+                            <span style="font-size:13.5px;">${escapeHtml(u.email)}</span>
+                            <select class="field" data-access-user="${u.id}" data-access-ks="${escapeHtml(k.code)}" data-access-team="${escapeHtml(scope)}" style="max-width:220px; flex:none;">
+                              ${accessLevelOptions(grant ? grant.access_level : "")}
+                            </select>
+                          </div>
+                        `;
+                          })
+                          .join("")}
                       </div>
-                    `;
-                      })
-                      .join("")
+                    `
+                    ).join("")
                   : `<div class="empty-state" style="padding:12px 4px;">${t("noApprovedForAccessMsg")}</div>`
               }
             </div>
@@ -2674,9 +2733,10 @@ async function renderAdmin() {
     sel.addEventListener("change", async () => {
       const userId = sel.dataset.accessUser;
       const code = sel.dataset.accessKs;
+      const team = sel.dataset.accessTeam;
       const level = sel.value || null;
       sel.disabled = true;
-      const ok = await setKostenstelleAccess(userId, code, level);
+      const ok = await setKostenstelleAccess(userId, code, team, level);
       sel.disabled = false;
       if (ok) {
         toast(t("accessSavedMsg"));
@@ -2708,7 +2768,7 @@ async function render() {
   }
   if (kostenstellenCache.length === 0) {
     kostenstellenCache = await loadKostenstellen();
-    myWriteCodes = await loadMyWriteCodes();
+    myGrants = await loadMyGrants();
   }
   const route = currentRoute();
   if (route.view === "idea-detail") {

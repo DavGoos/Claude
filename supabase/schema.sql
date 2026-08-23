@@ -140,17 +140,30 @@ create table if not exists kostenstelle_access (
   primary key (user_id, kostenstelle_code)
 );
 
+-- Team-Dimension: Zugriff wird pro (Kostenstelle, Team) statt nur pro
+-- Kostenstelle vergeben, damit z.B. innerhalb "050005 CO" die 5 Teams
+-- unabhängig voneinander freigeschaltet werden können. team = '*' heißt
+-- "alle Teams dieser Kostenstelle" - so bleiben bereits vergebene, aus der
+-- Zeit vor der Team-Trennung stammende Zugriffe unverändert gültig.
+alter table kostenstelle_access add column if not exists team text not null default '*';
+
+alter table kostenstelle_access drop constraint if exists kostenstelle_access_pkey;
+alter table kostenstelle_access add primary key (user_id, kostenstelle_code, team);
+
 -- Migration: alle bereits freigegebenen Personen bekommen automatisch
 -- Schreibzugriff auf die bisherige Kostenstelle, damit sich für die
 -- heutige Nutzung nichts ändert. Neue Kostenstellen und neue Personen
 -- werden ab jetzt bewusst über die Verwaltungsoberfläche zugewiesen.
-insert into kostenstelle_access (user_id, kostenstelle_code, access_level)
-select p.id, '050005 CO', 'write'
+insert into kostenstelle_access (user_id, kostenstelle_code, team, access_level)
+select p.id, '050005 CO', '*', 'write'
 from profiles p
 where p.is_approved = true
-on conflict (user_id, kostenstelle_code) do nothing;
+on conflict (user_id, kostenstelle_code, team) do nothing;
 
-create or replace function can_read_kostenstelle(ks text)
+drop function if exists can_read_kostenstelle(text);
+drop function if exists can_write_kostenstelle(text);
+
+create or replace function can_read_kostenstelle(ks text, tm text)
 returns boolean
 language sql
 security definer
@@ -160,10 +173,11 @@ as $$
   select is_admin_user() or exists (
     select 1 from public.kostenstelle_access a
     where a.user_id = auth.uid() and a.kostenstelle_code = ks
+      and (a.team = '*' or a.team = tm)
   );
 $$;
 
-create or replace function can_write_kostenstelle(ks text)
+create or replace function can_write_kostenstelle(ks text, tm text)
 returns boolean
 language sql
 security definer
@@ -172,7 +186,8 @@ stable
 as $$
   select is_admin_user() or exists (
     select 1 from public.kostenstelle_access a
-    where a.user_id = auth.uid() and a.kostenstelle_code = ks and a.access_level = 'write'
+    where a.user_id = auth.uid() and a.kostenstelle_code = ks
+      and (a.team = '*' or a.team = tm) and a.access_level = 'write'
   );
 $$;
 
@@ -241,26 +256,26 @@ drop policy if exists "Processes: select for logged in users" on processes;
 drop policy if exists "Processes: select for approved users" on processes;
 create policy "Processes: select with kostenstelle access"
   on processes for select
-  using (is_approved_user() and can_read_kostenstelle(department));
+  using (is_approved_user() and can_read_kostenstelle(department, team));
 
 drop policy if exists "Processes: insert for logged in users" on processes;
 drop policy if exists "Processes: insert for approved users" on processes;
 create policy "Processes: insert with kostenstelle access"
   on processes for insert
-  with check (is_approved_user() and can_write_kostenstelle(department));
+  with check (is_approved_user() and can_write_kostenstelle(department, team));
 
 drop policy if exists "Processes: update for logged in users" on processes;
 drop policy if exists "Processes: update for approved users" on processes;
 create policy "Processes: update with kostenstelle access"
   on processes for update
-  using (is_approved_user() and can_write_kostenstelle(department))
-  with check (is_approved_user() and can_write_kostenstelle(department));
+  using (is_approved_user() and can_write_kostenstelle(department, team))
+  with check (is_approved_user() and can_write_kostenstelle(department, team));
 
 drop policy if exists "Processes: delete for logged in users" on processes;
 drop policy if exists "Processes: delete for approved users" on processes;
 create policy "Processes: delete with kostenstelle access"
   on processes for delete
-  using (is_approved_user() and can_write_kostenstelle(department));
+  using (is_approved_user() and can_write_kostenstelle(department, team));
 
 -- Ideen / AI Use Cases
 create table if not exists ideas (
@@ -349,23 +364,23 @@ drop policy if exists "Ideas: select for logged in users" on ideas;
 drop policy if exists "Ideas: select for approved users" on ideas;
 create policy "Ideas: select with kostenstelle access"
   on ideas for select
-  using (is_approved_user() and can_read_kostenstelle(department));
+  using (is_approved_user() and can_read_kostenstelle(department, team));
 
 drop policy if exists "Ideas: insert for logged in users" on ideas;
 drop policy if exists "Ideas: insert for approved users" on ideas;
 create policy "Ideas: insert with kostenstelle access"
   on ideas for insert
-  with check (is_approved_user() and can_write_kostenstelle(department));
+  with check (is_approved_user() and can_write_kostenstelle(department, team));
 
 drop policy if exists "Ideas: update for logged in users" on ideas;
 drop policy if exists "Ideas: update for approved users" on ideas;
 create policy "Ideas: update with kostenstelle access"
   on ideas for update
-  using (is_approved_user() and can_write_kostenstelle(department))
-  with check (is_approved_user() and can_write_kostenstelle(department));
+  using (is_approved_user() and can_write_kostenstelle(department, team))
+  with check (is_approved_user() and can_write_kostenstelle(department, team));
 
 drop policy if exists "Ideas: delete for logged in users" on ideas;
 drop policy if exists "Ideas: delete for approved users" on ideas;
 create policy "Ideas: delete with kostenstelle access"
   on ideas for delete
-  using (is_approved_user() and can_write_kostenstelle(department));
+  using (is_approved_user() and can_write_kostenstelle(department, team));
