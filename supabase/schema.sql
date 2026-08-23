@@ -114,6 +114,94 @@ select
 from auth.users u
 where not exists (select 1 from public.profiles p where p.id = u.id);
 
+-- ============================================================
+-- Kostenstellen-Zugriff: das bisherige "Abteilung"-Feld (department bei
+-- ideas/processes) ist konzeptionell die Kostenstelle. Jede Person
+-- braucht pro Kostenstelle einen expliziten Zugriffs-Level, um deren
+-- Ideen/Prozesse zu sehen bzw. zu bearbeiten - keine Zeile heißt kein
+-- Zugriff. Admins sehen/bearbeiten unabhängig davon immer alles.
+-- ============================================================
+
+create table if not exists kostenstellen (
+  code text primary key,
+  name text not null default ''
+);
+
+-- Die bisher einzige, fest in der App hinterlegte Kostenstelle einmalig
+-- übernehmen, damit der Dropdown nicht leer ist.
+insert into kostenstellen (code, name)
+values ('050005 CO', 'Group Controlling')
+on conflict (code) do nothing;
+
+create table if not exists kostenstelle_access (
+  user_id uuid not null references auth.users (id) on delete cascade,
+  kostenstelle_code text not null references kostenstellen (code) on delete cascade,
+  access_level text not null check (access_level in ('read', 'write')),
+  primary key (user_id, kostenstelle_code)
+);
+
+-- Migration: alle bereits freigegebenen Personen bekommen automatisch
+-- Schreibzugriff auf die bisherige Kostenstelle, damit sich für die
+-- heutige Nutzung nichts ändert. Neue Kostenstellen und neue Personen
+-- werden ab jetzt bewusst über die Verwaltungsoberfläche zugewiesen.
+insert into kostenstelle_access (user_id, kostenstelle_code, access_level)
+select p.id, '050005 CO', 'write'
+from profiles p
+where p.is_approved = true
+on conflict (user_id, kostenstelle_code) do nothing;
+
+create or replace function can_read_kostenstelle(ks text)
+returns boolean
+language sql
+security definer
+set search_path = public
+stable
+as $$
+  select is_admin_user() or exists (
+    select 1 from public.kostenstelle_access a
+    where a.user_id = auth.uid() and a.kostenstelle_code = ks
+  );
+$$;
+
+create or replace function can_write_kostenstelle(ks text)
+returns boolean
+language sql
+security definer
+set search_path = public
+stable
+as $$
+  select is_admin_user() or exists (
+    select 1 from public.kostenstelle_access a
+    where a.user_id = auth.uid() and a.kostenstelle_code = ks and a.access_level = 'write'
+  );
+$$;
+
+alter table kostenstellen enable row level security;
+
+drop policy if exists "Kostenstellen: select for approved users" on kostenstellen;
+create policy "Kostenstellen: select for approved users"
+  on kostenstellen for select
+  using (is_approved_user());
+
+drop policy if exists "Kostenstellen: admin manage" on kostenstellen;
+create policy "Kostenstellen: admin manage"
+  on kostenstellen for all
+  using (is_admin_user())
+  with check (is_admin_user());
+
+alter table kostenstelle_access enable row level security;
+
+drop policy if exists "Access: select own" on kostenstelle_access;
+create policy "Access: select own"
+  on kostenstelle_access for select
+  using (user_id = auth.uid());
+
+drop policy if exists "Access: admin manage" on kostenstelle_access;
+create policy "Access: admin manage"
+  on kostenstelle_access for all
+  using (is_admin_user())
+  with check (is_admin_user());
+
 -- Prozesse: alle Abläufe eines Bereichs, die auf AI-Potenzial geprüft werden.
 create table if not exists processes (
   id uuid primary key default gen_random_uuid(),
@@ -134,10 +222,11 @@ create table if not exists processes (
 -- Verknüpfung angelegt hatten: Spalte nachträglich ergänzen.
 alter table processes add column if not exists parent_process_id uuid references processes (id) on delete set null;
 
--- Abteilung/Team sind Pflichtfelder (Dropdown in der App). Die erlaubten
--- Werte sind bewusst nicht als DB-Constraint hinterlegt, sondern nur in
--- js/app.js (DEPARTMENT_OPTIONS / TEAM_OPTIONS) - so lässt sich die Liste
--- erweitern, ohne dieses Skript anzupassen.
+-- Abteilung (= Kostenstelle, siehe oben) und Team sind Pflichtfelder
+-- (Dropdown in der App). Die Kostenstellen-Werte kommen aus der Tabelle
+-- "kostenstellen" oben, die Team-Werte sind bewusst nicht als
+-- DB-Constraint hinterlegt, sondern nur in js/app.js (TEAM_OPTIONS) - so
+-- lässt sich diese Liste erweitern, ohne dieses Skript anzupassen.
 alter table processes add column if not exists team text not null default '';
 
 drop trigger if exists processes_set_updated_at on processes;
@@ -150,27 +239,28 @@ alter table processes enable row level security;
 
 drop policy if exists "Processes: select for logged in users" on processes;
 drop policy if exists "Processes: select for approved users" on processes;
-create policy "Processes: select for approved users"
+create policy "Processes: select with kostenstelle access"
   on processes for select
-  using (is_approved_user());
+  using (is_approved_user() and can_read_kostenstelle(department));
 
 drop policy if exists "Processes: insert for logged in users" on processes;
 drop policy if exists "Processes: insert for approved users" on processes;
-create policy "Processes: insert for approved users"
+create policy "Processes: insert with kostenstelle access"
   on processes for insert
-  with check (is_approved_user());
+  with check (is_approved_user() and can_write_kostenstelle(department));
 
 drop policy if exists "Processes: update for logged in users" on processes;
 drop policy if exists "Processes: update for approved users" on processes;
-create policy "Processes: update for approved users"
+create policy "Processes: update with kostenstelle access"
   on processes for update
-  using (is_approved_user());
+  using (is_approved_user() and can_write_kostenstelle(department))
+  with check (is_approved_user() and can_write_kostenstelle(department));
 
 drop policy if exists "Processes: delete for logged in users" on processes;
 drop policy if exists "Processes: delete for approved users" on processes;
-create policy "Processes: delete for approved users"
+create policy "Processes: delete with kostenstelle access"
   on processes for delete
-  using (is_approved_user());
+  using (is_approved_user() and can_write_kostenstelle(department));
 
 -- Ideen / AI Use Cases
 create table if not exists ideas (
@@ -197,8 +287,8 @@ create table if not exists ideas (
 -- angelegt hatten: Spalte nachträglich ergänzen.
 alter table ideas add column if not exists process_id uuid references processes (id) on delete set null;
 
--- Abteilung/Team sind Pflichtfelder (Dropdown in der App, siehe Hinweis
--- bei der processes-Tabelle oben).
+-- Abteilung (= Kostenstelle) / Team sind Pflichtfelder (Dropdown in der
+-- App, siehe Hinweis bei der processes-Tabelle oben).
 alter table ideas add column if not exists department text not null default '';
 alter table ideas add column if not exists team text not null default '';
 
@@ -257,24 +347,25 @@ alter table ideas enable row level security;
 
 drop policy if exists "Ideas: select for logged in users" on ideas;
 drop policy if exists "Ideas: select for approved users" on ideas;
-create policy "Ideas: select for approved users"
+create policy "Ideas: select with kostenstelle access"
   on ideas for select
-  using (is_approved_user());
+  using (is_approved_user() and can_read_kostenstelle(department));
 
 drop policy if exists "Ideas: insert for logged in users" on ideas;
 drop policy if exists "Ideas: insert for approved users" on ideas;
-create policy "Ideas: insert for approved users"
+create policy "Ideas: insert with kostenstelle access"
   on ideas for insert
-  with check (is_approved_user());
+  with check (is_approved_user() and can_write_kostenstelle(department));
 
 drop policy if exists "Ideas: update for logged in users" on ideas;
 drop policy if exists "Ideas: update for approved users" on ideas;
-create policy "Ideas: update for approved users"
+create policy "Ideas: update with kostenstelle access"
   on ideas for update
-  using (is_approved_user());
+  using (is_approved_user() and can_write_kostenstelle(department))
+  with check (is_approved_user() and can_write_kostenstelle(department));
 
 drop policy if exists "Ideas: delete for logged in users" on ideas;
 drop policy if exists "Ideas: delete for approved users" on ideas;
-create policy "Ideas: delete for approved users"
+create policy "Ideas: delete with kostenstelle access"
   on ideas for delete
-  using (is_approved_user());
+  using (is_approved_user() and can_write_kostenstelle(department));

@@ -115,10 +115,11 @@ const I18N = {
     goalPlaceholder: "Was soll die Lösung konkret erreichen?",
     businessBenefitLabel: "Business Benefit",
     businessBenefitPlaceholder: "Welcher konkrete Nutzen (Zeit, Qualität, Kosten, Risiko) entsteht dadurch?",
-    departmentLabel: "Abteilung",
+    departmentLabel: "Kostenstelle",
     teamLabel: "Team",
     selectPlaceholderOption: "— Bitte wählen —",
-    departmentTeamRequiredMsg: "Bitte Abteilung und Team auswählen.",
+    departmentTeamRequiredMsg: "Bitte Kostenstelle und Team auswählen.",
+    readOnlyNotice: "Nur Lesezugriff auf diese Kostenstelle – Änderungen können hier nicht gespeichert werden.",
 
     catalogFieldsTitle: "Weitere Katalog-Felder (optional)",
     catalogFieldsDesc:
@@ -248,6 +249,19 @@ const I18N = {
     adminBadge: "Admin",
     approvedMsg: "Freigegeben",
 
+    kostenstellenTitle: "Kostenstellen & Zugriffsrechte",
+    newKostenstelleLabel: "Neue Kostenstelle anlegen",
+    kostenstelleCodePlaceholder: "Code, z.B. 050010 CO",
+    kostenstelleNamePlaceholder: "Name, z.B. Treasury",
+    addKostenstelleBtn: "+ Kostenstelle anlegen",
+    kostenstelleSavedMsg: "Kostenstelle angelegt",
+    accessSavedMsg: "Zugriff aktualisiert",
+    accessNoneOption: "Kein Zugriff",
+    accessReadOption: "Nur Lesen",
+    accessWriteOption: "Lesen & Schreiben",
+    emptyKostenstellen: "Noch keine Kostenstellen angelegt.",
+    noApprovedForAccessMsg: "Noch keine freigegebenen Kolleg:innen zum Zuweisen.",
+
     loadErrorPrefix: "Fehler beim Laden: ",
     saveErrorPrefix: "Fehler beim Speichern: ",
     deleteErrorPrefix: "Fehler beim Löschen: ",
@@ -353,10 +367,11 @@ const I18N = {
     goalPlaceholder: "What should the solution actually achieve?",
     businessBenefitLabel: "Business Benefit",
     businessBenefitPlaceholder: "What concrete benefit (time, quality, cost, risk) does this create?",
-    departmentLabel: "Department",
+    departmentLabel: "Cost center",
     teamLabel: "Team",
     selectPlaceholderOption: "— Please select —",
-    departmentTeamRequiredMsg: "Please select department and team.",
+    departmentTeamRequiredMsg: "Please select cost center and team.",
+    readOnlyNotice: "Read-only access to this cost center - changes here can't be saved.",
 
     catalogFieldsTitle: "Additional catalog fields (optional)",
     catalogFieldsDesc:
@@ -485,6 +500,19 @@ const I18N = {
     adminBadge: "Admin",
     approvedMsg: "Approved",
 
+    kostenstellenTitle: "Cost centers & access",
+    newKostenstelleLabel: "Add a new cost center",
+    kostenstelleCodePlaceholder: "Code, e.g. 050010 CO",
+    kostenstelleNamePlaceholder: "Name, e.g. Treasury",
+    addKostenstelleBtn: "+ Add cost center",
+    kostenstelleSavedMsg: "Cost center added",
+    accessSavedMsg: "Access updated",
+    accessNoneOption: "No access",
+    accessReadOption: "Read only",
+    accessWriteOption: "Read & write",
+    emptyKostenstellen: "No cost centers set up yet.",
+    noApprovedForAccessMsg: "No approved colleagues to assign yet.",
+
     loadErrorPrefix: "Error loading: ",
     saveErrorPrefix: "Error saving: ",
     deleteErrorPrefix: "Error deleting: ",
@@ -499,9 +527,11 @@ const I18N = {
 const STATUS_ORDER = ["idea", "evaluating", "planned", "in_progress", "done", "discarded"];
 const PROCESS_STATUS_ORDER = ["open", "reviewed"];
 
-// Erlaubte Werte für die Pflichtfelder Abteilung/Team. Bewusst nur hier in
-// der App gepflegt (nicht als DB-Constraint) - Liste einfach erweitern.
-const DEPARTMENT_OPTIONS = ["050005 CO"];
+// Kostenstelle (das Pflichtfeld "department" bei ideas/processes) kommt
+// jetzt aus der Tabelle "kostenstellen" + individuellem Zugriffslevel pro
+// Person (siehe kostenstellenCache/myWriteCodes) statt aus einer festen
+// Liste. Team bleibt bewusst nur hier in der App gepflegt (nicht als
+// DB-Constraint) - Liste einfach erweitern.
 const TEAM_OPTIONS = ["Group Controlling", "Treasury", "Cost Allocation", "Workforce Controlling", "BI-Strategy"];
 
 // Zusätzliche, optionale Katalog-Felder für den Abgleich mit dem
@@ -517,6 +547,9 @@ let currentProfile = null;
 let ideasCache = [];
 let processesCache = [];
 let profilesCache = [];
+let kostenstellenCache = [];
+let myWriteCodes = [];
+let accessCache = [];
 let activeFilter = "all";
 let passwordRecoveryMode = false;
 let authMode = "login";
@@ -623,6 +656,72 @@ async function approveUser(id) {
   const { error } = await sb.from("profiles").update({ is_approved: true }).eq("id", id);
   if (error) {
     toast(t("approveErrorPrefix") + error.message);
+    return false;
+  }
+  return true;
+}
+
+// ---------- Data: Kostenstellen & Zugriffsrechte ----------
+
+async function loadKostenstellen() {
+  const { data, error } = await sb.from("kostenstellen").select("*").order("code");
+  if (error) {
+    toast(t("loadErrorPrefix") + error.message);
+    return [];
+  }
+  return data || [];
+}
+
+async function loadMyWriteCodes() {
+  if (currentProfile.is_admin) return kostenstellenCache.map((k) => k.code);
+  const { data, error } = await sb
+    .from("kostenstelle_access")
+    .select("kostenstelle_code")
+    .eq("user_id", currentUser.id)
+    .eq("access_level", "write");
+  if (error) {
+    toast(t("loadErrorPrefix") + error.message);
+    return [];
+  }
+  return (data || []).map((r) => r.kostenstelle_code);
+}
+
+async function loadAllAccess() {
+  const { data, error } = await sb.from("kostenstelle_access").select("*");
+  if (error) {
+    toast(t("loadErrorPrefix") + error.message);
+    return [];
+  }
+  return data || [];
+}
+
+async function createKostenstelle(code, name) {
+  const { data, error } = await sb.from("kostenstellen").insert({ code, name }).select("*").single();
+  if (error) {
+    toast(t("saveErrorPrefix") + error.message);
+    return null;
+  }
+  return data;
+}
+
+async function setKostenstelleAccess(userId, code, level) {
+  if (!level) {
+    const { error } = await sb
+      .from("kostenstelle_access")
+      .delete()
+      .eq("user_id", userId)
+      .eq("kostenstelle_code", code);
+    if (error) {
+      toast(t("saveErrorPrefix") + error.message);
+      return false;
+    }
+    return true;
+  }
+  const { error } = await sb
+    .from("kostenstelle_access")
+    .upsert({ user_id: userId, kostenstelle_code: code, access_level: level });
+  if (error) {
+    toast(t("saveErrorPrefix") + error.message);
     return false;
   }
   return true;
@@ -978,11 +1077,23 @@ function selectOptionsFrom(values, selectedValue) {
   return options.join("");
 }
 
+function kostenstelleOptionsFrom(codes, selectedValue) {
+  const options = [`<option value="" ${selectedValue ? "" : "selected"}>${t("selectPlaceholderOption")}</option>`];
+  codes.forEach((code) => {
+    const k = kostenstellenCache.find((x) => x.code === code);
+    const label = k && k.name ? `${code} – ${k.name}` : code;
+    options.push(`<option value="${escapeHtml(code)}" ${code === selectedValue ? "selected" : ""}>${escapeHtml(label)}</option>`);
+  });
+  return options.join("");
+}
+
 function departmentTeamFields(department, team, idPrefix) {
+  const codes = new Set(myWriteCodes);
+  if (department) codes.add(department);
   return `
     <div class="row">
       <select class="field" id="${idPrefix}-department" style="flex:1;">
-        ${selectOptionsFrom(DEPARTMENT_OPTIONS, department)}
+        ${kostenstelleOptionsFrom(Array.from(codes), department)}
       </select>
       <select class="field" id="${idPrefix}-team" style="flex:1;">
         ${selectOptionsFrom(TEAM_OPTIONS, team)}
@@ -1398,6 +1509,7 @@ async function renderDetail(id) {
   if (processesCache.length === 0) {
     processesCache = await loadProcesses();
   }
+  const canWrite = currentProfile.is_admin || myWriteCodes.includes(idea.department);
 
   $app.innerHTML = `
     <header class="topbar">
@@ -1407,6 +1519,11 @@ async function renderDetail(id) {
       <button class="icon-btn" id="delete-btn">${t("deleteBtn")}</button>
     </header>
     <main>
+      ${
+        canWrite
+          ? ""
+          : `<div style="font-size:13px; color:var(--text); background:var(--surface-2); border-left:3px solid var(--accent); border-radius:6px; padding:10px 12px; margin:0 0 14px; line-height:1.5;">🔒 ${t("readOnlyNotice")}</div>`
+      }
       <div class="card">
         <label class="field-label">${t("quickNoteLabel")}</label>
         <textarea class="field" id="f-quick-note">${escapeHtml(idea.quick_note)}</textarea>
@@ -1563,6 +1680,12 @@ async function renderDetail(id) {
       </div>
     </main>
   `;
+
+  if (!canWrite) {
+    document.querySelectorAll("main input, main textarea, main select, main button").forEach((el) => {
+      el.disabled = true;
+    });
+  }
 
   function updatePriorityBanner() {
     const impact = Number(document.querySelector('[data-field="impact"]').value);
@@ -1923,6 +2046,7 @@ async function renderProcessDetail(id) {
     : (ideasCache = await loadIdeas()).filter((i) => i.process_id === proc.id);
 
   const subProcesses = processesCache.filter((p) => p.parent_process_id === proc.id);
+  const canWrite = currentProfile.is_admin || myWriteCodes.includes(proc.department);
 
   $app.innerHTML = `
     <header class="topbar">
@@ -1932,6 +2056,11 @@ async function renderProcessDetail(id) {
       <button class="icon-btn" id="delete-btn">${t("deleteBtn")}</button>
     </header>
     <main>
+      ${
+        canWrite
+          ? ""
+          : `<div style="font-size:13px; color:var(--text); background:var(--surface-2); border-left:3px solid var(--accent); border-radius:6px; padding:10px 12px; margin:0 0 14px; line-height:1.5;">🔒 ${t("readOnlyNotice")}</div>`
+      }
       <div class="card">
         <label class="field-label">${t("processNameLabel")}</label>
         <textarea class="field" id="f-name">${escapeHtml(proc.name)}</textarea>
@@ -1996,6 +2125,12 @@ async function renderProcessDetail(id) {
       </div>
     </main>
   `;
+
+  if (!canWrite) {
+    document.querySelectorAll("main input, main textarea, main select, main button").forEach((el) => {
+      el.disabled = true;
+    });
+  }
 
   function updateAiBanner() {
     const val = Number(document.querySelector('[data-field="ai_potential"]').value);
@@ -2403,10 +2538,24 @@ async function renderExportSync() {
   }
 }
 
+function accessLevelOptions(selected) {
+  const opts = [
+    { value: "", label: t("accessNoneOption") },
+    { value: "read", label: t("accessReadOption") },
+    { value: "write", label: t("accessWriteOption") },
+  ];
+  return opts
+    .map((o) => `<option value="${o.value}" ${o.value === (selected || "") ? "selected" : ""}>${o.label}</option>`)
+    .join("");
+}
+
 async function renderAdmin() {
   profilesCache = await loadAllProfiles();
   const pending = profilesCache.filter((p) => !p.is_approved);
   const approved = profilesCache.filter((p) => p.is_approved);
+  const nonAdminApproved = approved.filter((p) => !p.is_admin);
+  if (kostenstellenCache.length === 0) kostenstellenCache = await loadKostenstellen();
+  accessCache = await loadAllAccess();
 
   $app.innerHTML = `
     <header class="topbar">
@@ -2451,6 +2600,49 @@ async function renderAdmin() {
           )
           .join("")}
       </div>
+
+      <div class="section-title" style="margin:24px 4px 8px;">${t("kostenstellenTitle")}</div>
+      <div class="card">
+        <label class="field-label" style="margin-top:0;">${t("newKostenstelleLabel")}</label>
+        <div class="row">
+          <input class="field" id="new-ks-code" placeholder="${t("kostenstelleCodePlaceholder")}" style="flex:1;" />
+          <input class="field" id="new-ks-name" placeholder="${t("kostenstelleNamePlaceholder")}" style="flex:1;" />
+        </div>
+        <div class="row">
+          <button class="btn-primary" id="add-ks-btn" style="width:100%;">${t("addKostenstelleBtn")}</button>
+        </div>
+      </div>
+
+      ${
+        kostenstellenCache.length
+          ? kostenstellenCache
+              .map(
+                (k) => `
+            <div class="card">
+              <div class="section-title" style="margin:0 0 10px;">${escapeHtml(k.code)}${k.name ? ` – ${escapeHtml(k.name)}` : ""}</div>
+              ${
+                nonAdminApproved.length
+                  ? nonAdminApproved
+                      .map((u) => {
+                        const grant = accessCache.find((a) => a.user_id === u.id && a.kostenstelle_code === k.code);
+                        return `
+                      <div class="row" style="justify-content:space-between; align-items:center; margin-bottom:8px;">
+                        <span style="font-size:13.5px;">${escapeHtml(u.email)}</span>
+                        <select class="field" data-access-user="${u.id}" data-access-ks="${escapeHtml(k.code)}" style="max-width:220px; flex:none;">
+                          ${accessLevelOptions(grant ? grant.access_level : "")}
+                        </select>
+                      </div>
+                    `;
+                      })
+                      .join("")
+                  : `<div class="empty-state" style="padding:12px 4px;">${t("noApprovedForAccessMsg")}</div>`
+              }
+            </div>
+          `
+              )
+              .join("")
+          : `<div class="empty-state">${t("emptyKostenstellen")}</div>`
+      }
     </main>
   `;
 
@@ -2469,6 +2661,38 @@ async function renderAdmin() {
         await renderAdmin();
       } else {
         btn.disabled = false;
+      }
+    });
+  });
+
+  document.getElementById("add-ks-btn").addEventListener("click", async () => {
+    const codeInput = document.getElementById("new-ks-code");
+    const nameInput = document.getElementById("new-ks-name");
+    const code = codeInput.value.trim();
+    const name = nameInput.value.trim();
+    if (!code) return;
+    const btn = document.getElementById("add-ks-btn");
+    btn.disabled = true;
+    const created = await createKostenstelle(code, name);
+    btn.disabled = false;
+    if (created) {
+      toast(t("kostenstelleSavedMsg"));
+      kostenstellenCache = [];
+      await renderAdmin();
+    }
+  });
+
+  document.querySelectorAll("[data-access-user]").forEach((sel) => {
+    sel.addEventListener("change", async () => {
+      const userId = sel.dataset.accessUser;
+      const code = sel.dataset.accessKs;
+      const level = sel.value || null;
+      sel.disabled = true;
+      const ok = await setKostenstelleAccess(userId, code, level);
+      sel.disabled = false;
+      if (ok) {
+        toast(t("accessSavedMsg"));
+        accessCache = await loadAllAccess();
       }
     });
   });
@@ -2493,6 +2717,10 @@ async function render() {
   if (!currentProfile.is_approved) {
     renderPendingApproval();
     return;
+  }
+  if (kostenstellenCache.length === 0) {
+    kostenstellenCache = await loadKostenstellen();
+    myWriteCodes = await loadMyWriteCodes();
   }
   const route = currentRoute();
   if (route.view === "idea-detail") {

@@ -213,12 +213,28 @@ funktioniert die App ganz normal weiter, nur eben ohne die KI-Ausarbeitung.
 - **Use Cases zu Prozessen zuordnen**: Jede Idee kann optional einem Prozess
   zugeordnet werden; in der Prozess-Detailansicht seht ihr alle dazu bereits
   erfassten Use Cases.
-- **Abteilung & Team pflichtig**: Sowohl bei Ideen als auch bei Prozessen
-  müssen Abteilung und Team aus einem Dropdown gewählt werden (auch schon
-  beim schnellen Erfassen). Die erlaubten Werte stehen in `js/app.js` in
-  den Konstanten `DEPARTMENT_OPTIONS` und `TEAM_OPTIONS` – zum Erweitern
-  (z.B. neue Abteilung) einfach dort einen Eintrag ergänzen und die Datei
-  neu deployen (git push), keine Datenbank-Änderung nötig.
+- **Kostenstelle & Team pflichtig**: Sowohl bei Ideen als auch bei Prozessen
+  müssen Kostenstelle und Team aus einem Dropdown gewählt werden (auch
+  schon beim schnellen Erfassen). Team-Werte stehen in `js/app.js` in der
+  Konstante `TEAM_OPTIONS` – zum Erweitern einfach dort einen Eintrag
+  ergänzen und die Datei neu deployen (git push), keine
+  Datenbank-Änderung nötig. Kostenstellen kommen dagegen aus der
+  Datenbank (Tabelle `kostenstellen`) und werden über die
+  Verwaltungsoberfläche gepflegt, siehe nächster Punkt.
+- **Kostenstellen-Zugriff (🛡 Freigaben)**: Der Admin legt im
+  Freigaben-Bereich neue Kostenstellen an und weist jeder freigegebenen
+  Person pro Kostenstelle einen Zugriffslevel zu: **Kein Zugriff**
+  (Standard – die Person sieht diese Kostenstelle gar nicht),
+  **Nur Lesen** (sieht die Ideen/Prozesse dieser Kostenstelle, das
+  Speichern ist deaktiviert) oder **Lesen & Schreiben** (volles
+  Bearbeiten, inkl. neue Ideen/Prozesse in dieser Kostenstelle anlegen).
+  Der Admin selbst sieht und bearbeitet unabhängig davon immer alles.
+  **Wichtig für den Ablauf:** Freigeben (🛡 Freigaben → "Freigeben") reicht
+  allein nicht mehr aus – ohne mindestens eine zugewiesene Kostenstelle
+  sieht eine frisch freigegebene Person eine leere Ideen-/Prozessliste
+  und kann nichts anlegen. Zugriffs-Änderungen wirken bei bereits
+  eingeloggten Personen erst nach einem Neuladen der Seite bzw. erneuten
+  Login.
 - **Deutsch/Englisch umschalten**: Ein Sprachschalter (DE/EN-Knopf oben
   rechts, u.a. auf dem Login-Bildschirm und den beiden Haupt-Listen)
   übersetzt die komplette Oberfläche inkl. der von der KI angefragten
