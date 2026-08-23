@@ -355,9 +355,8 @@ create trigger ideas_set_updated_at
   for each row
   execute function set_updated_at();
 
--- Row Level Security: nur freigegebene Team-Mitglieder sehen/bearbeiten
--- die gemeinsame Ideen- und Prozess-Sammlung. Für mehrere getrennte Teams
--- müsste man später eine "team_id"-Spalte + passende Policies ergänzen.
+-- Row Level Security: nur freigegebene Personen mit passendem
+-- Kostenstellen-/Team-Zugriff (siehe oben) sehen/bearbeiten Ideen.
 alter table ideas enable row level security;
 
 drop policy if exists "Ideas: select for logged in users" on ideas;
