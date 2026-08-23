@@ -106,7 +106,8 @@ Ab jetzt läuft die Aufnahme neuer Kolleg:innen in drei Schritten:
 
 1. **Anfrage erhalten**: Die Person tippt in der App auf "Zugang
    anfragen" – das öffnet eine vorausgefüllte Mail an dich (oder sie
-   schreibt dir direkt in Teams).
+   schreibt dir direkt in Teams) mit Name, gewünschter E-Mail-Adresse und
+   den benötigten Kostenstelle(n)/Team(s) zum Ausfüllen.
 2. **Identität prüfen**: Bevor du irgendetwas anlegst, prüfe über einen
    dir vertrauten Kanal, dass es sich wirklich um die angegebene Person
    handelt – z.B. sie im Teams-/Outlook-Firmenverzeichnis nach Namen
@@ -133,6 +134,10 @@ Ab jetzt läuft die Aufnahme neuer Kolleg:innen in drei Schritten:
       ein zweiter, unabhängiger Schritt (Konto anlegen + Freigeben), auch
       wenn du die Person schon geprüft hast – doppelte Absicherung, falls
       die Registrierung versehentlich doch mal wieder offen sein sollte.
+   5. Direkt im selben Bereich außerdem die in der Anfrage genannte(n)
+      Kostenstelle(n)/Team(s) mit dem passenden Zugriffslevel zuweisen
+      (siehe "Kostenstellen- & Team-Zugriff" weiter unten) – ohne das
+      sieht die Person trotz Freigabe erstmal eine leere Liste.
 
 **Passwort vergessen** läuft nach demselben Prinzip komplett ohne
 E-Mail-Versand durch Supabase: Der "Passwort vergessen?"-Button in der

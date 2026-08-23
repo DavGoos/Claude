@@ -61,7 +61,7 @@ const I18N = {
     loggingIn: "Melde an...",
     forgotPassword: "Passwort vergessen?",
     requestAccessDesc:
-      "Aus Sicherheitsgründen gibt es keine offene Registrierung mehr. Schick mir kurz deinen Namen und die gewünschte E-Mail-Adresse – ich lege dir dann ein Konto an und schicke dir ein Start-Passwort.",
+      "Aus Sicherheitsgründen gibt es keine offene Registrierung mehr. Schick mir kurz deinen Namen, die gewünschte E-Mail-Adresse sowie die Kostenstelle(n) und das/die Team(s), für die du Zugriff brauchst – ich lege dir dann ein Konto an und schicke dir ein Start-Passwort.",
     requestAccessMailBtn: "📧 Mail an den Admin öffnen",
     requestAccessTeamsNote: "Geht auch ganz einfach per Nachricht in Teams.",
     onboardingBannerText: "📋 Anleitung",
@@ -321,7 +321,7 @@ const I18N = {
     loggingIn: "Logging in...",
     forgotPassword: "Forgot password?",
     requestAccessDesc:
-      "For security reasons there's no open self-registration anymore. Just send me your name and the email address you'd like to use - I'll set up an account and send you a starting password.",
+      "For security reasons there's no open self-registration anymore. Just send me your name, the email address you'd like to use, and the cost center(s) and team(s) you need access to - I'll set up an account and send you a starting password.",
     requestAccessMailBtn: "📧 Open email to admin",
     requestAccessTeamsNote: "A quick Teams message works just as well.",
     onboardingBannerText: "📋 Guide",
@@ -1244,10 +1244,14 @@ function readDepartmentTeam(idPrefix) {
 // hat). Stattdessen: Zugang per Mail/Teams beim Admin anfragen, der die
 // Person über einen ihm bekannten, vertrauten Kanal identifiziert und das
 // Konto danach selbst über die Supabase-Admin-API anlegt (siehe README).
-const ACCESS_REQUEST_MAILTO =
-  "mailto:d.goos@house-of-communication.com" +
-  "?subject=" + encodeURIComponent("Zugang zur Process- & AI-Usecase App") +
-  "&body=" + encodeURIComponent("Hallo,\n\nich hätte gern Zugang zur App.\n\nName: \nE-Mail-Adresse (für den Zugang): \n\nDanke!");
+function accessRequestMailto() {
+  const subject = currentLang === "en" ? "Access to the Process- & AI-Usecase App" : "Zugang zur Process- & AI-Usecase App";
+  const body =
+    currentLang === "en"
+      ? "Hi,\n\nI'd like access to the app.\n\nName: \nEmail address (for access): \nCost center(s): \nTeam(s): \n\nThanks!"
+      : "Hallo,\n\nich hätte gern Zugang zur App.\n\nName: \nE-Mail-Adresse (für den Zugang): \nKostenstelle(n): \nTeam(s): \n\nDanke!";
+  return "mailto:d.goos@house-of-communication.com" + "?subject=" + encodeURIComponent(subject) + "&body=" + encodeURIComponent(body);
+}
 
 function renderLogin() {
   const isRequest = authMode === "request";
@@ -1266,7 +1270,7 @@ function renderLogin() {
           ? `
         <div class="card" style="text-align:left; max-width:320px;">
           <p style="margin:0 0 12px; font-size:13.5px; color:var(--text); line-height:1.55;">${t("requestAccessDesc")}</p>
-          <a class="btn-primary" style="display:block; text-align:center; text-decoration:none;" href="${ACCESS_REQUEST_MAILTO}">${t("requestAccessMailBtn")}</a>
+          <a class="btn-primary" style="display:block; text-align:center; text-decoration:none;" href="${accessRequestMailto()}">${t("requestAccessMailBtn")}</a>
           <p style="margin:12px 0 0; font-size:12.5px; color:var(--text-dim);">${t("requestAccessTeamsNote")}</p>
         </div>
       `
