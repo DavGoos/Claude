@@ -257,18 +257,21 @@ alter table processes enable row level security;
 
 drop policy if exists "Processes: select for logged in users" on processes;
 drop policy if exists "Processes: select for approved users" on processes;
+drop policy if exists "Processes: select with kostenstelle access" on processes;
 create policy "Processes: select with kostenstelle access"
   on processes for select
   using (is_approved_user() and can_read_kostenstelle(department, team));
 
 drop policy if exists "Processes: insert for logged in users" on processes;
 drop policy if exists "Processes: insert for approved users" on processes;
+drop policy if exists "Processes: insert with kostenstelle access" on processes;
 create policy "Processes: insert with kostenstelle access"
   on processes for insert
   with check (is_approved_user() and can_write_kostenstelle(department, team));
 
 drop policy if exists "Processes: update for logged in users" on processes;
 drop policy if exists "Processes: update for approved users" on processes;
+drop policy if exists "Processes: update with kostenstelle access" on processes;
 create policy "Processes: update with kostenstelle access"
   on processes for update
   using (is_approved_user() and can_write_kostenstelle(department, team))
@@ -276,6 +279,7 @@ create policy "Processes: update with kostenstelle access"
 
 drop policy if exists "Processes: delete for logged in users" on processes;
 drop policy if exists "Processes: delete for approved users" on processes;
+drop policy if exists "Processes: delete with kostenstelle access" on processes;
 create policy "Processes: delete with kostenstelle access"
   on processes for delete
   using (is_approved_user() and can_write_kostenstelle(department, team));
@@ -364,18 +368,21 @@ alter table ideas enable row level security;
 
 drop policy if exists "Ideas: select for logged in users" on ideas;
 drop policy if exists "Ideas: select for approved users" on ideas;
+drop policy if exists "Ideas: select with kostenstelle access" on ideas;
 create policy "Ideas: select with kostenstelle access"
   on ideas for select
   using (is_approved_user() and can_read_kostenstelle(department, team));
 
 drop policy if exists "Ideas: insert for logged in users" on ideas;
 drop policy if exists "Ideas: insert for approved users" on ideas;
+drop policy if exists "Ideas: insert with kostenstelle access" on ideas;
 create policy "Ideas: insert with kostenstelle access"
   on ideas for insert
   with check (is_approved_user() and can_write_kostenstelle(department, team));
 
 drop policy if exists "Ideas: update for logged in users" on ideas;
 drop policy if exists "Ideas: update for approved users" on ideas;
+drop policy if exists "Ideas: update with kostenstelle access" on ideas;
 create policy "Ideas: update with kostenstelle access"
   on ideas for update
   using (is_approved_user() and can_write_kostenstelle(department, team))
@@ -383,6 +390,7 @@ create policy "Ideas: update with kostenstelle access"
 
 drop policy if exists "Ideas: delete for logged in users" on ideas;
 drop policy if exists "Ideas: delete for approved users" on ideas;
+drop policy if exists "Ideas: delete with kostenstelle access" on ideas;
 create policy "Ideas: delete with kostenstelle access"
   on ideas for delete
   using (is_approved_user() and can_write_kostenstelle(department, team));
