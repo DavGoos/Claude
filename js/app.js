@@ -30,7 +30,7 @@ document.documentElement.setAttribute("data-theme", currentTheme);
 // (z.B. Android-Statusleiste), damit sie zum jeweiligen Modus passt.
 function updateThemeColorMeta() {
   const meta = document.querySelector('meta[name="theme-color"]');
-  if (meta) meta.content = currentTheme === "light" ? "#b45309" : "#047857";
+  if (meta) meta.content = currentTheme === "light" ? "#0369a1" : "#047857";
 }
 updateThemeColorMeta();
 

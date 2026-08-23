@@ -13,16 +13,16 @@
   --radius: 14px;
 }
 
-/* Hellmodus (über den Umschalter oben rechts) - Akzent: Sonnengelb/Bernstein. */
+/* Hellmodus (über den Umschalter oben rechts) - Akzent: Azurblau. */
 :root[data-theme="light"] {
-  --bg: #f7f7f4;
+  --bg: #f5f7fa;
   --surface: #ffffff;
-  --surface-2: #f0efea;
-  --border: #e2e0d8;
-  --text: #1c1c1a;
-  --text-dim: #6b6a63;
-  --accent: #b45309;
-  --accent-2: #f59e0b;
+  --surface-2: #eef1f5;
+  --border: #dde2e8;
+  --text: #14181f;
+  --text-dim: #626b78;
+  --accent: #0369a1;
+  --accent-2: #0ea5e9;
   --danger: #dc2626;
   --success: #16a34a;
 }

@@ -268,7 +268,7 @@ funktioniert die App ganz normal weiter, nur eben ohne die KI-Ausarbeitung.
   bewusst immer das deutsche Original, unabhängig vom Sprachschalter.
 - **Hell-/Dunkelmodus umschalten**: Ein weiterer Knopf oben rechts (☀️/🌙)
   wechselt zwischen Dunkelmodus (Standard, Akzent Smaragdgrün) und
-  Hellmodus (Akzent Sonnengelb/Bernstein). Die Einstellung wird ebenfalls
+  Hellmodus (Akzent Azurblau). Die Einstellung wird ebenfalls
   pro Gerät gespeichert.
 - **Problem / Ziel / Business Benefit getrennt**: Statt einem einzigen
   Beschreibungsfeld gibt es drei eigene Felder, die exakt den Spalten der
