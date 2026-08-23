@@ -122,7 +122,7 @@ const I18N = {
 
     catalogFieldsTitle: "Weitere Katalog-Felder (optional)",
     catalogFieldsDesc:
-      "Zusätzliche Felder für den Abgleich mit der zentralen AI Ambassadors Usecase-Collection. Nicht nötig für die tägliche Nutzung.",
+      "Zusätzliche Felder für den Abgleich mit der zentralen AI Ambassadors Usecase-Collection. Für die tägliche Nutzung optional – möchtest du diese Idee aber später als Case in die Usecase-Collection kopieren (siehe 🔄 Export), sind genau diese Felder relevant und sollten vorher ausgefüllt sein.",
     aiRoleLabel: "KI-Rolle",
     inputSourceLabel: "Input (Datenquelle)",
     inputSourcePlaceholder: "Woher kommen die Daten/Eingaben?",
@@ -143,6 +143,8 @@ const I18N = {
     exportTitle: "Neue Ideen für die AI Ambassadors Usecase-Collection kopieren",
     exportIntro:
       "Hier stehen alle Ideen, die noch keine Katalog-ID haben – also noch nicht in der zentralen AI Ambassadors Usecase-Collection stehen. Wichtig: Das ist reines Copy & Paste, hier wird nichts automatisch geschrieben oder synchronisiert. Kopiere eine Idee (oder alle) und füge sie selbst als neue Zeile in die Usecase-Collection ein (am einfachsten mit der Tab-getrennt-Option unten), oder poste den Text stattdessen in den Chat mit Claude, wenn du beim Einordnen Unterstützung möchtest. Trag die dort vergebene Katalog-ID (z.B. GC30) anschließend hier bei der Idee ein, dann verschwindet sie aus dieser Liste.",
+    exportFieldsNote:
+      "Vor dem Kopieren prüfen: Bei der Idee gibt es einen ausklappbaren Bereich \"Weitere Katalog-Felder\" (KI-Rolle, Input, Output, Kind of KPI, quantifizierter/qualitativer Nutzen, Kommentar, Priorität). Die sind für die tägliche Nutzung optional – für einen vollständigen Case in der Usecase-Collection sind es aber genau die relevanten Felder und sollten ausgefüllt sein, bevor du kopierst.",
     exportEmpty: "Alle Ideen haben bereits eine Katalog-ID – nichts zu kopieren.",
     copyOneBtn: "📋 Kopieren",
     copyAllBtn: "📋 Alle kopieren",
@@ -358,7 +360,7 @@ const I18N = {
 
     catalogFieldsTitle: "Additional catalog fields (optional)",
     catalogFieldsDesc:
-      "Extra fields to align with the central AI Ambassadors Usecase Collection. Not needed for everyday use.",
+      "Extra fields to align with the central AI Ambassadors Usecase Collection. Optional for everyday use - but if you plan to copy this idea into the Usecase Collection as a case later (see 🔄 Export), these are exactly the fields that matter and should be filled in beforehand.",
     aiRoleLabel: "AI role",
     inputSourceLabel: "Input (data source)",
     inputSourcePlaceholder: "Where does the data/input come from?",
@@ -379,6 +381,8 @@ const I18N = {
     exportTitle: "Copy new ideas into the AI Ambassadors Usecase Collection",
     exportIntro:
       "This lists every idea that doesn't have a catalog ID yet - i.e. isn't in the central AI Ambassadors Usecase Collection yet. Important: this is plain copy & paste, nothing here writes or syncs anything automatically. Copy one idea (or all of them) and paste it yourself as a new row into the Usecase Collection (easiest with the tab-separated option below), or post the text into the chat with Claude instead if you'd like help sorting it out. Enter the catalog ID assigned there (e.g. GC30) back on the idea afterwards, then it disappears from this list.",
+    exportFieldsNote:
+      "Check before copying: the idea has an expandable \"Additional catalog fields\" section (AI role, input, output, kind of KPI, quantified/qualitative benefit, comment, priority). Those are optional for everyday use - but for a complete case in the Usecase Collection they're exactly the fields that matter, so fill them in before copying.",
     exportEmpty: "Every idea already has a catalog ID - nothing to copy.",
     copyOneBtn: "📋 Copy",
     copyAllBtn: "📋 Copy all",
@@ -2236,6 +2240,7 @@ async function renderExportSync() {
       <div class="card">
         <div class="section-title" style="margin:0 0 10px;">${t("exportTitle")}</div>
         <p style="font-size:13.5px; color:var(--text-dim); margin:0 0 14px; line-height:1.5;">${t("exportIntro")}</p>
+        <p style="font-size:13px; color:var(--text); background:var(--surface-2); border-left:3px solid var(--accent); border-radius:6px; padding:10px 12px; margin:0 0 14px; line-height:1.5;">${t("exportFieldsNote")}</p>
         ${
           list.length
             ? `<p style="font-size:12.5px; color:var(--text-dim); margin:0 0 14px; line-height:1.5;">${t("exportTsvNote")}</p>

@@ -232,10 +232,12 @@ funktioniert die App ganz normal weiter, nur eben ohne die KI-Ausarbeitung.
   ausklappbaren Bereich "Weitere Katalog-Felder" (Katalog-ID, KI-Rolle,
   Input, Output, Kind of KPI, quantifizierter/qualitativer Nutzen,
   Kommentar, Priorität laut Liste) – für den Abgleich mit der zentralen
-  AI Ambassadors Usecase-Collection (der SharePoint-Excel-Datei). Optional,
-  nicht nötig für die normale Nutzung. Die Katalog-ID (z.B. "GC29") muss
-  eindeutig sein und dient als Schlüssel für spätere Abgleiche zwischen
-  App und Collection.
+  AI Ambassadors Usecase-Collection (der SharePoint-Excel-Datei). Für die
+  tägliche Nutzung optional – wer eine Idee aber später per 🔄 Export als
+  Case in die Collection kopieren will, sollte genau diese Felder vorher
+  ausfüllen, da sie dort die eigentlichen Inhaltsspalten sind. Die
+  Katalog-ID (z.B. "GC29") muss eindeutig sein und dient als Schlüssel für
+  spätere Abgleiche zwischen App und Collection.
 - **Usecase-Geber / Ansprechpartner**: Direkt im Hauptbereich jeder Idee
   lässt sich der Name der verantwortlichen Person hinterlegen, damit klar
   ist, wer bei Rückfragen anzusprechen ist.
