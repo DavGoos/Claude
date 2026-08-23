@@ -625,6 +625,25 @@ textarea.field { min-height: 70px; resize: vertical; }
   border-color: var(--accent);
 }
 
+.filter-select-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.filter-select {
+  flex: 1 1 140px;
+  min-width: 0;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  border-radius: 10px;
+  padding: 7px 10px;
+  font-size: 13px;
+  font-family: inherit;
+}
+
 .back-row {
   display: flex;
   align-items: center;

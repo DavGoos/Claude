@@ -100,6 +100,8 @@ const I18N = {
     saveIdea: "Idee speichern",
     ideaSavedMsg: "Idee gespeichert",
     filterAll: "Alle",
+    filterAllKostenstellenOption: "Alle Kostenstellen",
+    filterAllTeamsOption: "Alle Teams",
     emptyIdeas: "Noch keine Ideen hier. Trag oben deine erste Idee ein!",
     loadingIdeas: "Lade Ideen...",
 
@@ -388,6 +390,8 @@ const I18N = {
     saveIdea: "Save idea",
     ideaSavedMsg: "Idea saved",
     filterAll: "All",
+    filterAllKostenstellenOption: "All cost centers",
+    filterAllTeamsOption: "All teams",
     emptyIdeas: "No ideas yet. Add your first one above!",
     loadingIdeas: "Loading ideas...",
 
@@ -668,6 +672,8 @@ let kostenstellenCache = [];
 let myGrants = [];
 let accessCache = [];
 let activeFilter = "all";
+let activeDeptFilter = "";
+let activeTeamFilter = "";
 let passwordRecoveryMode = false;
 let authMode = "login";
 
@@ -859,6 +865,22 @@ function writableTeamsForCode(code) {
   if (!code) return TEAM_OPTIONS.slice();
   if (currentProfile.is_admin) return TEAM_OPTIONS.slice();
   const grants = myGrants.filter((g) => g.kostenstelle_code === code && g.access_level === "write");
+  if (grants.some((g) => g.team === "*")) return TEAM_OPTIONS.slice();
+  return TEAM_OPTIONS.filter((team) => grants.some((g) => g.team === team));
+}
+
+// Kostenstellen, die die aktuelle Person überhaupt sehen darf (lesend oder
+// schreibend) - für Filter-Dropdowns, nicht nur zum Anlegen/Bearbeiten.
+function readableCodes() {
+  if (currentProfile.is_admin) return kostenstellenCache.map((k) => k.code);
+  return Array.from(new Set(myGrants.map((g) => g.kostenstelle_code)));
+}
+
+// Teams, die für eine Kostenstelle (oder, ohne Kostenstelle, über alle
+// lesbaren Kostenstellen hinweg) für die aktuelle Person sichtbar sind.
+function readableTeamsForCode(code) {
+  if (currentProfile.is_admin) return TEAM_OPTIONS.slice();
+  const grants = code ? myGrants.filter((g) => g.kostenstelle_code === code) : myGrants;
   if (grants.some((g) => g.team === "*")) return TEAM_OPTIONS.slice();
   return TEAM_OPTIONS.filter((team) => grants.some((g) => g.team === team));
 }
@@ -1276,6 +1298,43 @@ function departmentTeamFields(department, team, idPrefix) {
   `;
 }
 
+// Gleiches Prinzip wie kostenstelleOptionsFrom/selectOptionsFrom, aber für
+// Filter statt Pflichtfelder: erste Option heißt "Alle ..." statt einem
+// leeren Platzhalter, weil bei Filtern "kein Filter" der sinnvolle Standard
+// ist (nicht "bitte auswählen").
+function kostenstelleFilterOptionsFrom(codes, selectedValue) {
+  const options = [`<option value="" ${selectedValue ? "" : "selected"}>${t("filterAllKostenstellenOption")}</option>`];
+  codes.forEach((code) => {
+    const k = kostenstellenCache.find((x) => x.code === code);
+    const label = k && k.name ? `${code} – ${k.name}` : code;
+    options.push(`<option value="${escapeHtml(code)}" ${code === selectedValue ? "selected" : ""}>${escapeHtml(label)}</option>`);
+  });
+  return options.join("");
+}
+
+function teamFilterOptionsFrom(teams, selectedValue) {
+  const options = [`<option value="" ${selectedValue ? "" : "selected"}>${t("filterAllTeamsOption")}</option>`];
+  teams.forEach((team) => {
+    options.push(`<option value="${escapeHtml(team)}" ${team === selectedValue ? "selected" : ""}>${escapeHtml(team)}</option>`);
+  });
+  return options.join("");
+}
+
+function deptTeamFilterRow(idPrefix, activeDept, activeTeam) {
+  const codes = readableCodes();
+  const teams = readableTeamsForCode(activeDept);
+  return `
+    <div class="filter-select-row">
+      <select class="filter-select" id="${idPrefix}-dept-filter">
+        ${kostenstelleFilterOptionsFrom(codes, activeDept)}
+      </select>
+      <select class="filter-select" id="${idPrefix}-team-filter">
+        ${teamFilterOptionsFrom(teams, activeTeam)}
+      </select>
+    </div>
+  `;
+}
+
 // Team-Dropdown ist von der gewählten Kostenstelle abhängig (unterschiedliche
 // Kostenstellen können unterschiedliche Teams freigeschaltet haben) - bei
 // jedem Wechsel der Kostenstelle die Team-Optionen neu berechnen.
@@ -1570,6 +1629,7 @@ async function renderList() {
         </div>
       </div>
       ${filterChips()}
+      ${deptTeamFilterRow("ideafilter", activeDeptFilter, activeTeamFilter)}
       <div class="idea-list" id="idea-list">
         <div class="empty-state">${t("loadingIdeas")}</div>
       </div>
@@ -1582,6 +1642,18 @@ async function renderList() {
   bindLangToggle();
   bindThemeToggle();
   bindDepartmentTeamFields("capture");
+
+  document.getElementById("ideafilter-dept-filter").addEventListener("change", (e) => {
+    activeDeptFilter = e.target.value;
+    const teams = readableTeamsForCode(activeDeptFilter);
+    if (!teams.includes(activeTeamFilter)) activeTeamFilter = "";
+    document.getElementById("ideafilter-team-filter").innerHTML = teamFilterOptionsFrom(teams, activeTeamFilter);
+    renderIdeaList();
+  });
+  document.getElementById("ideafilter-team-filter").addEventListener("change", (e) => {
+    activeTeamFilter = e.target.value;
+    renderIdeaList();
+  });
   document.getElementById("logout-btn").addEventListener("click", logout);
   document.getElementById("settings-btn").addEventListener("click", () => {
     window.location.hash = "#/settings";
@@ -1651,7 +1723,12 @@ function renderIdeaList() {
   const listEl = document.getElementById("idea-list");
   if (!listEl) return;
   const heads = ideasCache.filter(ideaIsChainHead);
-  const filtered = heads.filter((i) => activeFilter === "all" || i.status === activeFilter);
+  const filtered = heads.filter(
+    (i) =>
+      (activeFilter === "all" || i.status === activeFilter) &&
+      (!activeDeptFilter || i.department === activeDeptFilter) &&
+      (!activeTeamFilter || i.team === activeTeamFilter)
+  );
   if (filtered.length === 0) {
     listEl.innerHTML = `<div class="empty-state">${t("emptyIdeas")}</div>`;
   } else {
@@ -2125,6 +2202,8 @@ function processCard(proc) {
 }
 
 let activeProcessFilter = "all";
+let activeProcessDeptFilter = "";
+let activeProcessTeamFilter = "";
 
 async function renderProcessList() {
   $app.innerHTML = `
@@ -2150,6 +2229,7 @@ async function renderProcessList() {
         </div>
       </div>
       ${processFilterChips(activeProcessFilter)}
+      ${deptTeamFilterRow("processfilter", activeProcessDeptFilter, activeProcessTeamFilter)}
       <div class="idea-list" id="process-list">
         <div class="empty-state">${t("loadingProcesses")}</div>
       </div>
@@ -2162,6 +2242,18 @@ async function renderProcessList() {
   bindLangToggle();
   bindThemeToggle();
   bindDepartmentTeamFields("pcapture");
+
+  document.getElementById("processfilter-dept-filter").addEventListener("change", (e) => {
+    activeProcessDeptFilter = e.target.value;
+    const teams = readableTeamsForCode(activeProcessDeptFilter);
+    if (!teams.includes(activeProcessTeamFilter)) activeProcessTeamFilter = "";
+    document.getElementById("processfilter-team-filter").innerHTML = teamFilterOptionsFrom(teams, activeProcessTeamFilter);
+    renderProcessListItems();
+  });
+  document.getElementById("processfilter-team-filter").addEventListener("change", (e) => {
+    activeProcessTeamFilter = e.target.value;
+    renderProcessListItems();
+  });
   document.getElementById("logout-btn").addEventListener("click", logout);
   document.getElementById("settings-btn").addEventListener("click", () => {
     window.location.hash = "#/settings";
@@ -2227,7 +2319,12 @@ function processTreeNodeHtml(proc, filteredIds) {
 function renderProcessListItems() {
   const listEl = document.getElementById("process-list");
   if (!listEl) return;
-  const filtered = processesCache.filter((p) => activeProcessFilter === "all" || p.status === activeProcessFilter);
+  const filtered = processesCache.filter(
+    (p) =>
+      (activeProcessFilter === "all" || p.status === activeProcessFilter) &&
+      (!activeProcessDeptFilter || p.department === activeProcessDeptFilter) &&
+      (!activeProcessTeamFilter || p.team === activeProcessTeamFilter)
+  );
   if (filtered.length === 0) {
     listEl.innerHTML = `<div class="empty-state">${t("emptyProcesses")}</div>`;
   } else {
