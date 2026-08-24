@@ -475,6 +475,11 @@ create unique index if not exists ideas_catalog_id_key on ideas (catalog_id);
 -- einem Nutzerkonto).
 alter table ideas add column if not exists owner_name text not null default '';
 
+-- Freitext-Notiz: Kopie der Antwort einer KI auf den in der App erzeugten
+-- Start-Prompt (siehe js/app.js buildKickoffPrompt), rein zur Dokumentation.
+-- Wird von der App nicht ausgewertet oder in andere Felder übernommen.
+alter table ideas add column if not exists ai_plan_notes text not null default '';
+
 -- "description" war ein einziges Freitextfeld für Problem/Ziel/Business
 -- Benefit zusammen - der Excel-Katalog braucht die drei aber als getrennte
 -- Spalten (sonst muss man beim Export jedes Mal raten, wie der Text

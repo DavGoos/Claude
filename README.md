@@ -13,9 +13,7 @@ Bausteine, die einmalig eingerichtet werden:
 2. **GitHub Pages** (kostenloses Hosting für diese Web-App)
 
 Die Einrichtung dauert einmalig ca. 15–20 Minuten. Danach nutzt ihr die App
-einfach. Für die KI-Ausarbeitung hinterlegt später jede:r Nutzer:in optional
-einen eigenen API-Key (Claude oder OpenAI, frei wählbar) direkt in der App
-(siehe unten) – dafür ist keine weitere Einrichtung durch dich nötig.
+einfach.
 
 ---
 
@@ -211,34 +209,31 @@ würde.
   jederzeit direkt in der App anpassen (kein Code-Deploy nötig) – siehe
   "🧩 Teams" im Punkt "Kostenstellen- & Team-Zugriff" unten.
 
-## KI-Ausarbeitung: Standardweg braucht keinen API-Key
+## KI-Unterstützung: Start-Prompt für die Umsetzungsplanung
 
-Bei einer Idee auf **"📋 Prompt erzeugen"** tippen, den Text kopieren und in
-ein beliebiges KI-Chat-Tool einfügen, das ihr ohnehin schon nutzt – Copilot,
-ChatGPT (kostenlose Version), Claude.ai, Gemini, völlig egal. Die Antwort
-der KI kopiert ihr zurück in das Feld "Antwort der KI hier einfügen" und
-tippt auf "Übernehmen". Keine Anmeldung bei einem Entwickler-Portal, kein
-Guthaben, keine Kreditkarte nötig.
+Der Abschnitt "KI-Unterstützung" bei einer Idee (eingeklappt unter "Weitere
+Katalog-Felder") erzeugt **keine** fertige Ausarbeitung von Problem/Ziel/
+Business Benefit – die müssen vorher bereits von Hand ausgefüllt sein. Die
+KI soll sie als gegeben nehmen, nicht neu erfinden (sonst zirkulärer
+Bezug: man würde sie bitten, etwas neu zu erfinden, das man ihr gerade
+selbst gegeben hat).
 
-### Optional: automatische Ausarbeitung mit eigenem API-Key
+Stattdessen tippt man auf **"📋 Start-Prompt erzeugen"**: Die App baut daraus
+einen Prompt, der eine KI bittet, mögliche Umsetzungswege einzuschätzen –
+welche Tool-Stufe realistisch nötig ist (reicht ein einfacher Chat, ein
+Cowork-artiges No-Code-Setup, oder braucht es einen echten
+Coding-Assistenten?), welche Ausprägungen der Umsetzung denkbar sind, wo die
+Grenzen/Risiken liegen, ob IT nötig ist oder es im Alleingang geht, und wie
+es mit der Skalierbarkeit aussieht. Der erzeugte Text landet direkt im Feld
+"Start-Prompt fürs Projekt" (inkl. Kopieren-Button) und wird 1:1 in ein
+beliebiges KI-Chat-Tool eingefügt, das man ohnehin schon nutzt – Copilot,
+ChatGPT, Claude.ai, Gemini, völlig egal. Kein API-Key, keine Anmeldung bei
+einem Entwickler-Portal nötig.
 
-Wer statt Copy & Paste einen einzigen Klick möchte, kann zusätzlich einen
-eigenen API-Key hinterlegen (unter dem Zahnrad ⚙ → "Stattdessen automatisch
-mit eigenem API-Key" bei der Idee ausklappen). Wichtig dabei:
-
-- **Ein bestehendes Claude- oder ChatGPT-Abo deckt das nicht ab.** Der
-  API-Zugang (console.anthropic.com bzw. platform.openai.com) ist ein
-  eigenständiges, separat abgerechnetes Angebot, unabhängig vom Chat-Abo –
-  auch mit Abo muss man dort ein kleines Guthaben aufladen (wenige Euro
-  reichen für sehr viele Nutzungen).
-- Der Key wird ausschließlich lokal auf dem jeweiligen Handy gespeichert
-  und bei der Anfrage direkt an den gewählten Anbieter geschickt – nie über
-  einen gemeinsamen Server, andere Kolleg:innen sehen ihn nicht.
-- Jede Person entscheidet unabhängig, ob und welchen Anbieter (Claude oder
-  OpenAI) sie dafür nutzen möchte.
-
-Beide Wege sind komplett optional zueinander – ohne irgendetwas davon
-funktioniert die App ganz normal weiter, nur eben ohne die KI-Ausarbeitung.
+Die Antwort der KI kann man optional zur Dokumentation in das Feld
+"KI-Antwort (Notiz, optional)" zurückkopieren – die App liest daraus nichts
+automatisch aus oder schreibt es in andere Felder; es ist eine reine
+Gedächtnisstütze, die mit der Idee gespeichert wird.
 
 ---
 
@@ -248,11 +243,11 @@ funktioniert die App ganz normal weiter, nur eben ohne die KI-Ausarbeitung.
 - **Später ausarbeiten**: Beschreibung, Tags, Status pro Idee ergänzen.
 - **Bewerten**: Nutzen / Machbarkeit / Aufwand / Risiko einschätzen, die App
   zeigt direkt eine Einordnung ("Quick Win", "Großes Projekt", ...).
-- **Mit KI ausarbeiten**: Erzeugt einen fertigen Prompt zum Einfügen in ein
-  beliebiges KI-Chat-Tool (Copilot, ChatGPT, Claude, Gemini, ...) – kein
-  API-Key nötig. Die Antwort kopiert man zurück und übernimmt daraus
-  Beschreibung, Tools, wichtige Punkte vorab und einen Start-Prompt.
-  Optional geht das auch automatisch mit einem eigenen API-Key (siehe unten).
+- **Start-Prompt für die Umsetzung erzeugen**: Aus dem bereits ausgefüllten
+  Problem/Ziel/Business Benefit einen Prompt bauen, der eine KI bittet,
+  mögliche Umsetzungswege einzuschätzen (Tool-Bedarf, Grenzen,
+  Skalierbarkeit, IT-Bedarf ...) – zum Einfügen in ein beliebiges
+  KI-Chat-Tool, kein API-Key nötig (siehe "KI-Unterstützung" unten).
 - **Gemeinsam nutzen**: Mehrere Kolleg:innen loggen sich ein und sehen/bearbeiten dieselbe Liste
   – geschützt durch Domain-Sperre + Admin-Freigabe (siehe Schritt 7).
 - **Am PC nutzen**: Läuft genauso im Desktop-Browser, das Layout passt sich
@@ -386,7 +381,7 @@ funktioniert die App ganz normal weiter, nur eben ohne die KI-Ausarbeitung.
 index.html                Haupt-App
 css/style.css             Design
 js/config.js              Supabase-Zugangsdaten (Schritt 2)
-js/app.js                 App-Logik inkl. direktem Claude/OpenAI API Aufruf
+js/app.js                 App-Logik
 manifest.json, sw.js, icons/   PWA-Grundlagen (Installierbarkeit)
 supabase/schema.sql       Datenbank-Struktur (Ideen inkl. Stufenketten + Prozesse inkl. Teilprozess-Hierarchie)
 ```

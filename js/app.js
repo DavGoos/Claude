@@ -199,23 +199,20 @@ const I18N = {
 
     aiSupportTitle: "KI-Unterstützung",
     aiSupportDesc:
-      "Erzeuge einen fertigen Prompt und füge ihn in ein beliebiges KI-Chat-Tool ein, das du bereits nutzt (Copilot, ChatGPT, Claude, Gemini, ...) – kein eigener API-Key nötig. Kopier die Antwort danach hier zurück rein.",
-    generatePromptBtn: "📋 Prompt erzeugen",
-    copyToClipboardBtn: "In Zwischenablage kopieren",
-    aiResponsePasteLabel: "Antwort der KI hier einfügen",
-    aiResponsePlaceholder: "Antwort aus Copilot/ChatGPT/Claude/... hier einfügen",
-    applyBtn: "Übernehmen",
-    optionalApiDetails: "Stattdessen automatisch mit eigenem API-Key (optional)",
-    autoElaborateBtn: "✨ Automatisch mit KI ausarbeiten",
-    aiWorkingMsg: "KI arbeitet...",
+      "Erzeugt einen Prompt, der eine KI dazu anleitet, mögliche Umsetzungswege für diesen Use Case einzuschätzen (nötige Tool-Stufe, Grenzen, Skalierbarkeit, IT-Bedarf ...). Voraussetzung: Problem, Ziel und Business Benefit oben sind bereits ausgefüllt – die werden als feste Grundlage übernommen, nicht neu erfunden. Füge den Prompt in ein beliebiges KI-Chat-Tool ein (Copilot, ChatGPT, Claude, Gemini, ...) und kopier die Antwort bei Bedarf unten zur Doku rein – ausgewertet wird sie nicht automatisch.",
+    generatePromptBtn: "📋 Start-Prompt erzeugen",
+    aiResponsePasteLabel: "KI-Antwort (Notiz, optional)",
+    aiResponsePlaceholder: "Antwort/Zusammenfassung der KI hier zur Doku einfügen (optional)",
 
     toolsLabel: "Tools & Umsetzungsoptionen",
-    toolsPlaceholder: "Wird von der KI vorgeschlagen oder hier selbst eintragen",
+    toolsPlaceholder: "z.B. konkrete Tools/Frameworks, die für die Umsetzung sinnvoll sind",
     considerationsLabel: "Wichtige Gedanken vorab",
     considerationsPlaceholder: "z.B. Datenschutz, Datenquelle, Kosten",
     startPromptLabel: "Start-Prompt fürs Projekt",
-    startPromptPlaceholder: "Wird von der KI generiert",
+    startPromptPlaceholder: "Per Klick auf \"Start-Prompt erzeugen\" befüllt, oder hier selbst eintragen",
     copyStartPromptBtn: "Start-Prompt kopieren",
+    kickoffPromptRequiresFieldsMsg: "Bitte zuerst Problem, Ziel und Business Benefit ausfüllen.",
+    kickoffPromptGeneratedMsg: "Start-Prompt erzeugt",
 
     saveBtn: "Speichern",
     savingBtn: "Speichere...",
@@ -224,18 +221,6 @@ const I18N = {
     ideaDeletedMsg: "Idee gelöscht",
     copiedMsg: "In Zwischenablage kopiert",
     copyFailedMsg: "Kopieren nicht möglich, bitte manuell markieren",
-    copiedPasteHintMsg: "In Zwischenablage kopiert – jetzt in dein KI-Tool einfügen",
-    couldNotParseMsg:
-      "Konnte die Antwort nicht automatisch auslesen. Du kannst die Felder unten auch selbst aus der Antwort befüllen.",
-    proposalApplied: "Vorschlag übernommen, denk ans Speichern!",
-    suggestedProblem: "Vorschlag Problem",
-    suggestedGoal: "Vorschlag Ziel",
-    suggestedBusinessBenefit: "Vorschlag Business Benefit",
-    suggestedTools: "Vorschlag Tools",
-    suggestedConsiderations: "Wichtige Gedanken vorab",
-    suggestedStartPrompt: "Start-Prompt",
-    applySuggestionBtn: "Vorschlag übernehmen",
-
     newProcessLabel: "Neuen Prozess dokumentieren",
     processPlaceholder: "z.B. Angebote erstellen, Rechnungsprüfung, Kundenonboarding...",
     saveProcessBtn: "Prozess speichern",
@@ -266,17 +251,6 @@ const I18N = {
       "Diesen Prozess wirklich löschen? Verknüpfte Ideen bleiben erhalten, verlieren aber die Zuordnung.",
     processDeletedMsg: "Prozess gelöscht",
     subProcessSavedMsg: "Teilprozess gespeichert",
-
-    settingsTitleOptionalKey: "Eigener KI-API-Key (optional)",
-    settingsIntro1:
-      "Komplett optional: Standardmäßig erzeugt die App einen Prompt zum Kopieren, den du in ein beliebiges KI-Chat-Tool einfügst, das du bereits nutzt (Copilot, ChatGPT, Claude, Gemini, ...) – ganz ohne diesen Key. Nur wer die Ausarbeitung stattdessen automatisch mit einem Klick möchte, braucht hier einen eigenen Key.",
-    settingsIntro2:
-      "Wichtig: Ein bestehendes Claude- oder ChatGPT-Abo deckt das nicht ab – der API-Zugang ist ein separates, eigenständig abgerechnetes Angebot (siehe Anleitung unten) und wird ausschließlich auf diesem Handy gespeichert, nie an Kolleg:innen oder einen eigenen Server geschickt.",
-    howToTitle: "So kommst du an einen $-Key:",
-    apiKeyLabelPrefix: "API-Key (",
-    removeBtn: "Entfernen",
-    keySavedMsg: "API-Key gespeichert",
-    keyRemovedMsg: "API-Key entfernt",
 
     pendingApprovalTitlePrefix: "Wartet auf Freigabe (",
     noPendingMsg: "Aktuell wartet niemand auf Freigabe.",
@@ -349,9 +323,6 @@ const I18N = {
     profileLoadErrorPrefix: "Fehler beim Laden des Profils: ",
     approveErrorPrefix: "Fehler beim Freigeben: ",
     rejectErrorPrefix: "Fehler beim Ablehnen: ",
-    noApiKeyError: "Kein eigener API-Key hinterlegt. Bitte unter Einstellungen eintragen.",
-    claudeApiError: "Claude API Fehler: ",
-    openaiApiError: "OpenAI API Fehler: ",
   },
   en: {
     appName: "Process & AI Use Case Management",
@@ -502,23 +473,20 @@ const I18N = {
 
     aiSupportTitle: "AI support",
     aiSupportDesc:
-      "Generate a ready-made prompt and paste it into any AI chat tool you already use (Copilot, ChatGPT, Claude, Gemini, ...) - no API key needed. Paste the reply back in here afterwards.",
-    generatePromptBtn: "📋 Generate prompt",
-    copyToClipboardBtn: "Copy to clipboard",
-    aiResponsePasteLabel: "Paste the AI's reply here",
-    aiResponsePlaceholder: "Paste the reply from Copilot/ChatGPT/Claude/... here",
-    applyBtn: "Apply",
-    optionalApiDetails: "Or automatically with your own API key (optional)",
-    autoElaborateBtn: "✨ Elaborate automatically with AI",
-    aiWorkingMsg: "AI is working...",
+      "Generates a prompt that guides an AI to assess possible implementation paths for this use case (tool tier needed, limits, scalability, IT involvement ...). Requires problem, goal and business benefit above to already be filled in - those are taken as a fixed given, not reinvented. Paste the prompt into any AI chat tool (Copilot, ChatGPT, Claude, Gemini, ...) and optionally paste the reply back below for documentation - it isn't evaluated automatically.",
+    generatePromptBtn: "📋 Generate starter prompt",
+    aiResponsePasteLabel: "AI reply (optional note)",
+    aiResponsePlaceholder: "Paste the AI's reply/summary here for documentation (optional)",
 
     toolsLabel: "Tools & implementation options",
-    toolsPlaceholder: "Suggested by AI, or fill in yourself",
+    toolsPlaceholder: "e.g. concrete tools/frameworks that make sense for the implementation",
     considerationsLabel: "Key considerations upfront",
     considerationsPlaceholder: "e.g. Privacy, data sources, cost",
     startPromptLabel: "Starter prompt for the project",
-    startPromptPlaceholder: "Generated by AI",
+    startPromptPlaceholder: "Filled in by clicking \"Generate starter prompt\", or write it yourself",
     copyStartPromptBtn: "Copy starter prompt",
+    kickoffPromptRequiresFieldsMsg: "Please fill in problem, goal and business benefit first.",
+    kickoffPromptGeneratedMsg: "Starter prompt generated",
 
     saveBtn: "Save",
     savingBtn: "Saving...",
@@ -527,18 +495,6 @@ const I18N = {
     ideaDeletedMsg: "Idea deleted",
     copiedMsg: "Copied to clipboard",
     copyFailedMsg: "Couldn't copy, please select manually",
-    copiedPasteHintMsg: "Copied to clipboard - now paste it into your AI tool",
-    couldNotParseMsg:
-      "Couldn't automatically parse the reply. You can also fill in the fields below yourself from the reply.",
-    proposalApplied: "Suggestion applied, remember to save!",
-    suggestedProblem: "Suggested problem",
-    suggestedGoal: "Suggested goal",
-    suggestedBusinessBenefit: "Suggested business benefit",
-    suggestedTools: "Suggested tools",
-    suggestedConsiderations: "Key considerations upfront",
-    suggestedStartPrompt: "Starter prompt",
-    applySuggestionBtn: "Apply suggestion",
-
     newProcessLabel: "Document a new process",
     processPlaceholder: "e.g. Creating quotes, invoice review, customer onboarding...",
     saveProcessBtn: "Save process",
@@ -568,17 +524,6 @@ const I18N = {
     deleteProcessConfirm: "Really delete this process? Linked ideas stay, but lose their assignment.",
     processDeletedMsg: "Process deleted",
     subProcessSavedMsg: "Sub-process saved",
-
-    settingsTitleOptionalKey: "Your own AI API key (optional)",
-    settingsIntro1:
-      "Completely optional: by default the app generates a prompt to copy, which you paste into any AI chat tool you already use (Copilot, ChatGPT, Claude, Gemini, ...) - no key needed at all. Only if you want the one-click automatic elaboration instead, you need your own key here.",
-    settingsIntro2:
-      "Important: an existing Claude or ChatGPT subscription does not cover this - API access is a separate, independently billed offering (see instructions below) and is stored only on this phone, never sent to colleagues or a server of ours.",
-    howToTitle: "How to get a $ key:",
-    apiKeyLabelPrefix: "API key (",
-    removeBtn: "Remove",
-    keySavedMsg: "API key saved",
-    keyRemovedMsg: "API key removed",
 
     pendingApprovalTitlePrefix: "Waiting for approval (",
     noPendingMsg: "No one is currently waiting for approval.",
@@ -651,9 +596,6 @@ const I18N = {
     profileLoadErrorPrefix: "Error loading profile: ",
     approveErrorPrefix: "Error approving: ",
     rejectErrorPrefix: "Error rejecting: ",
-    noApiKeyError: "No personal API key set. Please add one under Settings.",
-    claudeApiError: "Claude API error: ",
-    openaiApiError: "OpenAI API error: ",
   },
 };
 
@@ -1158,186 +1100,51 @@ async function deleteIdea(id) {
   return true;
 }
 
-const AI_PROVIDERS = {
-  anthropic: {
-    label: "Claude",
-    keyStorage: "ai_ideen_anthropic_key",
-    placeholder: "sk-ant-...",
-    howTo: {
-      de: [
-        "Auf console.anthropic.com registrieren oder einloggen.",
-        'Links im Menü auf "API Keys" gehen und einen neuen Key erstellen.',
-        "Etwas Guthaben aufladen (wenige Euro reichen für sehr viele Nutzungen).",
-      ],
-      en: [
-        "Sign up or log in at console.anthropic.com.",
-        'Go to "API Keys" in the left menu and create a new key.',
-        "Add a bit of credit (a few euros/dollars covers a lot of usage).",
-      ],
-    },
-  },
-  openai: {
-    label: "OpenAI (ChatGPT)",
-    keyStorage: "ai_ideen_openai_key",
-    placeholder: "sk-...",
-    howTo: {
-      de: [
-        "Auf platform.openai.com registrieren oder einloggen.",
-        'Über das Nutzermenü zu "API keys" gehen und einen neuen Key erstellen.',
-        "Etwas Guthaben aufladen (wenige Euro reichen für sehr viele Nutzungen).",
-      ],
-      en: [
-        "Sign up or log in at platform.openai.com.",
-        'Go to "API keys" via the user menu and create a new key.',
-        "Add a bit of credit (a few euros/dollars covers a lot of usage).",
-      ],
-    },
-  },
+// Start-Prompt fürs Projekt: nimmt Kurznotiz + das bereits vom Menschen
+// geschriebene Problem/Ziel/Business Benefit als feste Grundlage (die KI
+// soll diese NICHT neu erfinden - sonst zirkulärer Bezug, siehe Diskussion
+// im Chat) und bittet ausschließlich um eine Einschätzung möglicher
+// Umsetzungswege. Bewusst als Freitext-Prompt zum Einfügen in ein
+// beliebiges KI-Chat-Tool, nicht als strukturierte JSON-Antwort - die App
+// wertet die Antwort nicht mehr automatisch aus (siehe f-ai-plan-notes).
+const KICKOFF_PROMPT_INSTRUCTIONS = {
+  de: `Ich möchte diesen internen AI-Use-Case realistisch einschätzen und die Umsetzung planen. Bitte hilf mir dabei und gehe auf Folgendes ein:
+
+- Welche konkreten Lösungsansätze/Architekturen kommen realistisch in Frage?
+- Welche "Tool-Stufe" ist dafür nötig: reicht ein einfacher KI-Chat, ein Cowork-artiges No-Code-Setup, oder braucht es einen echten Coding-Assistenten bzw. Entwicklung?
+- In welchen Ausprägungen ist eine Umsetzung denkbar (z.B. schlanker erster Schritt vs. vollständige Lösung)?
+- Wo liegen die Grenzen bzw. Risiken dieses Ansatzes?
+- Ist das im Alleingang umsetzbar, oder braucht es IT bzw. weitere Spezialist:innen?
+- Wie sieht es mit der Skalierbarkeit aus?
+
+Fasse deine Antwort am Ende in einem kompakten Abschnitt "Projektaufbau-Zusammenfassung" zusammen, den ich unverändert in mein Tracking-Tool zurückkopieren kann.`,
+  en: `I want to realistically assess this internal AI use case and plan its implementation. Please help me with that and address the following:
+
+- What concrete solution approaches/architectures are realistically possible?
+- What "tool tier" is needed: is a simple AI chat enough, a Cowork-like no-code setup, or does it need a real coding assistant / development?
+- What forms of implementation are conceivable (e.g. a lean first step vs. a full solution)?
+- Where are the limits or risks of this approach?
+- Can this be done solo, or does it need IT or other specialists?
+- What about scalability?
+
+End your answer with a compact "Project setup summary" section that I can copy back into my tracking tool unchanged.`,
 };
 
-const AI_PROVIDER_STORAGE = "ai_ideen_ai_provider";
-
-function getAiProvider() {
-  const stored = localStorage.getItem(AI_PROVIDER_STORAGE);
-  return AI_PROVIDERS[stored] ? stored : "anthropic";
-}
-
-function setAiProvider(provider) {
-  localStorage.setItem(AI_PROVIDER_STORAGE, provider);
-}
-
-function getProviderKey(provider) {
-  return localStorage.getItem(AI_PROVIDERS[provider].keyStorage) || "";
-}
-
-function setProviderKey(provider, key) {
-  const storageKey = AI_PROVIDERS[provider].keyStorage;
-  if (key) localStorage.setItem(storageKey, key);
-  else localStorage.removeItem(storageKey);
-}
-
-const ELABORATE_SYSTEM_PROMPTS = {
-  de: `Du bist ein erfahrener AI-Solution-Architekt, der intern erfasste
-AI-Use-Case-Ideen eines Unternehmens ausarbeitet. Du bekommst eine kurze Notiz und
-optional ein bereits vorhandenes Problem/Ziel/Business Benefit. Antworte AUSSCHLIESSLICH
-mit einem JSON-Objekt (kein Markdown, kein Fließtext davor oder danach) mit genau
-diesen Feldern:
-
-{
-  "problem": "Klare Beschreibung des Problems: was ist aktuell schwierig, aufwendig oder fehleranfällig? Auf Deutsch, 2-4 Sätze.",
-  "goal": "Was soll die KI-Lösung konkret leisten bzw. automatisieren? Auf Deutsch, 2-4 Sätze.",
-  "business_benefit": "Welcher konkrete Nutzen (Zeit, Qualität, Kosten, Risiko) entsteht dadurch? Auf Deutsch, 2-4 Sätze.",
-  "tools": "Konkrete Vorschläge für Tools/Frameworks/Architektur, die für die Umsetzung sinnvoll sind, als kurze Liste mit Begründung.",
-  "considerations": "Wichtige Gedanken vorab: Datenschutz, benötigte Datenquellen, Kosten, Abhängigkeiten, Stakeholder, Risiken. Als kurze Liste.",
-  "initial_prompt": "Ein guter, direkt verwendbarer Start-Prompt (auf Deutsch), mit dem man z.B. bei Claude Code oder einem neuen Chat in die Umsetzung dieses Projekts einsteigen kann. Soll Kontext, Ziel und relevante Rahmenbedingungen enthalten."
-}`,
-  en: `You are an experienced AI solution architect who elaborates on internally
-captured AI use case ideas for a company. You get a short note and optionally
-an existing problem/goal/business benefit. Respond ONLY with a JSON object
-(no markdown, no text before or after) with exactly these fields:
-
-{
-  "problem": "Clear description of the problem: what's currently hard, slow, or error-prone? In English, 2-4 sentences.",
-  "goal": "What should the AI solution actually do / automate? In English, 2-4 sentences.",
-  "business_benefit": "What concrete benefit (time, quality, cost, risk) does this create? In English, 2-4 sentences.",
-  "tools": "Concrete suggestions for tools/frameworks/architecture that make sense for the implementation, as a short list with rationale.",
-  "considerations": "Key considerations upfront: privacy, required data sources, cost, dependencies, stakeholders, risks. As a short list.",
-  "initial_prompt": "A good, directly usable starter prompt (in English) to kick off implementation of this project, e.g. with Claude Code or a new chat. Should include context, goal, and relevant constraints."
-}`,
-};
-
-function ideaContextMessage(idea) {
-  const none = currentLang === "en" ? "(none yet)" : "(noch keine)";
+function kickoffPromptContext(fields) {
   const labels =
     currentLang === "en"
       ? { note: "Quick note", problem: "Problem", goal: "Goal", benefit: "Business benefit" }
       : { note: "Kurznotiz", problem: "Problem", goal: "Ziel", benefit: "Business Benefit" };
   return [
-    `${labels.note}: ${trValue(idea, "quick_note")}`,
-    `${labels.problem}: ${trValue(idea, "problem") || none}`,
-    `${labels.goal}: ${trValue(idea, "goal") || none}`,
-    `${labels.benefit}: ${trValue(idea, "business_benefit") || none}`,
+    `${labels.note}: ${fields.quick_note}`,
+    `${labels.problem}: ${fields.problem}`,
+    `${labels.goal}: ${fields.goal}`,
+    `${labels.benefit}: ${fields.business_benefit}`,
   ].join("\n\n");
 }
 
-function buildElaboratePrompt(idea) {
-  const prompt = ELABORATE_SYSTEM_PROMPTS[currentLang];
-  return `${prompt}\n\n---\n\n${ideaContextMessage(idea)}`;
-}
-
-function extractJson(text) {
-  const trimmed = text.trim();
-  const fenced = trimmed.match(/```(?:json)?\s*([\s\S]*?)```/i);
-  const candidate = fenced ? fenced[1] : trimmed;
-  const start = candidate.indexOf("{");
-  const end = candidate.lastIndexOf("}");
-  const jsonSlice = start >= 0 && end >= 0 ? candidate.slice(start, end + 1) : candidate;
-  return JSON.parse(jsonSlice);
-}
-
-async function elaborateWithAnthropic(apiKey, userMessage) {
-  const res = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: {
-      "content-type": "application/json",
-      "x-api-key": apiKey,
-      "anthropic-version": "2023-06-01",
-      "anthropic-dangerous-direct-browser-access": "true",
-    },
-    body: JSON.stringify({
-      model: "claude-sonnet-5",
-      max_tokens: 1500,
-      system: ELABORATE_SYSTEM_PROMPTS[currentLang],
-      messages: [{ role: "user", content: userMessage }],
-    }),
-  });
-  if (!res.ok) {
-    const errText = await res.text();
-    throw new Error(t("claudeApiError") + errText);
-  }
-  const data = await res.json();
-  return data.content?.[0]?.text || "";
-}
-
-async function elaborateWithOpenAI(apiKey, userMessage) {
-  const res = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "content-type": "application/json",
-      authorization: `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({
-      model: "gpt-4o-mini",
-      response_format: { type: "json_object" },
-      messages: [
-        { role: "system", content: ELABORATE_SYSTEM_PROMPTS[currentLang] },
-        { role: "user", content: userMessage },
-      ],
-    }),
-  });
-  if (!res.ok) {
-    const errText = await res.text();
-    throw new Error(t("openaiApiError") + errText);
-  }
-  const data = await res.json();
-  return data.choices?.[0]?.message?.content || "";
-}
-
-async function elaborateWithAI(idea) {
-  const provider = getAiProvider();
-  const apiKey = getProviderKey(provider);
-  if (!apiKey) {
-    throw new Error(t("noApiKeyError"));
-  }
-
-  const userMessage = ideaContextMessage(idea);
-
-  const rawText =
-    provider === "openai"
-      ? await elaborateWithOpenAI(apiKey, userMessage)
-      : await elaborateWithAnthropic(apiKey, userMessage);
-
-  return extractJson(rawText);
+function buildKickoffPrompt(fields) {
+  return `${kickoffPromptContext(fields)}\n\n---\n\n${KICKOFF_PROMPT_INSTRUCTIONS[currentLang]}`;
 }
 
 // ---------- Data: Processes ----------
@@ -2062,12 +1869,6 @@ async function renderDetail(id) {
 
         <label class="field-label">${t("considerationsLabel")}</label>
         <textarea class="field" id="f-considerations" placeholder="${t("considerationsPlaceholder")}"${trReadonlyAttr(idea, "considerations")}>${escapeHtml(trValue(idea, "considerations"))}</textarea>
-
-        <label class="field-label">${t("startPromptLabel")}</label>
-        <textarea class="field" id="f-initial-prompt" placeholder="${t("startPromptPlaceholder")}">${escapeHtml(idea.initial_prompt || "")}</textarea>
-        <div class="row">
-          <button class="btn-secondary" id="copy-prompt-btn" style="width:100%;">${t("copyStartPromptBtn")}</button>
-        </div>
       </div>
 
       <details class="card">
@@ -2114,24 +1915,15 @@ async function renderDetail(id) {
           ${t("aiSupportDesc")}
         </p>
         <button class="btn-secondary" id="generate-prompt-btn" style="width:100%;">${t("generatePromptBtn")}</button>
-        <div id="generated-prompt-wrap" style="display:none; margin-top:12px;">
-          <pre id="generated-prompt-text" style="white-space:pre-wrap; background:var(--surface-2); border:1px solid var(--border); border-radius:10px; padding:12px; font-size:13px; font-family:inherit; margin:0; max-height:220px; overflow-y:auto;"></pre>
-          <div class="row">
-            <button class="btn-secondary" id="copy-generated-prompt-btn" style="width:100%;">${t("copyToClipboardBtn")}</button>
-          </div>
+
+        <label class="field-label">${t("startPromptLabel")}</label>
+        <textarea class="field" id="f-initial-prompt" placeholder="${t("startPromptPlaceholder")}">${escapeHtml(idea.initial_prompt || "")}</textarea>
+        <div class="row">
+          <button class="btn-secondary" id="copy-prompt-btn" style="width:100%;">${t("copyStartPromptBtn")}</button>
         </div>
 
         <label class="field-label">${t("aiResponsePasteLabel")}</label>
-        <textarea class="field" id="ai-response-paste" placeholder="${t("aiResponsePlaceholder")}"></textarea>
-        <div class="row">
-          <button class="btn-primary" id="apply-pasted-btn" style="width:100%;">${t("applyBtn")}</button>
-        </div>
-        <div id="ai-result" class="ai-result"></div>
-
-        <details style="margin-top:18px;">
-          <summary style="cursor:pointer; font-size:13px; color:var(--text-dim);">${t("optionalApiDetails")}</summary>
-          <button class="btn-secondary" id="ai-btn" style="width:100%; margin-top:10px;">${t("autoElaborateBtn")}</button>
-        </details>
+        <textarea class="field" id="f-ai-plan-notes" placeholder="${t("aiResponsePlaceholder")}">${escapeHtml(idea.ai_plan_notes || "")}</textarea>
       </details>
 
       <div class="row">
@@ -2234,6 +2026,7 @@ async function renderDetail(id) {
       list_priority: document.getElementById("f-list-priority").value,
       catalog_id: document.getElementById("f-catalog-id").value.trim() || null,
       owner_name: document.getElementById("f-owner-name").value.trim(),
+      ai_plan_notes: document.getElementById("f-ai-plan-notes").value.trim(),
     };
     // Felder, die aktuell die (vom Admin gepflegte) Übersetzung anzeigen,
     // werden nicht mitgespeichert - sonst würde die englische Anzeige das
@@ -2266,82 +2059,19 @@ async function renderDetail(id) {
     }
   });
 
-  function showAiResult(result) {
-    const resultEl = document.getElementById("ai-result");
-    resultEl.innerHTML = `
-      <h3>${t("suggestedProblem")}</h3>
-      <pre>${escapeHtml(result.problem || "")}</pre>
-      <h3>${t("suggestedGoal")}</h3>
-      <pre>${escapeHtml(result.goal || "")}</pre>
-      <h3>${t("suggestedBusinessBenefit")}</h3>
-      <pre>${escapeHtml(result.business_benefit || "")}</pre>
-      <h3>${t("suggestedTools")}</h3>
-      <pre>${escapeHtml(result.tools || "")}</pre>
-      <h3>${t("suggestedConsiderations")}</h3>
-      <pre>${escapeHtml(result.considerations || "")}</pre>
-      <h3>${t("suggestedStartPrompt")}</h3>
-      <pre>${escapeHtml(result.initial_prompt || "")}</pre>
-      <div class="row" style="margin-top:12px;">
-        <button class="btn-primary" id="apply-ai-btn" style="width:100%;">${t("applySuggestionBtn")}</button>
-      </div>
-    `;
-    document.getElementById("apply-ai-btn").addEventListener("click", () => {
-      if (result.problem) document.getElementById("f-problem").value = result.problem;
-      if (result.goal) document.getElementById("f-goal").value = result.goal;
-      if (result.business_benefit) document.getElementById("f-business-benefit").value = result.business_benefit;
-      if (result.tools) document.getElementById("f-tools").value = result.tools;
-      if (result.considerations) document.getElementById("f-considerations").value = result.considerations;
-      if (result.initial_prompt) document.getElementById("f-initial-prompt").value = result.initial_prompt;
-      toast(t("proposalApplied"));
-    });
-  }
-
-  document.getElementById("generate-prompt-btn").addEventListener("click", async () => {
-    const patchNow = collectPatch();
-    await updateIdea(idea.id, patchNow);
-    const promptText = buildElaboratePrompt(patchNow);
-    document.getElementById("generated-prompt-text").textContent = promptText;
-    document.getElementById("generated-prompt-wrap").style.display = "block";
-  });
-
-  document.getElementById("copy-generated-prompt-btn").addEventListener("click", async () => {
-    const text = document.getElementById("generated-prompt-text").textContent;
-    try {
-      await navigator.clipboard.writeText(text);
-      toast(t("copiedPasteHintMsg"));
-    } catch {
-      toast(t("copyFailedMsg"));
+  document.getElementById("generate-prompt-btn").addEventListener("click", () => {
+    const quickNote = document.getElementById("f-quick-note").value.trim();
+    const problem = document.getElementById("f-problem").value.trim();
+    const goal = document.getElementById("f-goal").value.trim();
+    const businessBenefit = document.getElementById("f-business-benefit").value.trim();
+    if (!problem || !goal || !businessBenefit) {
+      toast(t("kickoffPromptRequiresFieldsMsg"));
+      return;
     }
-  });
-
-  document.getElementById("apply-pasted-btn").addEventListener("click", () => {
-    const resultEl = document.getElementById("ai-result");
-    const pasted = document.getElementById("ai-response-paste").value;
-    if (!pasted.trim()) return;
-    try {
-      const result = extractJson(pasted);
-      showAiResult(result);
-    } catch {
-      resultEl.innerHTML = `<p style="color:#ef4444; font-size:13.5px;">${t("couldNotParseMsg")}</p>`;
-    }
-  });
-
-  document.getElementById("ai-btn").addEventListener("click", async () => {
-    const btn = document.getElementById("ai-btn");
-    const resultEl = document.getElementById("ai-result");
-    btn.disabled = true;
-    btn.innerHTML = `<span class="spinner"></span> ${t("aiWorkingMsg")}`;
-    resultEl.innerHTML = "";
-    try {
-      const patchNow = collectPatch();
-      await updateIdea(idea.id, patchNow);
-      const result = await elaborateWithAI(patchNow);
-      showAiResult(result);
-    } catch (err) {
-      resultEl.innerHTML = `<p style="color:#ef4444; font-size:13.5px;">${t("errorPrefix")}${escapeHtml(err.message || String(err))}</p>`;
-    }
-    btn.disabled = false;
-    btn.innerHTML = t("autoElaborateBtn");
+    const promptField = document.getElementById("f-initial-prompt");
+    promptField.value = buildKickoffPrompt({ quick_note: quickNote, problem, goal, business_benefit: businessBenefit });
+    promptField.dispatchEvent(new Event("input", { bubbles: true }));
+    toast(t("kickoffPromptGeneratedMsg"));
   });
 }
 
@@ -2731,10 +2461,6 @@ async function renderProcessDetail(id) {
 // ---------- View: Settings ----------
 
 function renderSettings() {
-  const provider = getAiProvider();
-  const info = AI_PROVIDERS[provider];
-  const existing = getProviderKey(provider);
-
   $app.innerHTML = `
     <header class="topbar">
       <div class="back-row">
@@ -2751,36 +2477,6 @@ function renderSettings() {
         <input class="field" id="f-new-password" type="password" placeholder="${t("newPasswordPlaceholder")}" minlength="6" autocomplete="new-password" />
         <div class="row">
           <button class="btn-primary" id="save-password-btn">${t("savePassword")}</button>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="section-title" style="margin:0 0 10px;">${t("settingsTitleOptionalKey")}</div>
-        <p style="font-size:13.5px; color:var(--text-dim); margin:0 0 10px; line-height:1.5;">
-          ${t("settingsIntro1")}
-        </p>
-        <p style="font-size:13.5px; color:var(--text-dim); margin:0 0 14px; line-height:1.5;">
-          ${t("settingsIntro2")}
-        </p>
-        <div class="tabbar">
-          ${Object.keys(AI_PROVIDERS)
-            .map(
-              (key) =>
-                `<button data-provider="${key}" class="${key === provider ? "active" : ""}">${AI_PROVIDERS[key].label}</button>`
-            )
-            .join("")}
-        </div>
-        <div style="font-size:13.5px; color:var(--text-dim); margin:14px 0; line-height:1.6;">
-          <strong style="color:var(--text);">${t("howToTitle").replace("$", info.label)}</strong>
-          <ol style="margin:8px 0 0; padding-left:20px;">
-            ${info.howTo[currentLang].map((step) => `<li style="margin-bottom:4px;">${step}</li>`).join("")}
-          </ol>
-        </div>
-        <label class="field-label" style="margin-top:0;">${t("apiKeyLabelPrefix")}${info.label})</label>
-        <input class="field" id="f-api-key" type="password" value="${escapeHtml(existing)}" placeholder="${info.placeholder}" autocomplete="off" />
-        <div class="row">
-          <button class="btn-primary" id="save-key-btn">${t("saveBtn")}</button>
-          <button class="btn-secondary" id="remove-key-btn">${t("removeBtn")}</button>
         </div>
       </div>
     </main>
@@ -2807,26 +2503,6 @@ function renderSettings() {
       input.value = "";
       toast(t("passwordChangedMsg"));
     }
-  });
-
-  document.querySelectorAll(".tabbar button").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      setAiProvider(btn.dataset.provider);
-      renderSettings();
-    });
-  });
-
-  document.getElementById("save-key-btn").addEventListener("click", () => {
-    const key = document.getElementById("f-api-key").value.trim();
-    setProviderKey(provider, key);
-    setAiProvider(provider);
-    toast(key ? t("keySavedMsg") : t("keyRemovedMsg"));
-  });
-
-  document.getElementById("remove-key-btn").addEventListener("click", () => {
-    document.getElementById("f-api-key").value = "";
-    setProviderKey(provider, "");
-    toast(t("keyRemovedMsg"));
   });
 }
 
@@ -2931,6 +2607,7 @@ function buildExportBlock(idea) {
     section("Qualitativer Nutzen", idea.qualitative_benefit),
     section("Kommentar", idea.comment),
     section("Start-Prompt", idea.initial_prompt),
+    section("KI-Antwort (Notiz)", idea.ai_plan_notes),
   ]
     .filter(Boolean)
     .join("\n");
