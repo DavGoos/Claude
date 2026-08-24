@@ -315,6 +315,7 @@ const I18N = {
     renameTeamPrompt: "Neuer Name für dieses Team:",
     deleteTeamConfirm: "Team wirklich löschen? Ideen/Prozesse mit diesem Team verlieren dann ihre Team-Zuordnung.",
     teamDeletedMsg: "Team gelöscht",
+    unsavedChangesConfirm: "Es gibt ungespeicherte Änderungen. Diese Seite trotzdem verlassen und die Änderungen verwerfen?",
 
     dashFilterAllDept: "Alle Kostenstellen",
     dashFilterAllTeam: "Alle Teams",
@@ -616,6 +617,7 @@ const I18N = {
     renameTeamPrompt: "New name for this team:",
     deleteTeamConfirm: "Really delete this team? Ideas/processes with this team will lose their team assignment.",
     teamDeletedMsg: "Team deleted",
+    unsavedChangesConfirm: "You have unsaved changes. Leave this page anyway and discard them?",
 
     dashFilterAllDept: "All cost centers",
     dashFilterAllTeam: "All teams",
@@ -799,6 +801,55 @@ function bindThemeToggle() {
 
 // ---------- Routing ----------
 
+// Warnung vor Datenverlust: Formulare (Ideen/Prozesse anlegen oder
+// bearbeiten) melden sich hier per watchUnsavedChanges() an. Vor jedem
+// Verlassen der Seite - egal ob per Hash-Navigation innerhalb der App,
+// Browser-Zurück oder Tab schließen/neu laden - wird gewarnt, falls dabei
+// noch nicht gespeicherte Eingaben verloren gehen würden.
+let unsavedChangesGuard = null;
+let unsavedChangesReset = null;
+
+function watchUnsavedChanges(container) {
+  if (!container) {
+    unsavedChangesGuard = null;
+    unsavedChangesReset = null;
+    return;
+  }
+  let dirty = false;
+  const markDirty = () => {
+    dirty = true;
+  };
+  container.addEventListener("input", markDirty);
+  container.addEventListener("change", markDirty);
+  unsavedChangesGuard = () => dirty;
+  unsavedChangesReset = () => {
+    dirty = false;
+  };
+}
+
+function clearUnsavedChanges() {
+  unsavedChangesGuard = null;
+  unsavedChangesReset = null;
+}
+
+function confirmLeaveIfDirty() {
+  if (!unsavedChangesGuard || !unsavedChangesGuard()) return true;
+  return confirm(t("unsavedChangesConfirm"));
+}
+
+function guardedLogout() {
+  if (confirmLeaveIfDirty()) logout();
+}
+
+// Tab schließen/neu laden/andere URL eingeben - der Router oben bekommt
+// das nicht mit, deshalb zusätzlich der native Browser-Hinweis.
+window.addEventListener("beforeunload", (e) => {
+  if (unsavedChangesGuard && unsavedChangesGuard()) {
+    e.preventDefault();
+    e.returnValue = "";
+  }
+});
+
 function currentRoute() {
   const hash = window.location.hash;
   let m = hash.match(/^#\/idea\/([^/]+)$/);
@@ -814,7 +865,25 @@ function currentRoute() {
   return { view: "idea-list" };
 }
 
-window.addEventListener("hashchange", render);
+let lastRenderedHash = window.location.hash;
+let suppressNextHashchange = false;
+
+window.addEventListener("hashchange", () => {
+  if (suppressNextHashchange) {
+    suppressNextHashchange = false;
+    return;
+  }
+  if (!confirmLeaveIfDirty()) {
+    // Navigation abgebrochen: Hash zurücksetzen, ohne dass das dadurch
+    // erneut ausgelöste hashchange-Event die Ansicht neu rendert (die
+    // aktuelle, ungespeicherte Eingabe soll ja genau erhalten bleiben).
+    suppressNextHashchange = true;
+    window.location.hash = lastRenderedHash;
+    return;
+  }
+  clearUnsavedChanges();
+  render();
+});
 
 // ---------- Auth ----------
 
@@ -1744,6 +1813,7 @@ async function renderList() {
   bindLangToggle();
   bindThemeToggle();
   bindDepartmentTeamFields("capture");
+  watchUnsavedChanges(document.querySelector(".capture-box"));
 
   document.getElementById("ideafilter-dept-filter").addEventListener("change", (e) => {
     activeDeptFilter = e.target.value;
@@ -1756,7 +1826,7 @@ async function renderList() {
     activeTeamFilter = e.target.value;
     renderIdeaList();
   });
-  document.getElementById("logout-btn").addEventListener("click", logout);
+  document.getElementById("logout-btn").addEventListener("click", guardedLogout);
   document.getElementById("settings-btn").addEventListener("click", () => {
     window.location.hash = "#/settings";
   });
@@ -1777,6 +1847,7 @@ async function renderList() {
     if (idea) {
       ta.value = "";
       toast(t("ideaSavedMsg"));
+      if (unsavedChangesReset) unsavedChangesReset();
       ideasCache = await loadIdeas();
       renderIdeaList();
     }
@@ -1785,7 +1856,8 @@ async function renderList() {
   document.querySelectorAll(".chip").forEach((chip) => {
     chip.addEventListener("click", () => {
       activeFilter = chip.dataset.filter;
-      renderList();
+      document.querySelectorAll(".chip").forEach((c) => c.classList.toggle("active", c.dataset.filter === activeFilter));
+      renderIdeaList();
     });
   });
 
@@ -2074,6 +2146,8 @@ async function renderDetail(id) {
     document.querySelectorAll("main input, main textarea, main select, main button").forEach((el) => {
       el.disabled = true;
     });
+  } else {
+    watchUnsavedChanges(document.querySelector("main"));
   }
 
   function updatePriorityBanner() {
@@ -2101,6 +2175,7 @@ async function renderDetail(id) {
     const ok = await deleteIdea(idea.id);
     if (ok) {
       toast(t("ideaDeletedMsg"));
+      clearUnsavedChanges();
       window.location.hash = "";
     }
   });
@@ -2187,6 +2262,7 @@ async function renderDetail(id) {
       const idx = ideasCache.findIndex((i) => i.id === idea.id);
       if (idx >= 0) ideasCache[idx] = updated;
       toast(t("savedMsg"));
+      if (unsavedChangesReset) unsavedChangesReset();
     }
   });
 
@@ -2346,6 +2422,7 @@ async function renderProcessList() {
   bindLangToggle();
   bindThemeToggle();
   bindDepartmentTeamFields("pcapture");
+  watchUnsavedChanges(document.querySelector(".capture-box"));
 
   document.getElementById("processfilter-dept-filter").addEventListener("change", (e) => {
     activeProcessDeptFilter = e.target.value;
@@ -2358,7 +2435,7 @@ async function renderProcessList() {
     activeProcessTeamFilter = e.target.value;
     renderProcessListItems();
   });
-  document.getElementById("logout-btn").addEventListener("click", logout);
+  document.getElementById("logout-btn").addEventListener("click", guardedLogout);
   document.getElementById("settings-btn").addEventListener("click", () => {
     window.location.hash = "#/settings";
   });
@@ -2379,6 +2456,7 @@ async function renderProcessList() {
     if (proc) {
       ta.value = "";
       toast(t("processSavedMsg"));
+      if (unsavedChangesReset) unsavedChangesReset();
       processesCache = await loadProcesses();
       renderProcessListItems();
     }
@@ -2387,7 +2465,8 @@ async function renderProcessList() {
   document.querySelectorAll("[data-pfilter]").forEach((chip) => {
     chip.addEventListener("click", () => {
       activeProcessFilter = chip.dataset.pfilter;
-      renderProcessList();
+      document.querySelectorAll("[data-pfilter]").forEach((c) => c.classList.toggle("active", c.dataset.pfilter === activeProcessFilter));
+      renderProcessListItems();
     });
   });
 
@@ -2557,6 +2636,8 @@ async function renderProcessDetail(id) {
     document.querySelectorAll("main input, main textarea, main select, main button").forEach((el) => {
       el.disabled = true;
     });
+  } else {
+    watchUnsavedChanges(document.querySelector("main"));
   }
 
   function updateAiBanner() {
@@ -2583,6 +2664,7 @@ async function renderProcessDetail(id) {
     const ok = await deleteProcess(proc.id);
     if (ok) {
       toast(t("processDeletedMsg"));
+      clearUnsavedChanges();
       window.location.hash = "#/processes";
     }
   });
@@ -2641,6 +2723,7 @@ async function renderProcessDetail(id) {
       const idx = processesCache.findIndex((p) => p.id === proc.id);
       if (idx >= 0) processesCache[idx] = updated;
       toast(t("savedMsg"));
+      if (unsavedChangesReset) unsavedChangesReset();
     }
   });
 }
@@ -2763,7 +2846,7 @@ function renderPendingApproval() {
     currentProfile = null;
     await render();
   });
-  document.getElementById("pending-logout-btn").addEventListener("click", logout);
+  document.getElementById("pending-logout-btn").addEventListener("click", guardedLogout);
 }
 
 function renderProfileError() {
@@ -2775,7 +2858,7 @@ function renderProfileError() {
       <button class="btn-ghost" id="error-logout-btn">${t("logout")}</button>
     </div>
   `;
-  document.getElementById("error-logout-btn").addEventListener("click", logout);
+  document.getElementById("error-logout-btn").addEventListener("click", guardedLogout);
 }
 
 function adminNavButton() {
@@ -3851,7 +3934,7 @@ async function renderDashboard() {
   bindTeamsNavButton();
   bindLangToggle();
   bindThemeToggle();
-  document.getElementById("logout-btn").addEventListener("click", logout);
+  document.getElementById("logout-btn").addEventListener("click", guardedLogout);
   document.getElementById("settings-btn").addEventListener("click", () => {
     window.location.hash = "#/settings";
   });
@@ -3862,6 +3945,7 @@ async function renderDashboard() {
 }
 
 async function render() {
+  lastRenderedHash = window.location.hash;
   if (passwordRecoveryMode) {
     renderSetNewPassword();
     return;
