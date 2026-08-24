@@ -2057,32 +2057,6 @@ async function renderDetail(id) {
       </div>
 
       <div class="card">
-        <div class="section-title" style="margin:0 0 10px;">${t("aiSupportTitle")}</div>
-        <p style="font-size:13.5px; color:var(--text-dim); margin:0 0 12px; line-height:1.5;">
-          ${t("aiSupportDesc")}
-        </p>
-        <button class="btn-secondary" id="generate-prompt-btn" style="width:100%;">${t("generatePromptBtn")}</button>
-        <div id="generated-prompt-wrap" style="display:none; margin-top:12px;">
-          <pre id="generated-prompt-text" style="white-space:pre-wrap; background:var(--surface-2); border:1px solid var(--border); border-radius:10px; padding:12px; font-size:13px; font-family:inherit; margin:0; max-height:220px; overflow-y:auto;"></pre>
-          <div class="row">
-            <button class="btn-secondary" id="copy-generated-prompt-btn" style="width:100%;">${t("copyToClipboardBtn")}</button>
-          </div>
-        </div>
-
-        <label class="field-label">${t("aiResponsePasteLabel")}</label>
-        <textarea class="field" id="ai-response-paste" placeholder="${t("aiResponsePlaceholder")}"></textarea>
-        <div class="row">
-          <button class="btn-primary" id="apply-pasted-btn" style="width:100%;">${t("applyBtn")}</button>
-        </div>
-        <div id="ai-result" class="ai-result"></div>
-
-        <details style="margin-top:18px;">
-          <summary style="cursor:pointer; font-size:13px; color:var(--text-dim);">${t("optionalApiDetails")}</summary>
-          <button class="btn-secondary" id="ai-btn" style="width:100%; margin-top:10px;">${t("autoElaborateBtn")}</button>
-        </details>
-      </div>
-
-      <div class="card">
         <label class="field-label" style="margin-top:0;">${t("toolsLabel")}</label>
         <textarea class="field" id="f-tools" placeholder="${t("toolsPlaceholder")}">${escapeHtml(idea.tools || "")}</textarea>
 
@@ -2132,6 +2106,32 @@ async function renderDetail(id) {
         <select class="field" id="f-list-priority">
           ${selectOptionsFrom(LIST_PRIORITY_OPTIONS, idea.list_priority)}
         </select>
+      </details>
+
+      <details class="card">
+        <summary style="cursor:pointer; font-size:14px; font-weight:600; color:var(--text);">${t("aiSupportTitle")}</summary>
+        <p style="font-size:13.5px; color:var(--text-dim); margin:10px 0 12px; line-height:1.5;">
+          ${t("aiSupportDesc")}
+        </p>
+        <button class="btn-secondary" id="generate-prompt-btn" style="width:100%;">${t("generatePromptBtn")}</button>
+        <div id="generated-prompt-wrap" style="display:none; margin-top:12px;">
+          <pre id="generated-prompt-text" style="white-space:pre-wrap; background:var(--surface-2); border:1px solid var(--border); border-radius:10px; padding:12px; font-size:13px; font-family:inherit; margin:0; max-height:220px; overflow-y:auto;"></pre>
+          <div class="row">
+            <button class="btn-secondary" id="copy-generated-prompt-btn" style="width:100%;">${t("copyToClipboardBtn")}</button>
+          </div>
+        </div>
+
+        <label class="field-label">${t("aiResponsePasteLabel")}</label>
+        <textarea class="field" id="ai-response-paste" placeholder="${t("aiResponsePlaceholder")}"></textarea>
+        <div class="row">
+          <button class="btn-primary" id="apply-pasted-btn" style="width:100%;">${t("applyBtn")}</button>
+        </div>
+        <div id="ai-result" class="ai-result"></div>
+
+        <details style="margin-top:18px;">
+          <summary style="cursor:pointer; font-size:13px; color:var(--text-dim);">${t("optionalApiDetails")}</summary>
+          <button class="btn-secondary" id="ai-btn" style="width:100%; margin-top:10px;">${t("autoElaborateBtn")}</button>
+        </details>
       </details>
 
       <div class="row">
