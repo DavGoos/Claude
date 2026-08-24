@@ -117,6 +117,8 @@ const I18N = {
     priority_niceToHave: "Nice to have",
     priority_postpone: "Eher verschieben",
     priority_review: "Prüfen",
+    priority_hardToImplement: "Kaum machbar",
+    priority_highRisk: "Hohes Risiko",
 
     ai_high: "Hohes AI-Potenzial",
     ai_low: "Geringes AI-Potenzial",
@@ -391,6 +393,8 @@ const I18N = {
     priority_niceToHave: "Nice to have",
     priority_postpone: "Better postpone",
     priority_review: "Review",
+    priority_hardToImplement: "Hard to implement",
+    priority_highRisk: "High risk",
 
     ai_high: "High AI potential",
     ai_low: "Low AI potential",
@@ -702,11 +706,22 @@ function toast(msg) {
 function priorityInfo(idea) {
   const impact = idea.impact || 3;
   const effort = idea.effort || 3;
+  const feasibility = idea.feasibility || 3;
+  const risk = idea.risk || 3;
+  // Machbarkeit/Risiko wirken als Vorabprüfung vor der eigentlichen
+  // Impact/Effort-Matrix: kaum machbare oder riskante Ideen sollen nicht als
+  // "Quick Win" erscheinen, egal wie gut Impact/Effort sonst aussehen.
+  if (feasibility <= 2) return { label: t("priority_hardToImplement"), color: "#ef4444" };
+  if (risk >= 4) return { label: t("priority_highRisk"), color: "#f97316" };
   if (impact >= 4 && effort <= 2) return { label: t("priority_quickWin"), color: "#22c55e" };
   if (impact >= 4 && effort >= 4) return { label: t("priority_bigProject"), color: "#8b5cf6" };
   if (impact <= 2 && effort <= 2) return { label: t("priority_niceToHave"), color: "#93c5fd" };
   if (impact <= 2 && effort >= 4) return { label: t("priority_postpone"), color: "#9aa1af" };
   return { label: t("priority_review"), color: "#fcd34d" };
+}
+
+function ideaScore(idea) {
+  return (idea.impact || 3) - (idea.effort || 3) + (idea.feasibility || 3) - (idea.risk || 3);
 }
 
 function aiPotentialInfo(value) {
@@ -1415,6 +1430,14 @@ function renderLogin() {
 
   const forgotBtn = document.getElementById("forgot-btn");
   if (forgotBtn) {
+    // Bewusst kein supabase.auth.resetPasswordForEmail() hier: ohne eigenen
+    // SMTP-Dienst (siehe README, "Optional für später") verschickt Supabase
+    // Auth-Mails nur zuverlässig an Mitglieder der eigenen Supabase-Org, nicht
+    // an beliebige Kolleg:innen - der Button würde Self-Service versprechen,
+    // der bei den meisten nie ankommt. Sobald SMTP + Redirect-URLs (README
+    // Schritt 4) eingerichtet sind, hier resetPasswordForEmail(email) mit
+    // redirectTo auf die eigene Origin aufrufen; renderSetNewPassword() und
+    // das PASSWORD_RECOVERY-Handling weiter unten sind dafür bereits fertig.
     forgotBtn.addEventListener("click", () => {
       const msg = document.getElementById("login-msg");
       msg.textContent = t("forgotPasswordContactMsg");
@@ -1945,7 +1968,9 @@ async function renderDetail(id) {
   function updatePriorityBanner() {
     const impact = Number(document.querySelector('[data-field="impact"]').value);
     const effort = Number(document.querySelector('[data-field="effort"]').value);
-    const p = priorityInfo({ impact, effort });
+    const feasibility = Number(document.querySelector('[data-field="feasibility"]').value);
+    const risk = Number(document.querySelector('[data-field="risk"]').value);
+    const p = priorityInfo({ impact, effort, feasibility, risk });
     document.getElementById("priority-banner").innerHTML =
       `<span class="priority-dot" style="background:${p.color}"></span> ${t("assessmentPrefix")}<strong>${p.label}</strong>`;
   }
@@ -3455,9 +3480,7 @@ function dashboardRankingSection(ideas) {
     return dashCard(t("dashRankingTitle"), `<div class="empty-state">${t("dashRankingEmpty")}</div>`);
   }
   const ranked = [...active].sort((a, b) => {
-    const scoreA = (a.impact || 3) - (a.effort || 3);
-    const scoreB = (b.impact || 3) - (b.effort || 3);
-    return scoreB - scoreA || (b.impact || 3) - (a.impact || 3);
+    return ideaScore(b) - ideaScore(a) || (b.impact || 3) - (a.impact || 3);
   });
   const shown = dashRankingShowAll ? ranked : ranked.slice(0, 8);
   const rows = shown
@@ -3470,6 +3493,8 @@ function dashboardRankingSection(ideas) {
             <span class="dash-rank-meters">
               ${dashMeter(t("impactLabel"), idea.impact)}
               ${dashMeter(t("effortLabel"), idea.effort)}
+              ${dashMeter(t("feasibilityLabel"), idea.feasibility)}
+              ${dashMeter(t("riskLabel"), idea.risk)}
             </span>
           </span>
         </a>
