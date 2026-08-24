@@ -303,6 +303,18 @@ const I18N = {
     allTeamsScope: "Alle Teams (ganze Kostenstelle)",
     translatedReadonlyTitle: "Übersetzte Ansicht – zum Bearbeiten auf Deutsch (DE) umschalten.",
     themeToggleTitle: "Hell-/Dunkelmodus umschalten",
+    teamsNav: "🧩 Teams",
+    teamsManagementTitle: "Teams verwalten",
+    emptyTeamsForKostenstelle: "Noch keine Teams für diese Kostenstelle angelegt.",
+    renameTeamBtn: "Umbenennen",
+    deleteTeamBtn: "Löschen",
+    newTeamNamePlaceholder: "Neues Team, z.B. Data Science",
+    addTeamBtn: "+ Team anlegen",
+    noKostenstellenAccessMsg: "Du hast noch keinen Zugriff auf eine Kostenstelle.",
+    teamSavedMsg: "Team gespeichert",
+    renameTeamPrompt: "Neuer Name für dieses Team:",
+    deleteTeamConfirm: "Team wirklich löschen? Ideen/Prozesse mit diesem Team verlieren dann ihre Team-Zuordnung.",
+    teamDeletedMsg: "Team gelöscht",
 
     dashFilterAllDept: "Alle Kostenstellen",
     dashFilterAllTeam: "Alle Teams",
@@ -592,6 +604,18 @@ const I18N = {
     allTeamsScope: "All teams (whole cost center)",
     translatedReadonlyTitle: "Translated view – switch to German (DE) to edit.",
     themeToggleTitle: "Toggle light/dark mode",
+    teamsNav: "🧩 Teams",
+    teamsManagementTitle: "Manage teams",
+    emptyTeamsForKostenstelle: "No teams set up for this cost center yet.",
+    renameTeamBtn: "Rename",
+    deleteTeamBtn: "Delete",
+    newTeamNamePlaceholder: "New team, e.g. Data Science",
+    addTeamBtn: "+ Add team",
+    noKostenstellenAccessMsg: "You don't have access to any cost center yet.",
+    teamSavedMsg: "Team saved",
+    renameTeamPrompt: "New name for this team:",
+    deleteTeamConfirm: "Really delete this team? Ideas/processes with this team will lose their team assignment.",
+    teamDeletedMsg: "Team deleted",
 
     dashFilterAllDept: "All cost centers",
     dashFilterAllTeam: "All teams",
@@ -635,12 +659,11 @@ const STATUS_ORDER = ["idea", "evaluating", "planned", "in_progress", "done", "d
 const PROCESS_STATUS_ORDER = ["open", "reviewed"];
 
 // Kostenstelle (das Pflichtfeld "department" bei ideas/processes) kommt
-// jetzt aus der Tabelle "kostenstellen" + individuellem Zugriffslevel pro
-// Person und Team (siehe kostenstellenCache/myGrants) statt aus einer
-// festen Liste. Team bleibt bewusst nur hier in der App gepflegt (nicht
-// als DB-Constraint) - Liste einfach erweitern.
-const TEAM_OPTIONS = ["Group Controlling", "Treasury", "Cost Allocation", "Workforce Controlling", "BI-Strategy"];
-const TEAM_SCOPES = ["*", ...TEAM_OPTIONS];
+// aus der Tabelle "kostenstellen", Team aus der Tabelle "teams" (siehe
+// kostenstellenCache/teamsCache/myGrants) - beide mit individuellem
+// Zugriffslevel pro Person. Teams gehören zu genau einer Kostenstelle
+// (nicht global) und werden über die Verwaltungsoberfläche gepflegt, wer
+// Vollzugriff auf die jeweilige Kostenstelle hat.
 
 // Zusätzliche, optionale Katalog-Felder für den Abgleich mit dem
 // bestehenden Excel-Use-Case-Katalog. Werte bewusst nicht übersetzt
@@ -669,6 +692,7 @@ let ideasCache = [];
 let processesCache = [];
 let profilesCache = [];
 let kostenstellenCache = [];
+let teamsCache = [];
 let myGrants = [];
 let accessCache = [];
 let activeFilter = "all";
@@ -786,6 +810,7 @@ function currentRoute() {
   if (hash === "#/settings") return { view: "settings" };
   if (hash === "#/admin") return { view: "admin" };
   if (hash === "#/export") return { view: "export" };
+  if (hash === "#/teams") return { view: "teams" };
   return { view: "idea-list" };
 }
 
@@ -840,11 +865,54 @@ async function loadKostenstellen() {
   return data || [];
 }
 
+// Teams gehören zu genau einer Kostenstelle (siehe supabase/schema.sql) -
+// eine flache, kostenstellen-übergreifende Cache-Liste, aus der überall
+// nach kostenstelle_code gefiltert wird.
+async function loadTeams() {
+  const { data, error } = await sb.from("teams").select("*").order("name");
+  if (error) {
+    toast(t("loadErrorPrefix") + error.message);
+    return [];
+  }
+  return data || [];
+}
+
+async function createTeam(kostenstelleCode, name) {
+  const { data, error } = await sb
+    .from("teams")
+    .insert({ kostenstelle_code: kostenstelleCode, name })
+    .select("*")
+    .single();
+  if (error) {
+    toast(t("saveErrorPrefix") + error.message);
+    return null;
+  }
+  return data;
+}
+
+async function renameTeam(id, name) {
+  const { data, error } = await sb.from("teams").update({ name }).eq("id", id).select("*").single();
+  if (error) {
+    toast(t("saveErrorPrefix") + error.message);
+    return null;
+  }
+  return data;
+}
+
+async function deleteTeam(id) {
+  const { error } = await sb.from("teams").delete().eq("id", id);
+  if (error) {
+    toast(t("deleteErrorPrefix") + error.message);
+    return false;
+  }
+  return true;
+}
+
 async function loadMyGrants() {
   if (currentProfile.is_admin) return [];
   const { data, error } = await sb
     .from("kostenstelle_access")
-    .select("kostenstelle_code, team, access_level")
+    .select("kostenstelle_code, team_id, access_level")
     .eq("user_id", currentUser.id);
   if (error) {
     toast(t("loadErrorPrefix") + error.message);
@@ -859,14 +927,17 @@ function writableCodes() {
   return Array.from(new Set(myGrants.filter((g) => g.access_level === "write").map((g) => g.kostenstelle_code)));
 }
 
-// Teams, für die die aktuelle Person innerhalb einer bestimmten Kostenstelle
-// schreiben darf (team = "*" bei einem Grant deckt alle Teams ab).
+// Team-Objekte ({id, kostenstelle_code, name}), für die die aktuelle
+// Person schreiben darf - ohne Kostenstelle über alle schreibbaren
+// Kostenstellen hinweg (team_id null bei einem Grant deckt alle Teams
+// dieser Kostenstelle ab).
 function writableTeamsForCode(code) {
-  if (!code) return TEAM_OPTIONS.slice();
-  if (currentProfile.is_admin) return TEAM_OPTIONS.slice();
-  const grants = myGrants.filter((g) => g.kostenstelle_code === code && g.access_level === "write");
-  if (grants.some((g) => g.team === "*")) return TEAM_OPTIONS.slice();
-  return TEAM_OPTIONS.filter((team) => grants.some((g) => g.team === team));
+  const scoped = code ? teamsCache.filter((tm) => tm.kostenstelle_code === code) : teamsCache;
+  if (currentProfile.is_admin) return scoped.slice();
+  return scoped.filter((tm) => {
+    const grants = myGrants.filter((g) => g.kostenstelle_code === tm.kostenstelle_code && g.access_level === "write");
+    return grants.some((g) => g.team_id === null || g.team_id === tm.id);
+  });
 }
 
 // Kostenstellen, die die aktuelle Person überhaupt sehen darf (lesend oder
@@ -876,20 +947,31 @@ function readableCodes() {
   return Array.from(new Set(myGrants.map((g) => g.kostenstelle_code)));
 }
 
-// Teams, die für eine Kostenstelle (oder, ohne Kostenstelle, über alle
-// lesbaren Kostenstellen hinweg) für die aktuelle Person sichtbar sind.
+// Team-Objekte, die für eine Kostenstelle (oder, ohne Kostenstelle, über
+// alle lesbaren Kostenstellen hinweg) für die aktuelle Person sichtbar sind.
 function readableTeamsForCode(code) {
-  if (currentProfile.is_admin) return TEAM_OPTIONS.slice();
-  const grants = code ? myGrants.filter((g) => g.kostenstelle_code === code) : myGrants;
-  if (grants.some((g) => g.team === "*")) return TEAM_OPTIONS.slice();
-  return TEAM_OPTIONS.filter((team) => grants.some((g) => g.team === team));
+  const scoped = code ? teamsCache.filter((tm) => tm.kostenstelle_code === code) : teamsCache;
+  if (currentProfile.is_admin) return scoped.slice();
+  return scoped.filter((tm) => {
+    const grants = myGrants.filter((g) => g.kostenstelle_code === tm.kostenstelle_code);
+    return grants.some((g) => g.team_id === null || g.team_id === tm.id);
+  });
 }
 
-function canWriteCombo(code, team) {
+function canWriteCombo(code, teamId) {
   if (currentProfile.is_admin) return true;
   return myGrants.some(
-    (g) => g.kostenstelle_code === code && g.access_level === "write" && (g.team === "*" || g.team === team)
+    (g) => g.kostenstelle_code === code && g.access_level === "write" && (g.team_id === null || g.team_id === teamId)
   );
+}
+
+// Wer Vollzugriff (Schreiben, alle Teams) auf eine Kostenstelle hat, darf
+// deren Teams anlegen/umbenennen/löschen - spiegelt can_manage_teams() in
+// supabase/schema.sql (die RLS-Policy ist die eigentliche Absicherung,
+// das hier steuert nur, ob die Verwaltungs-UI angezeigt wird).
+function canManageTeams(code) {
+  if (currentProfile.is_admin) return true;
+  return myGrants.some((g) => g.kostenstelle_code === code && g.team_id === null && g.access_level === "write");
 }
 
 async function loadAllAccess() {
@@ -910,23 +992,23 @@ async function createKostenstelle(code, name) {
   return data;
 }
 
-async function setKostenstelleAccess(userId, code, team, level) {
-  if (!level) {
-    const { error } = await sb
-      .from("kostenstelle_access")
-      .delete()
-      .eq("user_id", userId)
-      .eq("kostenstelle_code", code)
-      .eq("team", team);
-    if (error) {
-      toast(t("saveErrorPrefix") + error.message);
-      return false;
-    }
-    return true;
+// team_id ist nullable (Vollzugriff), Postgrest ".eq()" matcht NULL nicht
+// - deshalb hier ".is()" für den Vollzugriff-Fall. Da team_id nicht Teil
+// eines Primary Keys sein kann (siehe schema.sql), gibt es keinen
+// verlässlichen "onConflict"-Ziel für ein upsert - stattdessen explizit
+// erst löschen, dann (falls ein Level gewählt wurde) neu anlegen.
+async function setKostenstelleAccess(userId, code, teamId, level) {
+  let del = sb.from("kostenstelle_access").delete().eq("user_id", userId).eq("kostenstelle_code", code);
+  del = teamId ? del.eq("team_id", teamId) : del.is("team_id", null);
+  const { error: delError } = await del;
+  if (delError) {
+    toast(t("saveErrorPrefix") + delError.message);
+    return false;
   }
+  if (!level) return true;
   const { error } = await sb
     .from("kostenstelle_access")
-    .upsert({ user_id: userId, kostenstelle_code: code, team, access_level: level });
+    .insert({ user_id: userId, kostenstelle_code: code, team_id: teamId || null, access_level: level });
   if (error) {
     toast(t("saveErrorPrefix") + error.message);
     return false;
@@ -972,8 +1054,8 @@ async function loadIdeas() {
   return data || [];
 }
 
-async function createIdea(quickNote, department, team, processId, parentIdeaId) {
-  const payload = { quick_note: quickNote, department, team, created_by: currentUser.id };
+async function createIdea(quickNote, department, teamId, processId, parentIdeaId) {
+  const payload = { quick_note: quickNote, department, team_id: teamId, created_by: currentUser.id };
   if (processId) payload.process_id = processId;
   if (parentIdeaId) payload.parent_idea_id = parentIdeaId;
   const { data, error } = await sb.from("ideas").insert(payload).select(IDEA_SELECT).single();
@@ -1203,8 +1285,8 @@ async function loadProcesses() {
   return data || [];
 }
 
-async function createProcess(name, department, team, parentProcessId) {
-  const payload = { name, department, team, created_by: currentUser.id };
+async function createProcess(name, department, teamId, parentProcessId) {
+  const payload = { name, department, team_id: teamId, created_by: currentUser.id };
   if (parentProcessId) payload.parent_process_id = parentProcessId;
   const { data, error } = await sb
     .from("processes")
@@ -1271,6 +1353,11 @@ function selectOptionsFrom(values, selectedValue) {
   return options.join("");
 }
 
+function teamName(teamId) {
+  const tm = teamsCache.find((x) => x.id === teamId);
+  return tm ? tm.name : "";
+}
+
 function kostenstelleOptionsFrom(codes, selectedValue) {
   const options = [`<option value="" ${selectedValue ? "" : "selected"}>${t("selectPlaceholderOption")}</option>`];
   codes.forEach((code) => {
@@ -1281,24 +1368,37 @@ function kostenstelleOptionsFrom(codes, selectedValue) {
   return options.join("");
 }
 
-function departmentTeamFields(department, team, idPrefix) {
+// Team-Objekte ({id, kostenstelle_code, name}) als <option>-Liste - wie
+// selectOptionsFrom, aber der Options-Wert ist die Team-ID, nicht der Name.
+function teamOptionsFrom(teams, selectedId) {
+  const options = [`<option value="" ${selectedId ? "" : "selected"}>${t("selectPlaceholderOption")}</option>`];
+  teams.forEach((tm) => {
+    options.push(`<option value="${tm.id}" ${tm.id === selectedId ? "selected" : ""}>${escapeHtml(tm.name)}</option>`);
+  });
+  return options.join("");
+}
+
+function departmentTeamFields(department, teamId, idPrefix) {
   const codes = new Set(writableCodes());
   if (department) codes.add(department);
-  const teams = new Set(writableTeamsForCode(department));
-  if (team) teams.add(team);
+  const teams = writableTeamsForCode(department).slice();
+  if (teamId && !teams.some((tm) => tm.id === teamId)) {
+    const existing = teamsCache.find((tm) => tm.id === teamId);
+    if (existing) teams.push(existing);
+  }
   return `
     <div class="row">
       <select class="field" id="${idPrefix}-department" style="flex:1;">
         ${kostenstelleOptionsFrom(Array.from(codes), department)}
       </select>
       <select class="field" id="${idPrefix}-team" style="flex:1;">
-        ${selectOptionsFrom(Array.from(teams), team)}
+        ${teamOptionsFrom(teams, teamId)}
       </select>
     </div>
   `;
 }
 
-// Gleiches Prinzip wie kostenstelleOptionsFrom/selectOptionsFrom, aber für
+// Gleiches Prinzip wie kostenstelleOptionsFrom/teamOptionsFrom, aber für
 // Filter statt Pflichtfelder: erste Option heißt "Alle ..." statt einem
 // leeren Platzhalter, weil bei Filtern "kein Filter" der sinnvolle Standard
 // ist (nicht "bitte auswählen").
@@ -1312,15 +1412,15 @@ function kostenstelleFilterOptionsFrom(codes, selectedValue) {
   return options.join("");
 }
 
-function teamFilterOptionsFrom(teams, selectedValue) {
-  const options = [`<option value="" ${selectedValue ? "" : "selected"}>${t("filterAllTeamsOption")}</option>`];
-  teams.forEach((team) => {
-    options.push(`<option value="${escapeHtml(team)}" ${team === selectedValue ? "selected" : ""}>${escapeHtml(team)}</option>`);
+function teamFilterOptionsFrom(teams, selectedId) {
+  const options = [`<option value="" ${selectedId ? "" : "selected"}>${t("filterAllTeamsOption")}</option>`];
+  teams.forEach((tm) => {
+    options.push(`<option value="${tm.id}" ${tm.id === selectedId ? "selected" : ""}>${escapeHtml(tm.name)}</option>`);
   });
   return options.join("");
 }
 
-function deptTeamFilterRow(idPrefix, activeDept, activeTeam) {
+function deptTeamFilterRow(idPrefix, activeDept, activeTeamId) {
   const codes = readableCodes();
   const teams = readableTeamsForCode(activeDept);
   return `
@@ -1329,30 +1429,30 @@ function deptTeamFilterRow(idPrefix, activeDept, activeTeam) {
         ${kostenstelleFilterOptionsFrom(codes, activeDept)}
       </select>
       <select class="filter-select" id="${idPrefix}-team-filter">
-        ${teamFilterOptionsFrom(teams, activeTeam)}
+        ${teamFilterOptionsFrom(teams, activeTeamId)}
       </select>
     </div>
   `;
 }
 
-// Team-Dropdown ist von der gewählten Kostenstelle abhängig (unterschiedliche
-// Kostenstellen können unterschiedliche Teams freigeschaltet haben) - bei
-// jedem Wechsel der Kostenstelle die Team-Optionen neu berechnen.
+// Team-Dropdown ist von der gewählten Kostenstelle abhängig (jede
+// Kostenstelle hat ihre eigene Teamliste) - bei jedem Wechsel der
+// Kostenstelle die Team-Optionen neu berechnen.
 function bindDepartmentTeamFields(idPrefix) {
   const deptSel = document.getElementById(`${idPrefix}-department`);
   const teamSel = document.getElementById(`${idPrefix}-team`);
   if (!deptSel || !teamSel) return;
   deptSel.addEventListener("change", () => {
-    const currentTeam = teamSel.value;
+    const currentTeamId = teamSel.value;
     const teams = writableTeamsForCode(deptSel.value);
-    teamSel.innerHTML = selectOptionsFrom(teams, teams.includes(currentTeam) ? currentTeam : "");
+    teamSel.innerHTML = teamOptionsFrom(teams, teams.some((tm) => tm.id === currentTeamId) ? currentTeamId : "");
   });
 }
 
 function readDepartmentTeam(idPrefix) {
   return {
     department: document.getElementById(`${idPrefix}-department`).value,
-    team: document.getElementById(`${idPrefix}-team`).value,
+    teamId: document.getElementById(`${idPrefix}-team`).value || null,
   };
 }
 
@@ -1596,7 +1696,7 @@ function ideaCard(idea) {
         <span class="badge"><span class="priority-dot" style="background:${p.color}"></span> ${p.label}</span>
         ${isChained ? `<span class="badge">🔗 ${t("stagePrefix")}${ideaStageNumber(idea)}</span>` : ""}
         ${idea.owner_name ? `<span class="badge">👤 ${escapeHtml(idea.owner_name)}</span>` : ""}
-        ${idea.team ? `<span class="badge">${escapeHtml(idea.team)}</span>` : ""}
+        ${idea.team_id ? `<span class="badge">${escapeHtml(teamName(idea.team_id))}</span>` : ""}
         ${idea.processes ? `<span class="badge">⚙ ${escapeHtml(trValue(idea.processes, "name"))}</span>` : ""}
         ${tags.map((tag) => `<span class="badge">#${escapeHtml(tag)}</span>`).join("")}
         <span class="badge" title="${t("lastSavedTitle")}">🕒 ${formatDateTime(idea.updated_at)}</span>
@@ -1612,6 +1712,7 @@ async function renderList() {
       <div class="actions">
         ${langToggleButton()}${themeToggleButton()}
         ${exportNavButton()}
+        ${teamsNavButton()}
         ${onboardingNavButton()}
         ${adminNavButton()}
         <button class="icon-btn" id="settings-btn">⚙</button>
@@ -1639,6 +1740,7 @@ async function renderList() {
   bindTabBar();
   bindAdminNavButton();
   bindExportNavButton();
+  bindTeamsNavButton();
   bindLangToggle();
   bindThemeToggle();
   bindDepartmentTeamFields("capture");
@@ -1662,15 +1764,15 @@ async function renderList() {
   document.getElementById("save-capture").addEventListener("click", async () => {
     const ta = document.getElementById("quick-note");
     const text = ta.value.trim();
-    const { department, team } = readDepartmentTeam("capture");
+    const { department, teamId } = readDepartmentTeam("capture");
     if (!text) return;
-    if (!department || !team) {
+    if (!department || !teamId) {
       toast(t("departmentTeamRequiredMsg"));
       return;
     }
     const btn = document.getElementById("save-capture");
     btn.disabled = true;
-    const idea = await createIdea(text, department, team);
+    const idea = await createIdea(text, department, teamId);
     btn.disabled = false;
     if (idea) {
       ta.value = "";
@@ -1727,7 +1829,7 @@ function renderIdeaList() {
     (i) =>
       (activeFilter === "all" || i.status === activeFilter) &&
       (!activeDeptFilter || i.department === activeDeptFilter) &&
-      (!activeTeamFilter || i.team === activeTeamFilter)
+      (!activeTeamFilter || i.team_id === activeTeamFilter)
   );
   if (filtered.length === 0) {
     listEl.innerHTML = `<div class="empty-state">${t("emptyIdeas")}</div>`;
@@ -1794,7 +1896,7 @@ async function renderDetail(id) {
   if (processesCache.length === 0) {
     processesCache = await loadProcesses();
   }
-  const canWrite = canWriteCombo(idea.department, idea.team);
+  const canWrite = canWriteCombo(idea.department, idea.team_id);
 
   $app.innerHTML = `
     <header class="topbar">
@@ -1824,7 +1926,7 @@ async function renderDetail(id) {
         </select>
 
         <label class="field-label">${t("departmentLabel")} / ${t("teamLabel")}</label>
-        ${departmentTeamFields(idea.department, idea.team, "detail")}
+        ${departmentTeamFields(idea.department, idea.team_id, "detail")}
 
         <label class="field-label">${t("relatedProcessLabel")}</label>
         <select class="field" id="f-process">
@@ -2016,7 +2118,7 @@ async function renderDetail(id) {
   document.getElementById("add-followup-btn").addEventListener("click", async () => {
     const text = prompt(t("newFollowUpStagePrompt"));
     if (!text || !text.trim()) return;
-    const followUp = await createIdea(text.trim(), idea.department, idea.team, idea.process_id, idea.id);
+    const followUp = await createIdea(text.trim(), idea.department, idea.team_id, idea.process_id, idea.id);
     if (followUp) {
       toast(t("followUpStageSavedMsg"));
       ideasCache = await loadIdeas();
@@ -2035,13 +2137,13 @@ async function renderDetail(id) {
   };
 
   function collectPatch() {
-    const { department, team } = readDepartmentTeam("detail");
+    const { department, teamId } = readDepartmentTeam("detail");
     const patch = {
       status: document.getElementById("f-status").value,
       process_id: document.getElementById("f-process").value || null,
       parent_idea_id: document.getElementById("f-parent-idea").value || null,
       department,
-      team,
+      team_id: teamId,
       tags: document.getElementById("f-tags").value.trim(),
       impact: Number(document.querySelector('[data-field="impact"]').value),
       feasibility: Number(document.querySelector('[data-field="feasibility"]').value),
@@ -2070,8 +2172,8 @@ async function renderDetail(id) {
   }
 
   document.getElementById("save-detail-btn").addEventListener("click", async () => {
-    const { department, team } = readDepartmentTeam("detail");
-    if (!department || !team) {
+    const { department, teamId } = readDepartmentTeam("detail");
+    if (!department || !teamId) {
       toast(t("departmentTeamRequiredMsg"));
       return;
     }
@@ -2194,7 +2296,7 @@ function processCard(proc) {
       <div class="idea-meta">
         <span class="badge status-${proc.status === "reviewed" ? "done" : "idea"}">${t(`pstatus_${proc.status}`)}</span>
         <span class="badge"><span class="priority-dot" style="background:${ai.color}"></span> ${ai.label}</span>
-        ${proc.team ? `<span class="badge">${escapeHtml(proc.team)}</span>` : ""}
+        ${proc.team_id ? `<span class="badge">${escapeHtml(teamName(proc.team_id))}</span>` : ""}
         ${proc.parent ? `<span class="badge">↳ ${escapeHtml(trValue(proc.parent, "name"))}</span>` : ""}
       </div>
     </div>
@@ -2212,6 +2314,7 @@ async function renderProcessList() {
       <div class="actions">
         ${langToggleButton()}${themeToggleButton()}
         ${exportNavButton()}
+        ${teamsNavButton()}
         ${onboardingNavButton()}
         ${adminNavButton()}
         <button class="icon-btn" id="settings-btn">⚙</button>
@@ -2239,6 +2342,7 @@ async function renderProcessList() {
   bindTabBar();
   bindAdminNavButton();
   bindExportNavButton();
+  bindTeamsNavButton();
   bindLangToggle();
   bindThemeToggle();
   bindDepartmentTeamFields("pcapture");
@@ -2262,15 +2366,15 @@ async function renderProcessList() {
   document.getElementById("save-process").addEventListener("click", async () => {
     const ta = document.getElementById("process-name");
     const text = ta.value.trim();
-    const { department, team } = readDepartmentTeam("pcapture");
+    const { department, teamId } = readDepartmentTeam("pcapture");
     if (!text) return;
-    if (!department || !team) {
+    if (!department || !teamId) {
       toast(t("departmentTeamRequiredMsg"));
       return;
     }
     const btn = document.getElementById("save-process");
     btn.disabled = true;
-    const proc = await createProcess(text, department, team);
+    const proc = await createProcess(text, department, teamId);
     btn.disabled = false;
     if (proc) {
       ta.value = "";
@@ -2323,7 +2427,7 @@ function renderProcessListItems() {
     (p) =>
       (activeProcessFilter === "all" || p.status === activeProcessFilter) &&
       (!activeProcessDeptFilter || p.department === activeProcessDeptFilter) &&
-      (!activeProcessTeamFilter || p.team === activeProcessTeamFilter)
+      (!activeProcessTeamFilter || p.team_id === activeProcessTeamFilter)
   );
   if (filtered.length === 0) {
     listEl.innerHTML = `<div class="empty-state">${t("emptyProcesses")}</div>`;
@@ -2367,7 +2471,7 @@ async function renderProcessDetail(id) {
     : (ideasCache = await loadIdeas()).filter((i) => i.process_id === proc.id);
 
   const subProcesses = processesCache.filter((p) => p.parent_process_id === proc.id);
-  const canWrite = canWriteCombo(proc.department, proc.team);
+  const canWrite = canWriteCombo(proc.department, proc.team_id);
 
   $app.innerHTML = `
     <header class="topbar">
@@ -2387,7 +2491,7 @@ async function renderProcessDetail(id) {
         <textarea class="field" id="f-name"${trReadonlyAttr(proc, "name")}>${escapeHtml(trValue(proc, "name"))}</textarea>
 
         <label class="field-label">${t("departmentLabel")} / ${t("teamLabel")}</label>
-        ${departmentTeamFields(proc.department, proc.team, "pdetail")}
+        ${departmentTeamFields(proc.department, proc.team_id, "pdetail")}
 
         <label class="field-label">${t("parentProcessLabel")}</label>
         <select class="field" id="f-parent-process">
@@ -2486,7 +2590,7 @@ async function renderProcessDetail(id) {
   document.getElementById("add-idea-btn").addEventListener("click", async () => {
     const text = prompt(t("newIdeaPrompt"));
     if (!text || !text.trim()) return;
-    const idea = await createIdea(text.trim(), proc.department, proc.team, proc.id);
+    const idea = await createIdea(text.trim(), proc.department, proc.team_id, proc.id);
     if (idea) {
       toast(t("ideaSavedMsg"));
       ideasCache = await loadIdeas();
@@ -2497,7 +2601,7 @@ async function renderProcessDetail(id) {
   document.getElementById("add-subprocess-btn").addEventListener("click", async () => {
     const text = prompt(t("newSubProcessPrompt"));
     if (!text || !text.trim()) return;
-    const sub = await createProcess(text.trim(), proc.department, proc.team, proc.id);
+    const sub = await createProcess(text.trim(), proc.department, proc.team_id, proc.id);
     if (sub) {
       toast(t("subProcessSavedMsg"));
       processesCache = await loadProcesses();
@@ -2506,8 +2610,8 @@ async function renderProcessDetail(id) {
   });
 
   document.getElementById("save-process-detail-btn").addEventListener("click", async () => {
-    const { department, team } = readDepartmentTeam("pdetail");
-    if (!department || !team) {
+    const { department, teamId } = readDepartmentTeam("pdetail");
+    if (!department || !teamId) {
       toast(t("departmentTeamRequiredMsg"));
       return;
     }
@@ -2516,7 +2620,7 @@ async function renderProcessDetail(id) {
     btn.textContent = t("savingBtn");
     const patch = {
       department,
-      team,
+      team_id: teamId,
       parent_process_id: document.getElementById("f-parent-process").value || null,
       status: document.getElementById("f-status").value,
       ai_potential: Number(document.querySelector('[data-field="ai_potential"]').value),
@@ -2693,6 +2797,19 @@ function exportNavButton() {
   return `<button class="icon-btn" id="export-btn">${t("exportNav")}</button>`;
 }
 
+function teamsNavButton() {
+  return `<button class="icon-btn" id="teams-btn">${t("teamsNav")}</button>`;
+}
+
+function bindTeamsNavButton() {
+  const btn = document.getElementById("teams-btn");
+  if (btn) {
+    btn.addEventListener("click", () => {
+      window.location.hash = "#/teams";
+    });
+  }
+}
+
 function onboardingNavButton() {
   return `<a class="icon-btn" href="https://claude.ai/code/artifact/a5713396-1a29-499d-9edb-4b642a6f1ace" target="_blank" rel="noopener">${t("onboardingBannerText")}</a>`;
 }
@@ -2714,7 +2831,7 @@ function buildExportBlock(idea) {
     `### ${idea.quick_note}`,
     `Status: ${idea.status}`,
     `Abteilung: ${idea.department}`,
-    `Team: ${idea.team}`,
+    `Team: ${teamName(idea.team_id)}`,
     idea.owner_name ? `Usecase-Geber: ${idea.owner_name}` : "",
     idea.tags ? `Tags/Bucket: ${idea.tags}` : "",
     idea.ai_role ? `KI-Rolle: ${idea.ai_role}` : "",
@@ -2807,7 +2924,7 @@ async function renderExportSync() {
                   <div class="idea-title">${escapeHtml(idea.quick_note)}</div>
                   <div class="idea-meta">
                     <span class="badge status-${idea.status}">${t(`status_${idea.status}`)}</span>
-                    ${idea.team ? `<span class="badge">${escapeHtml(idea.team)}</span>` : ""}
+                    ${idea.team_id ? `<span class="badge">${escapeHtml(teamName(idea.team_id))}</span>` : ""}
                   </div>
                   <div class="row" style="margin-top:10px;">
                     <button class="btn-secondary" data-copy-one="${idea.id}" style="width:100%;">${t("copyOneBtn")}</button>
@@ -2886,6 +3003,7 @@ async function renderAdmin() {
   const approved = profilesCache.filter((p) => p.is_approved);
   const nonAdminApproved = approved.filter((p) => !p.is_admin);
   if (kostenstellenCache.length === 0) kostenstellenCache = await loadKostenstellen();
+  teamsCache = await loadTeams();
   accessCache = await loadAllAccess();
 
   $app.innerHTML = `
@@ -2954,21 +3072,23 @@ async function renderAdmin() {
               <div class="section-title" style="margin:0 0 10px;">${escapeHtml(k.code)}${k.name ? ` – ${escapeHtml(k.name)}` : ""}</div>
               ${
                 nonAdminApproved.length
-                  ? TEAM_SCOPES.map(
-                      (scope) => `
+                  ? [{ id: "", label: t("allTeamsScope") }, ...teamsCache.filter((tm) => tm.kostenstelle_code === k.code).map((tm) => ({ id: tm.id, label: tm.name }))]
+                      .map(
+                        (scope) => `
                       <div style="margin-bottom:14px;">
-                        <div style="font-size:12px; color:var(--text-dim); margin-bottom:6px;">${
-                          scope === "*" ? t("allTeamsScope") : escapeHtml(scope)
-                        }</div>
+                        <div style="font-size:12px; color:var(--text-dim); margin-bottom:6px;">${escapeHtml(scope.label)}</div>
                         ${nonAdminApproved
                           .map((u) => {
                             const grant = accessCache.find(
-                              (a) => a.user_id === u.id && a.kostenstelle_code === k.code && a.team === scope
+                              (a) =>
+                                a.user_id === u.id &&
+                                a.kostenstelle_code === k.code &&
+                                (scope.id ? a.team_id === scope.id : a.team_id === null)
                             );
                             return `
                           <div class="row" style="justify-content:space-between; align-items:center; margin-bottom:8px;">
                             <span style="font-size:13.5px;">${escapeHtml(u.email)}</span>
-                            <select class="field" data-access-user="${u.id}" data-access-ks="${escapeHtml(k.code)}" data-access-team="${escapeHtml(scope)}" style="max-width:220px; flex:none;">
+                            <select class="field" data-access-user="${u.id}" data-access-ks="${escapeHtml(k.code)}" data-access-team="${escapeHtml(scope.id)}" style="max-width:220px; flex:none;">
                               ${accessLevelOptions(grant ? grant.access_level : "")}
                             </select>
                           </div>
@@ -2977,7 +3097,8 @@ async function renderAdmin() {
                           .join("")}
                       </div>
                     `
-                    ).join("")
+                      )
+                      .join("")
                   : `<div class="empty-state" style="padding:12px 4px;">${t("noApprovedForAccessMsg")}</div>`
               }
             </div>
@@ -3044,14 +3165,141 @@ async function renderAdmin() {
     sel.addEventListener("change", async () => {
       const userId = sel.dataset.accessUser;
       const code = sel.dataset.accessKs;
-      const team = sel.dataset.accessTeam;
+      const teamId = sel.dataset.accessTeam || null;
       const level = sel.value || null;
       sel.disabled = true;
-      const ok = await setKostenstelleAccess(userId, code, team, level);
+      const ok = await setKostenstelleAccess(userId, code, teamId, level);
       sel.disabled = false;
       if (ok) {
         toast(t("accessSavedMsg"));
         accessCache = await loadAllAccess();
+      }
+    });
+  });
+}
+
+// ---------- View: Teams verwalten ----------
+// Anders als die Kostenstellen selbst (nur der Admin legt sie an) dürfen
+// Teams auch von Personen mit Vollzugriff (Schreiben, alle Teams) auf die
+// jeweilige Kostenstelle verwaltet werden, siehe can_manage_teams() in
+// supabase/schema.sql. Diese Ansicht ist deshalb bewusst nicht
+// admin-gated - jede freigegebene Person sieht die Teams ihrer
+// Kostenstellen, Bearbeiten-Kontrollen erscheinen nur, wo canManageTeams()
+// zutrifft (die RLS-Policy ist die eigentliche Absicherung dahinter).
+async function renderTeamsManagement() {
+  if (kostenstellenCache.length === 0) kostenstellenCache = await loadKostenstellen();
+  teamsCache = await loadTeams();
+  const codes = readableCodes();
+  const visible = currentProfile.is_admin ? kostenstellenCache : kostenstellenCache.filter((k) => codes.includes(k.code));
+
+  $app.innerHTML = `
+    <header class="topbar">
+      <div class="back-row">
+        <button class="icon-btn" id="back-btn">${t("backBtn")}</button>
+      </div>
+      ${langToggleButton()}${themeToggleButton()}
+    </header>
+    <main>
+      <div class="section-title" style="margin:0 4px 8px;">${t("teamsManagementTitle")}</div>
+      ${
+        visible.length
+          ? visible
+              .map((k) => {
+                const canManage = canManageTeams(k.code);
+                const kTeams = teamsCache.filter((tm) => tm.kostenstelle_code === k.code);
+                return `
+            <div class="card">
+              <div class="section-title" style="margin:0 0 10px;">${escapeHtml(k.code)}${k.name ? ` – ${escapeHtml(k.name)}` : ""}</div>
+              ${
+                kTeams.length
+                  ? kTeams
+                      .map(
+                        (tm) => `
+                    <div class="row" style="justify-content:space-between; align-items:center; margin-bottom:8px;">
+                      <span style="font-size:13.5px;">${escapeHtml(tm.name)}</span>
+                      ${
+                        canManage
+                          ? `
+                        <div class="row" style="gap:6px; flex:0 0 auto;">
+                          <button class="btn-secondary" data-rename-team="${tm.id}" style="padding:6px 10px; font-size:12.5px;">${t("renameTeamBtn")}</button>
+                          <button class="btn-danger" data-delete-team="${tm.id}" style="padding:6px 10px; font-size:12.5px;">${t("deleteTeamBtn")}</button>
+                        </div>
+                      `
+                          : ""
+                      }
+                    </div>
+                  `
+                      )
+                      .join("")
+                  : `<div class="empty-state" style="padding:12px 4px;">${t("emptyTeamsForKostenstelle")}</div>`
+              }
+              ${
+                canManage
+                  ? `
+                <div class="row" style="margin-top:10px;">
+                  <input class="field" data-new-team-input="${escapeHtml(k.code)}" placeholder="${t("newTeamNamePlaceholder")}" style="flex:1;" />
+                  <button class="btn-primary" data-add-team="${escapeHtml(k.code)}" style="flex:0 0 auto;">${t("addTeamBtn")}</button>
+                </div>
+              `
+                  : ""
+              }
+            </div>
+          `;
+              })
+              .join("")
+          : `<div class="empty-state">${t("noKostenstellenAccessMsg")}</div>`
+      }
+    </main>
+  `;
+
+  document.getElementById("back-btn").addEventListener("click", () => {
+    window.location.hash = "";
+  });
+  bindLangToggle();
+  bindThemeToggle();
+
+  document.querySelectorAll("[data-add-team]").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const code = btn.dataset.addTeam;
+      const input = document.querySelector(`[data-new-team-input="${code}"]`);
+      const name = input.value.trim();
+      if (!name) return;
+      btn.disabled = true;
+      const created = await createTeam(code, name);
+      btn.disabled = false;
+      if (created) {
+        toast(t("teamSavedMsg"));
+        await renderTeamsManagement();
+      }
+    });
+  });
+
+  document.querySelectorAll("[data-rename-team]").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const id = btn.dataset.renameTeam;
+      const current = teamsCache.find((tm) => tm.id === id);
+      const name = prompt(t("renameTeamPrompt"), current ? current.name : "");
+      if (!name || !name.trim()) return;
+      btn.disabled = true;
+      const updated = await renameTeam(id, name.trim());
+      btn.disabled = false;
+      if (updated) {
+        toast(t("teamSavedMsg"));
+        await renderTeamsManagement();
+      }
+    });
+  });
+
+  document.querySelectorAll("[data-delete-team]").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      if (!window.confirm(t("deleteTeamConfirm"))) return;
+      const id = btn.dataset.deleteTeam;
+      btn.disabled = true;
+      const ok = await deleteTeam(id);
+      btn.disabled = false;
+      if (ok) {
+        toast(t("teamDeletedMsg"));
+        await renderTeamsManagement();
       }
     });
   });
@@ -3082,25 +3330,28 @@ function dashboardDepartments() {
 }
 
 function dashboardTeamsForDept(dept) {
-  const set = new Set();
+  const ids = new Set();
   ideasCache.forEach((i) => {
-    if (dept === "all" || i.department === dept) i.team && set.add(i.team);
+    if (dept === "all" || i.department === dept) i.team_id && ids.add(i.team_id);
   });
   processesCache.forEach((p) => {
-    if (dept === "all" || p.department === dept) p.team && set.add(p.team);
+    if (dept === "all" || p.department === dept) p.team_id && ids.add(p.team_id);
   });
-  return Array.from(set).sort();
+  return Array.from(ids)
+    .map((id) => teamsCache.find((tm) => tm.id === id))
+    .filter(Boolean)
+    .sort((a, b) => a.name.localeCompare(b.name));
 }
 
 function dashboardFilteredIdeas() {
   return ideasCache.filter(
-    (i) => (dashDept === "all" || i.department === dashDept) && (dashTeam === "all" || i.team === dashTeam)
+    (i) => (dashDept === "all" || i.department === dashDept) && (dashTeam === "all" || i.team_id === dashTeam)
   );
 }
 
 function dashboardFilteredProcesses() {
   return processesCache.filter(
-    (p) => (dashDept === "all" || p.department === dashDept) && (dashTeam === "all" || p.team === dashTeam)
+    (p) => (dashDept === "all" || p.department === dashDept) && (dashTeam === "all" || p.team_id === dashTeam)
   );
 }
 
@@ -3156,7 +3407,7 @@ function dashboardFiltersHtml() {
       </select>
       <select class="field" id="dash-team" style="flex:1;">
         <option value="all" ${dashTeam === "all" ? "selected" : ""}>${t("dashFilterAllTeam")}</option>
-        ${teams.map((tm) => `<option value="${escapeHtml(tm)}" ${tm === dashTeam ? "selected" : ""}>${escapeHtml(tm)}</option>`).join("")}
+        ${teams.map((tm) => `<option value="${tm.id}" ${tm.id === dashTeam ? "selected" : ""}>${escapeHtml(tm.name)}</option>`).join("")}
       </select>
     </div>
   `;
@@ -3341,16 +3592,17 @@ function dashboardTreeSection(ideas, processes) {
     .sort()
     .map((dept) => {
       const deptProcesses = byDept[dept];
-      const byTeam = groupByKey(deptProcesses, "team");
+      const byTeam = groupByKey(deptProcesses, "team_id");
       const teamsHtml = Object.keys(byTeam)
-        .sort()
-        .map((team) => {
+        .map((team) => ({ key: team, label: team === "—" ? "—" : teamName(team) }))
+        .sort((a, b) => a.label.localeCompare(b.label))
+        .map(({ key: team, label }) => {
           const teamProcesses = byTeam[team];
           const idsInTeam = new Set(teamProcesses.map((p) => p.id));
           const roots = teamProcesses.filter((p) => !p.parent_process_id || !idsInTeam.has(p.parent_process_id));
           return `
             <div class="dash-tree-team">
-              <div class="dash-tree-team-title">${escapeHtml(team)}</div>
+              <div class="dash-tree-team-title">${escapeHtml(label)}</div>
               ${roots.map((p) => dashProcessNodeHtml(p, teamProcesses, ideas)).join("")}
             </div>
           `;
@@ -3384,10 +3636,11 @@ function dashboardStatusSection(ideas) {
   if (ideas.length === 0) {
     return dashCard(t("dashStatusTitle"), `<div class="empty-state">${t("dashStatusEmpty")}</div>`);
   }
-  const byTeam = groupByKey(ideas, "team");
+  const byTeam = groupByKey(ideas, "team_id");
   const rows = Object.keys(byTeam)
-    .sort()
-    .map((team) => {
+    .map((team) => ({ key: team, label: team === "—" ? "—" : teamName(team) }))
+    .sort((a, b) => a.label.localeCompare(b.label))
+    .map(({ key: team, label }) => {
       const teamIdeas = byTeam[team];
       const total = teamIdeas.length;
       const segments = STATUS_ORDER.map((s) => {
@@ -3398,7 +3651,7 @@ function dashboardStatusSection(ideas) {
       }).join("");
       return `
         <div class="dash-bar-row">
-          <div class="dash-bar-label">${escapeHtml(team)} <span class="dash-bar-total">(${total})</span></div>
+          <div class="dash-bar-label">${escapeHtml(label)} <span class="dash-bar-total">(${total})</span></div>
           <div class="dash-bar-track">${segments}</div>
         </div>
       `;
@@ -3577,6 +3830,7 @@ async function renderDashboard() {
       <div class="actions">
         ${langToggleButton()}${themeToggleButton()}
         ${exportNavButton()}
+        ${teamsNavButton()}
         ${onboardingNavButton()}
         ${adminNavButton()}
         <button class="icon-btn" id="settings-btn">⚙</button>
@@ -3594,6 +3848,7 @@ async function renderDashboard() {
   bindTabBar();
   bindAdminNavButton();
   bindExportNavButton();
+  bindTeamsNavButton();
   bindLangToggle();
   bindThemeToggle();
   document.getElementById("logout-btn").addEventListener("click", logout);
@@ -3628,6 +3883,7 @@ async function render() {
   }
   if (kostenstellenCache.length === 0) {
     kostenstellenCache = await loadKostenstellen();
+    teamsCache = await loadTeams();
     myGrants = await loadMyGrants();
   }
   const route = currentRoute();
@@ -3645,6 +3901,8 @@ async function render() {
     await renderAdmin();
   } else if (route.view === "export") {
     await renderExportSync();
+  } else if (route.view === "teams") {
+    await renderTeamsManagement();
   } else {
     await renderList();
   }

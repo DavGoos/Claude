@@ -207,10 +207,9 @@ würde.
      ohne Zugriff. Nicht rückgängig zu machen über die Oberfläche – nur
      über einen direkten Datenbank-Eingriff (`update profiles set
      is_rejected = false where email = '...'` im SQL Editor).
-- Wächst das Team stark oder ihr braucht mehr als die 5 vorgesehenen Teams,
-  lässt sich das jederzeit erweitern (`TEAM_OPTIONS` in `js/app.js`, siehe
-  "Was die App kann" unten) – für die feingranulare Zugriffssteuerung pro
-  Kostenstelle/Team siehe den Punkt "Kostenstellen- & Team-Zugriff" unten.
+- Wächst das Team stark oder ihr braucht mehr/andere Teams, lässt sich das
+  jederzeit direkt in der App anpassen (kein Code-Deploy nötig) – siehe
+  "🧩 Teams" im Punkt "Kostenstellen- & Team-Zugriff" unten.
 
 ## KI-Ausarbeitung: Standardweg braucht keinen API-Key
 
@@ -268,33 +267,47 @@ funktioniert die App ganz normal weiter, nur eben ohne die KI-Ausarbeitung.
   erfassten Use Cases.
 - **Kostenstelle & Team pflichtig**: Sowohl bei Ideen als auch bei Prozessen
   müssen Kostenstelle und Team aus einem Dropdown gewählt werden (auch
-  schon beim schnellen Erfassen). Team-Werte stehen in `js/app.js` in der
-  Konstante `TEAM_OPTIONS` – zum Erweitern einfach dort einen Eintrag
-  ergänzen und die Datei neu deployen (git push), keine
-  Datenbank-Änderung nötig. Kostenstellen kommen dagegen aus der
-  Datenbank (Tabelle `kostenstellen`) und werden über die
-  Verwaltungsoberfläche gepflegt, siehe nächster Punkt.
+  schon beim schnellen Erfassen). Beide kommen aus der Datenbank
+  (Tabellen `kostenstellen` und `teams`) und werden über die
+  Verwaltungsoberfläche gepflegt, siehe nächste zwei Punkte. Teams
+  gehören dabei immer zu genau einer Kostenstelle – zwei Kostenstellen
+  können also unterschiedliche Teams haben.
 - **Kostenstellen- & Team-Zugriff (🛡 Freigaben)**: Der Admin legt im
   Freigaben-Bereich neue Kostenstellen an und weist jeder freigegebenen
   Person Zugriff zu – und zwar pro Kombination aus Kostenstelle **und**
   Team, nicht nur pro Kostenstelle. Jede Kostenstellen-Karte zeigt dafür
   mehrere Unterbereiche: **"Alle Teams (ganze Kostenstelle)"** ganz oben,
-  darunter je ein Unterbereich pro einzelnem Team (Group Controlling,
-  Treasury, Cost Allocation, Workforce Controlling, BI-Strategy). Pro
-  Person und Unterbereich lässt sich einstellen: **Kein Zugriff**
-  (Standard – nichts sichtbar), **Nur Lesen** oder **Lesen & Schreiben**.
-  Ein Zugriff im Unterbereich "Alle Teams" gilt automatisch für alle
-  Teams dieser Kostenstelle; ein zusätzlicher Zugriff bei einem einzelnen
-  Team wirkt nur für genau dieses Team. Damit lässt sich z.B. jemandem
-  Schreibzugriff nur für "BI-Strategy" innerhalb der Kostenstelle
-  "050005 CO" geben, ohne die übrigen vier Teams dieser Kostenstelle
-  mitzugeben. Der Admin selbst sieht und bearbeitet unabhängig davon
-  immer alles. **Wichtig für den Ablauf:** Freigeben (🛡 Freigaben →
-  "Freigeben") reicht allein nicht mehr aus – ohne mindestens einen
-  zugewiesenen Kostenstelle/Team-Zugriff sieht eine frisch freigegebene
-  Person eine leere Ideen-/Prozessliste und kann nichts anlegen.
-  Zugriffs-Änderungen wirken bei bereits eingeloggten Personen erst nach
-  einem Neuladen der Seite bzw. erneuten Login.
+  darunter je ein Unterbereich pro Team dieser Kostenstelle. Pro Person
+  und Unterbereich lässt sich einstellen: **Kein Zugriff** (Standard –
+  nichts sichtbar), **Nur Lesen** oder **Lesen & Schreiben**. Ein Zugriff
+  im Unterbereich "Alle Teams" gilt automatisch für alle Teams dieser
+  Kostenstelle; ein zusätzlicher Zugriff bei einem einzelnen Team wirkt
+  nur für genau dieses Team. Damit lässt sich z.B. jemandem
+  Schreibzugriff nur für ein einzelnes Team innerhalb einer Kostenstelle
+  geben, ohne die übrigen Teams dieser Kostenstelle mitzugeben. Der Admin
+  selbst sieht und bearbeitet unabhängig davon immer alles. **Wichtig für
+  den Ablauf:** Freigeben (🛡 Freigaben → "Freigeben") reicht allein nicht
+  mehr aus – ohne mindestens einen zugewiesenen Kostenstelle/Team-Zugriff
+  sieht eine frisch freigegebene Person eine leere Ideen-/Prozessliste
+  und kann nichts anlegen. Zugriffs-Änderungen wirken bei bereits
+  eingeloggten Personen erst nach einem Neuladen der Seite bzw. erneuten
+  Login.
+- **Teams verwalten ("🧩 Teams")**: Anders als Kostenstellen (nur der
+  Admin legt sie an) dürfen Teams auch von Personen mit **Vollzugriff**
+  (Lesen & Schreiben, "Alle Teams") auf eine Kostenstelle angelegt,
+  umbenannt und gelöscht werden – ganz ohne Admin-Rechte. Der Button
+  "🧩 Teams" steht deshalb allen freigegebenen Personen offen (bei den
+  Ideen/Prozessen/Auswertungen oben in der Kopfzeile) und zeigt dort die
+  Teams jeder Kostenstelle, auf die man selbst Zugriff hat – Bearbeiten-
+  Knöpfe erscheinen nur bei den Kostenstellen mit eigenem Vollzugriff.
+  Wer nur auf einzelne Teams Zugriff hat, sieht die Liste nur lesend.
+  Eine Umbenennung wirkt sich sofort auch auf alle bereits bestehenden
+  Ideen/Prozesse dieses Teams aus (der Name wird nicht als Text
+  gespeichert, sondern live nachgeschlagen) – bestehende Zugriffsrechte
+  bleiben davon unberührt, da sie intern nicht am Namen, sondern an einer
+  festen Team-ID hängen. Ein gelöschtes Team verschwindet bei betroffenen
+  Ideen/Prozessen einfach aus der Team-Spalte (keine Löschung der
+  Ideen/Prozesse selbst).
 - **Deutsch/Englisch umschalten**: Ein Sprachschalter (DE/EN-Knopf oben
   rechts, u.a. auf dem Login-Bildschirm und den beiden Haupt-Listen)
   übersetzt die komplette Oberfläche inkl. der von der KI angefragten

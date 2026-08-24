@@ -138,40 +138,102 @@ insert into kostenstellen (code, name)
 values ('050005 CO', 'Group Controlling')
 on conflict (code) do nothing;
 
+-- Teams gehören zu genau einer Kostenstelle (nicht global) - jede
+-- Kostenstelle kann ihre eigene, unabhängige Teamliste haben. Ideen/
+-- Prozesse verweisen auf die Team-ID statt auf den Namen als Text, damit
+-- eine Umbenennung überall automatisch mitzieht (genau wie bei
+-- Kostenstellen-Namen schon heute).
+create table if not exists teams (
+  id uuid primary key default gen_random_uuid(),
+  kostenstelle_code text not null references kostenstellen (code) on delete cascade,
+  name text not null,
+  created_at timestamptz not null default now(),
+  unique (kostenstelle_code, name)
+);
+
+-- Die bisher fest in js/app.js hinterlegten 5 Teams einmalig für die
+-- bestehende Kostenstelle übernehmen, damit sich für die heutige Nutzung
+-- nichts ändert.
+insert into teams (kostenstelle_code, name)
+select '050005 CO', t
+from unnest(array['Group Controlling', 'Treasury', 'Cost Allocation', 'Workforce Controlling', 'BI-Strategy']) as t
+where exists (select 1 from kostenstellen k where k.code = '050005 CO')
+on conflict (kostenstelle_code, name) do nothing;
+
+-- Kein Primary Key inline: team_id (siehe unten) ist nullable ("alle
+-- Teams") und kann daher nicht Teil eines Primary Keys sein. Stattdessen
+-- weiter unten ein eigener id-Primary-Key plus zwei partielle
+-- Unique-Indexe - das muss unbedingt unconditional (nicht nur bei einer
+-- Migration von der alten team-Text-Spalte) passieren, sonst würde eine
+-- brandneue Datenbank fälschlich nur einen Zugriffs-Eintrag pro Person
+-- und Kostenstelle zulassen, statt einen pro Team.
 create table if not exists kostenstelle_access (
   user_id uuid not null references auth.users (id) on delete cascade,
   kostenstelle_code text not null references kostenstellen (code) on delete cascade,
-  access_level text not null check (access_level in ('read', 'write')),
-  primary key (user_id, kostenstelle_code)
+  access_level text not null check (access_level in ('read', 'write'))
 );
 
 -- Team-Dimension: Zugriff wird pro (Kostenstelle, Team) statt nur pro
--- Kostenstelle vergeben, damit z.B. innerhalb "050005 CO" die 5 Teams
--- unabhängig voneinander freigeschaltet werden können. team = '*' heißt
--- "alle Teams dieser Kostenstelle" - so bleiben bereits vergebene, aus der
--- Zeit vor der Team-Trennung stammende Zugriffe unverändert gültig.
-alter table kostenstelle_access add column if not exists team text not null default '*';
+-- Kostenstelle vergeben, damit innerhalb einer Kostenstelle mehrere Teams
+-- unabhängig voneinander freigeschaltet werden können. team_id NULL heißt
+-- "alle Teams dieser Kostenstelle" (Vollzugriff) - so bleiben bereits
+-- vergebene, aus der Zeit vor der Team-Trennung stammende Zugriffe
+-- unverändert gültig.
+do $$
+begin
+  if exists (select 1 from information_schema.columns where table_name = 'kostenstelle_access' and column_name = 'team') then
+    alter table kostenstelle_access add column if not exists team_id uuid references teams (id) on delete cascade;
+    update kostenstelle_access a
+    set team_id = t.id
+    from teams t
+    where t.kostenstelle_code = a.kostenstelle_code and t.name = a.team and a.team <> '*';
+    alter table kostenstelle_access drop column team;
+  end if;
+end $$;
 
+alter table kostenstelle_access add column if not exists team_id uuid references teams (id) on delete cascade;
 alter table kostenstelle_access drop constraint if exists kostenstelle_access_pkey;
-alter table kostenstelle_access add primary key (user_id, kostenstelle_code, team);
+alter table kostenstelle_access add column if not exists id uuid not null default gen_random_uuid();
 
--- Migration: alle bereits freigegebenen Personen bekommen automatisch
--- Schreibzugriff auf die bisherige Kostenstelle, damit sich für die
--- heutige Nutzung nichts ändert. Neue Kostenstellen und neue Personen
--- werden ab jetzt bewusst über die Verwaltungsoberfläche zugewiesen.
-insert into kostenstelle_access (user_id, kostenstelle_code, team, access_level)
-select p.id, '050005 CO', '*', 'write'
+do $$
+begin
+  if not exists (
+    select 1 from pg_constraint c
+    join pg_class t on t.oid = c.conrelid
+    where t.relname = 'kostenstelle_access' and c.contype = 'p'
+  ) then
+    alter table kostenstelle_access add primary key (id);
+  end if;
+end $$;
+
+-- Höchstens ein Vollzugriff-Eintrag (team_id NULL) pro Person+Kostenstelle,
+-- höchstens ein Eintrag pro Person+Kostenstelle+konkretem Team.
+create unique index if not exists kostenstelle_access_team_unique
+  on kostenstelle_access (user_id, kostenstelle_code, team_id) where team_id is not null;
+create unique index if not exists kostenstelle_access_wildcard_unique
+  on kostenstelle_access (user_id, kostenstelle_code) where team_id is null;
+
+-- Migration: freigegebene Personen, die noch NIE einen Zugriffs-Eintrag
+-- hatten, bekommen einmalig automatisch Vollzugriff (alle Teams) auf die
+-- bisherige Kostenstelle, damit sich für die heutige Nutzung nichts
+-- ändert. Bewusst nur für Personen ohne jeden bestehenden Eintrag - sonst
+-- würde ein erneutes Ausführen dieses Skripts eine später über die
+-- Verwaltungsoberfläche gezielt auf einzelne Teams eingeschränkte Person
+-- bei jedem Lauf wieder auf Vollzugriff zurücksetzen.
+insert into kostenstelle_access (user_id, kostenstelle_code, team_id, access_level)
+select p.id, '050005 CO', null, 'write'
 from profiles p
 where p.is_approved = true
-on conflict (user_id, kostenstelle_code, team) do nothing;
+  and not exists (select 1 from kostenstelle_access a2 where a2.user_id = p.id)
+on conflict (user_id, kostenstelle_code) where team_id is null do nothing;
 
 -- cascade: bestehende Policies auf processes/ideas hängen noch an der alten
--- 1-Parameter-Signatur - die werden hier mitgelöscht und weiter unten mit
--- der neuen 2-Parameter-Version (Kostenstelle + Team) neu angelegt.
-drop function if exists can_read_kostenstelle(text) cascade;
-drop function if exists can_write_kostenstelle(text) cascade;
+-- Signatur (Kostenstelle + Team-Name) - die werden hier mitgelöscht und
+-- weiter unten mit der neuen Version (Kostenstelle + Team-ID) neu angelegt.
+drop function if exists can_read_kostenstelle(text, text) cascade;
+drop function if exists can_write_kostenstelle(text, text) cascade;
 
-create or replace function can_read_kostenstelle(ks text, tm text)
+create or replace function can_read_kostenstelle(ks text, tm uuid)
 returns boolean
 language sql
 security definer
@@ -181,11 +243,11 @@ as $$
   select is_admin_user() or exists (
     select 1 from public.kostenstelle_access a
     where a.user_id = auth.uid() and a.kostenstelle_code = ks
-      and (a.team = '*' or a.team = tm)
+      and (a.team_id is null or a.team_id = tm)
   );
 $$;
 
-create or replace function can_write_kostenstelle(ks text, tm text)
+create or replace function can_write_kostenstelle(ks text, tm uuid)
 returns boolean
 language sql
 security definer
@@ -195,7 +257,24 @@ as $$
   select is_admin_user() or exists (
     select 1 from public.kostenstelle_access a
     where a.user_id = auth.uid() and a.kostenstelle_code = ks
-      and (a.team = '*' or a.team = tm) and a.access_level = 'write'
+      and (a.team_id is null or a.team_id = tm) and a.access_level = 'write'
+  );
+$$;
+
+-- Wer Vollzugriff (Schreiben, alle Teams) auf eine Kostenstelle hat, darf
+-- deren Teams anlegen/umbenennen/löschen - wer nur auf einzelne Teams
+-- Zugriff hat, darf das nicht.
+create or replace function can_manage_teams(ks text)
+returns boolean
+language sql
+security definer
+set search_path = public
+stable
+as $$
+  select is_admin_user() or exists (
+    select 1 from public.kostenstelle_access a
+    where a.user_id = auth.uid() and a.kostenstelle_code = ks
+      and a.team_id is null and a.access_level = 'write'
   );
 $$;
 
@@ -211,6 +290,19 @@ create policy "Kostenstellen: admin manage"
   on kostenstellen for all
   using (is_admin_user())
   with check (is_admin_user());
+
+alter table teams enable row level security;
+
+drop policy if exists "Teams: select for approved users" on teams;
+create policy "Teams: select for approved users"
+  on teams for select
+  using (is_approved_user());
+
+drop policy if exists "Teams: manage with full kostenstelle access" on teams;
+create policy "Teams: manage with full kostenstelle access"
+  on teams for all
+  using (can_manage_teams(kostenstelle_code))
+  with check (can_manage_teams(kostenstelle_code));
 
 alter table kostenstelle_access enable row level security;
 
@@ -245,12 +337,28 @@ create table if not exists processes (
 -- Verknüpfung angelegt hatten: Spalte nachträglich ergänzen.
 alter table processes add column if not exists parent_process_id uuid references processes (id) on delete set null;
 
--- Abteilung (= Kostenstelle, siehe oben) und Team sind Pflichtfelder
--- (Dropdown in der App). Die Kostenstellen-Werte kommen aus der Tabelle
--- "kostenstellen" oben, die Team-Werte sind bewusst nicht als
--- DB-Constraint hinterlegt, sondern nur in js/app.js (TEAM_OPTIONS) - so
--- lässt sich diese Liste erweitern, ohne dieses Skript anzupassen.
-alter table processes add column if not exists team text not null default '';
+-- Abteilung (= Kostenstelle, siehe oben) ist Pflichtfeld (Dropdown in der
+-- App). Team ist ebenfalls Pflichtfeld, aber als team_id (siehe
+-- teams-Tabelle oben) statt als Text - so wirkt eine Umbenennung eines
+-- Teams automatisch auch bei bereits bestehenden Prozessen.
+alter table processes add column if not exists team_id uuid references teams (id) on delete set null;
+
+do $$
+begin
+  if exists (select 1 from information_schema.columns where table_name = 'processes' and column_name = 'team') then
+    insert into teams (kostenstelle_code, name)
+    select distinct department, team from processes
+    where team <> '' and exists (select 1 from kostenstellen k where k.code = processes.department)
+    on conflict (kostenstelle_code, name) do nothing;
+
+    update processes p
+    set team_id = t.id
+    from teams t
+    where t.kostenstelle_code = p.department and t.name = p.team and p.team_id is null and p.team <> '';
+
+    alter table processes drop column team;
+  end if;
+end $$;
 
 -- Zweisprachige Inhalte: optionale "_en"-Spalten für eine vom Admin auf
 -- Zuruf im Chat gepflegte Übersetzung (siehe README "Zweisprachige
@@ -273,29 +381,29 @@ drop policy if exists "Processes: select for approved users" on processes;
 drop policy if exists "Processes: select with kostenstelle access" on processes;
 create policy "Processes: select with kostenstelle access"
   on processes for select
-  using (is_approved_user() and can_read_kostenstelle(department, team));
+  using (is_approved_user() and can_read_kostenstelle(department, team_id));
 
 drop policy if exists "Processes: insert for logged in users" on processes;
 drop policy if exists "Processes: insert for approved users" on processes;
 drop policy if exists "Processes: insert with kostenstelle access" on processes;
 create policy "Processes: insert with kostenstelle access"
   on processes for insert
-  with check (is_approved_user() and can_write_kostenstelle(department, team));
+  with check (is_approved_user() and can_write_kostenstelle(department, team_id));
 
 drop policy if exists "Processes: update for logged in users" on processes;
 drop policy if exists "Processes: update for approved users" on processes;
 drop policy if exists "Processes: update with kostenstelle access" on processes;
 create policy "Processes: update with kostenstelle access"
   on processes for update
-  using (is_approved_user() and can_write_kostenstelle(department, team))
-  with check (is_approved_user() and can_write_kostenstelle(department, team));
+  using (is_approved_user() and can_write_kostenstelle(department, team_id))
+  with check (is_approved_user() and can_write_kostenstelle(department, team_id));
 
 drop policy if exists "Processes: delete for logged in users" on processes;
 drop policy if exists "Processes: delete for approved users" on processes;
 drop policy if exists "Processes: delete with kostenstelle access" on processes;
 create policy "Processes: delete with kostenstelle access"
   on processes for delete
-  using (is_approved_user() and can_write_kostenstelle(department, team));
+  using (is_approved_user() and can_write_kostenstelle(department, team_id));
 
 -- Ideen / AI Use Cases
 create table if not exists ideas (
@@ -325,7 +433,24 @@ alter table ideas add column if not exists process_id uuid references processes 
 -- Abteilung (= Kostenstelle) / Team sind Pflichtfelder (Dropdown in der
 -- App, siehe Hinweis bei der processes-Tabelle oben).
 alter table ideas add column if not exists department text not null default '';
-alter table ideas add column if not exists team text not null default '';
+alter table ideas add column if not exists team_id uuid references teams (id) on delete set null;
+
+do $$
+begin
+  if exists (select 1 from information_schema.columns where table_name = 'ideas' and column_name = 'team') then
+    insert into teams (kostenstelle_code, name)
+    select distinct department, team from ideas
+    where team <> '' and exists (select 1 from kostenstellen k where k.code = ideas.department)
+    on conflict (kostenstelle_code, name) do nothing;
+
+    update ideas i
+    set team_id = t.id
+    from teams t
+    where t.kostenstelle_code = i.department and t.name = i.team and i.team_id is null and i.team <> '';
+
+    alter table ideas drop column team;
+  end if;
+end $$;
 
 -- Zusätzliche, optionale Felder für den Abgleich mit dem bestehenden
 -- Excel-Use-Case-Katalog (Import/Export). Dropdown-Werte werden wie bei
@@ -396,26 +521,26 @@ drop policy if exists "Ideas: select for approved users" on ideas;
 drop policy if exists "Ideas: select with kostenstelle access" on ideas;
 create policy "Ideas: select with kostenstelle access"
   on ideas for select
-  using (is_approved_user() and can_read_kostenstelle(department, team));
+  using (is_approved_user() and can_read_kostenstelle(department, team_id));
 
 drop policy if exists "Ideas: insert for logged in users" on ideas;
 drop policy if exists "Ideas: insert for approved users" on ideas;
 drop policy if exists "Ideas: insert with kostenstelle access" on ideas;
 create policy "Ideas: insert with kostenstelle access"
   on ideas for insert
-  with check (is_approved_user() and can_write_kostenstelle(department, team));
+  with check (is_approved_user() and can_write_kostenstelle(department, team_id));
 
 drop policy if exists "Ideas: update for logged in users" on ideas;
 drop policy if exists "Ideas: update for approved users" on ideas;
 drop policy if exists "Ideas: update with kostenstelle access" on ideas;
 create policy "Ideas: update with kostenstelle access"
   on ideas for update
-  using (is_approved_user() and can_write_kostenstelle(department, team))
-  with check (is_approved_user() and can_write_kostenstelle(department, team));
+  using (is_approved_user() and can_write_kostenstelle(department, team_id))
+  with check (is_approved_user() and can_write_kostenstelle(department, team_id));
 
 drop policy if exists "Ideas: delete for logged in users" on ideas;
 drop policy if exists "Ideas: delete for approved users" on ideas;
 drop policy if exists "Ideas: delete with kostenstelle access" on ideas;
 create policy "Ideas: delete with kostenstelle access"
   on ideas for delete
-  using (is_approved_user() and can_write_kostenstelle(department, team));
+  using (is_approved_user() and can_write_kostenstelle(department, team_id));
