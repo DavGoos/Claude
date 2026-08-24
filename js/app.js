@@ -1381,7 +1381,7 @@ function teamOptionsFrom(teams, selectedId) {
 function departmentTeamFields(department, teamId, idPrefix) {
   const codes = new Set(writableCodes());
   if (department) codes.add(department);
-  const teams = writableTeamsForCode(department).slice();
+  const teams = department ? writableTeamsForCode(department).slice() : [];
   if (teamId && !teams.some((tm) => tm.id === teamId)) {
     const existing = teamsCache.find((tm) => tm.id === teamId);
     if (existing) teams.push(existing);
@@ -1422,7 +1422,7 @@ function teamFilterOptionsFrom(teams, selectedId) {
 
 function deptTeamFilterRow(idPrefix, activeDept, activeTeamId) {
   const codes = readableCodes();
-  const teams = readableTeamsForCode(activeDept);
+  const teams = activeDept ? readableTeamsForCode(activeDept) : [];
   return `
     <div class="filter-select-row">
       <select class="filter-select" id="${idPrefix}-dept-filter">
@@ -1747,8 +1747,8 @@ async function renderList() {
 
   document.getElementById("ideafilter-dept-filter").addEventListener("change", (e) => {
     activeDeptFilter = e.target.value;
-    const teams = readableTeamsForCode(activeDeptFilter);
-    if (!teams.includes(activeTeamFilter)) activeTeamFilter = "";
+    const teams = activeDeptFilter ? readableTeamsForCode(activeDeptFilter) : [];
+    if (!teams.some((tm) => tm.id === activeTeamFilter)) activeTeamFilter = "";
     document.getElementById("ideafilter-team-filter").innerHTML = teamFilterOptionsFrom(teams, activeTeamFilter);
     renderIdeaList();
   });
@@ -2349,8 +2349,8 @@ async function renderProcessList() {
 
   document.getElementById("processfilter-dept-filter").addEventListener("change", (e) => {
     activeProcessDeptFilter = e.target.value;
-    const teams = readableTeamsForCode(activeProcessDeptFilter);
-    if (!teams.includes(activeProcessTeamFilter)) activeProcessTeamFilter = "";
+    const teams = activeProcessDeptFilter ? readableTeamsForCode(activeProcessDeptFilter) : [];
+    if (!teams.some((tm) => tm.id === activeProcessTeamFilter)) activeProcessTeamFilter = "";
     document.getElementById("processfilter-team-filter").innerHTML = teamFilterOptionsFrom(teams, activeProcessTeamFilter);
     renderProcessListItems();
   });
