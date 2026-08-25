@@ -740,13 +740,13 @@ function priorityInfo(idea) {
   // Machbarkeit/Risiko wirken als Vorabprüfung vor der eigentlichen
   // Impact/Effort-Matrix: kaum machbare oder riskante Ideen sollen nicht als
   // "Quick Win" erscheinen, egal wie gut Impact/Effort sonst aussehen.
-  if (feasibility <= 2) return { label: t("priority_hardToImplement"), color: "#ef4444" };
-  if (risk >= 4) return { label: t("priority_highRisk"), color: "#f97316" };
-  if (impact >= 4 && effort <= 2) return { label: t("priority_quickWin"), color: "#22c55e" };
-  if (impact >= 4 && effort >= 4) return { label: t("priority_bigProject"), color: "#8b5cf6" };
-  if (impact <= 2 && effort <= 2) return { label: t("priority_niceToHave"), color: "#93c5fd" };
-  if (impact <= 2 && effort >= 4) return { label: t("priority_postpone"), color: "#9aa1af" };
-  return { label: t("priority_review"), color: "#fcd34d" };
+  if (feasibility <= 2) return { label: t("priority_hardToImplement"), color: "#ef4444", icon: "🚧" };
+  if (risk >= 4) return { label: t("priority_highRisk"), color: "#f97316", icon: "⚠️" };
+  if (impact >= 4 && effort <= 2) return { label: t("priority_quickWin"), color: "#22c55e", icon: "🚀" };
+  if (impact >= 4 && effort >= 4) return { label: t("priority_bigProject"), color: "#8b5cf6", icon: "🏗️" };
+  if (impact <= 2 && effort <= 2) return { label: t("priority_niceToHave"), color: "#93c5fd", icon: "✨" };
+  if (impact <= 2 && effort >= 4) return { label: t("priority_postpone"), color: "#9aa1af", icon: "⏳" };
+  return { label: t("priority_review"), color: "#fcd34d", icon: "🔍" };
 }
 
 function ideaScore(idea) {
@@ -1911,11 +1911,6 @@ async function renderDetail(id) {
         <label class="field-label">${t("departmentLabel")} / ${t("teamLabel")}</label>
         ${departmentTeamFields(idea.department, idea.team_id, "detail")}
 
-        <label class="field-label">${t("relatedProcessLabel")}</label>
-        <select class="field" id="f-process">
-          ${processOptions(idea.process_id)}
-        </select>
-
         <label class="field-label">${t("tagsLabel")}</label>
         <input class="field list-field" id="f-tags" value="${escapeHtml(idea.tags || "")}" placeholder="${t("tagsPlaceholder")}" />
       </div>
@@ -1935,35 +1930,6 @@ async function renderDetail(id) {
 
         <label class="field-label">${t("qualitativeBenefitLabel")}</label>
         <textarea class="field list-field" id="f-qualitative-benefit" placeholder="${t("qualitativeBenefitPlaceholder")}"${trReadonlyAttr(idea, "qualitative_benefit")}>${escapeHtml(trValue(idea, "qualitative_benefit"))}</textarea>
-      </div>
-
-      <div class="card">
-        <div class="section-title" style="margin:0 0 10px;">${t("stageChainTitle")}</div>
-        <p style="font-size:13px; color:var(--text-dim); margin:0 0 12px; line-height:1.5;">${t("stageChainDesc")}</p>
-
-        <label class="field-label" style="margin-top:0;">${t("previousStageLabel")}</label>
-        <select class="field" id="f-parent-idea">
-          ${parentIdeaOptions(idea)}
-        </select>
-
-        ${stageChainHtml(idea)}
-
-        <label class="field-label" style="margin-top:0;">${t("followUpStagesTitle")}</label>
-        <div id="follow-up-stages">
-          ${
-            ideaFollowUpStages(idea).length
-              ? ideaFollowUpStages(idea)
-                  .map(
-                    (i) =>
-                      `<a class="link-item" href="#/idea/${i.id}">${escapeHtml(ideaLabel(i))} <span class="badge status-${i.status}">${t(`status_${i.status}`)}</span></a>`
-                  )
-                  .join("")
-              : `<div class="empty-state" style="padding:16px 4px;">${t("emptyFollowUpStages")}</div>`
-          }
-        </div>
-        <div class="row">
-          <button class="btn-secondary" id="add-followup-btn" style="width:100%;">${t("addFollowUpStageBtn")}</button>
-        </div>
       </div>
 
       <div class="card">
@@ -2034,6 +2000,40 @@ async function renderDetail(id) {
         <textarea class="field" id="f-ai-plan-notes" placeholder="${t("aiResponsePlaceholder")}">${escapeHtml(idea.ai_plan_notes || "")}</textarea>
       </details>
 
+      <div class="card">
+        <div class="section-title" style="margin:0 0 10px;">${t("stageChainTitle")}</div>
+        <p style="font-size:13px; color:var(--text-dim); margin:0 0 12px; line-height:1.5;">${t("stageChainDesc")}</p>
+
+        <label class="field-label" style="margin-top:0;">${t("relatedProcessLabel")}</label>
+        <select class="field" id="f-process">
+          ${processOptions(idea.process_id)}
+        </select>
+
+        <label class="field-label">${t("previousStageLabel")}</label>
+        <select class="field" id="f-parent-idea">
+          ${parentIdeaOptions(idea)}
+        </select>
+
+        ${stageChainHtml(idea)}
+
+        <label class="field-label" style="margin-top:0;">${t("followUpStagesTitle")}</label>
+        <div id="follow-up-stages">
+          ${
+            ideaFollowUpStages(idea).length
+              ? ideaFollowUpStages(idea)
+                  .map(
+                    (i) =>
+                      `<a class="link-item" href="#/idea/${i.id}">${escapeHtml(ideaLabel(i))} <span class="badge status-${i.status}">${t(`status_${i.status}`)}</span></a>`
+                  )
+                  .join("")
+              : `<div class="empty-state" style="padding:16px 4px;">${t("emptyFollowUpStages")}</div>`
+          }
+        </div>
+        <div class="row">
+          <button class="btn-secondary" id="add-followup-btn" style="width:100%;">${t("addFollowUpStageBtn")}</button>
+        </div>
+      </div>
+
       <div class="row">
         <button class="btn-primary" id="save-detail-btn">${t("saveBtn")}</button>
       </div>
@@ -2057,7 +2057,7 @@ async function renderDetail(id) {
     const risk = Number(document.querySelector('[data-field="risk"]').value);
     const p = priorityInfo({ impact, effort, feasibility, risk });
     document.getElementById("priority-banner").innerHTML =
-      `<span class="priority-dot" style="background:${p.color}"></span> ${t("assessmentPrefix")}<strong>${p.label}</strong>`;
+      `<span class="priority-dot" style="background:${p.color}"></span> ${p.icon} ${t("assessmentPrefix")}<strong>${p.label}</strong>`;
   }
 
   document.querySelectorAll('input[type="range"]').forEach((slider) => {
