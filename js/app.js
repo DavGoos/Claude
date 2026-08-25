@@ -159,10 +159,10 @@ const I18N = {
     selectPlaceholderOption: "— Bitte wählen —",
     departmentTeamRequiredMsg: "Bitte Kostenstelle und Team auswählen.",
     readOnlyNotice: "Nur Lesezugriff auf diese Kostenstelle – Änderungen können hier nicht gespeichert werden.",
-
-    catalogFieldsTitle: "Weitere Katalog-Felder (optional)",
-    catalogFieldsDesc:
-      "Zusätzliche Felder für den Abgleich mit der zentralen AI Ambassadors Usecase-Collection. Für die tägliche Nutzung optional – möchtest du diese Idee aber später als Case in die Usecase-Collection kopieren (siehe 🔄 Export), sind genau diese Felder relevant und sollten vorher ausgefüllt sein.",
+    listFieldsHint:
+      "Felder mit farbigem Rand links stehen auch in der zentralen AI Ambassadors Usecase-Collection (🔄 Export) – alle anderen Felder gibt es nur hier in der App.",
+    solutionApproachTitle: "Lösungsansatz",
+    listDetailsTitle: "Für die Ambassador-Liste",
     aiRoleLabel: "KI-Rolle",
     systemeLabel: "Systeme",
     systemePlaceholder: "Beteiligte Systeme/Plattformen (eigene Spalte in der Liste, getrennt von KI-Lösung)",
@@ -449,10 +449,10 @@ const I18N = {
     selectPlaceholderOption: "— Please select —",
     departmentTeamRequiredMsg: "Please select cost center and team.",
     readOnlyNotice: "Read-only access to this cost center - changes here can't be saved.",
-
-    catalogFieldsTitle: "Additional catalog fields (optional)",
-    catalogFieldsDesc:
-      "Extra fields to align with the central AI Ambassadors Usecase Collection. Optional for everyday use - but if you plan to copy this idea into the Usecase Collection as a case later (see 🔄 Export), these are exactly the fields that matter and should be filled in beforehand.",
+    listFieldsHint:
+      "Fields with a colored left border are also part of the central AI Ambassadors Usecase Collection (🔄 Export) - all other fields only exist here in the app.",
+    solutionApproachTitle: "Solution approach",
+    listDetailsTitle: "For the Ambassador list",
     aiRoleLabel: "AI role",
     systemeLabel: "Systems",
     systemePlaceholder: "Systems/platforms involved (own column in the list, separate from AI solution)",
@@ -1890,9 +1890,13 @@ async function renderDetail(id) {
           ? ""
           : `<div style="font-size:13px; color:var(--text); background:var(--surface-2); border-left:3px solid var(--accent); border-radius:6px; padding:10px 12px; margin:0 0 14px; line-height:1.5;">🔒 ${t("readOnlyNotice")}</div>`
       }
+      <div style="font-size:13px; color:var(--text); background:var(--surface-2); border-left:3px solid var(--accent); border-radius:6px; padding:10px 12px; margin:0 0 14px; line-height:1.5;">${t("listFieldsHint")}</div>
       <div class="card">
         <label class="field-label">${t("quickNoteLabel")}</label>
-        <textarea class="field" id="f-quick-note"${trReadonlyAttr(idea, "quick_note")}>${escapeHtml(trValue(idea, "quick_note"))}</textarea>
+        <textarea class="field list-field" id="f-quick-note"${trReadonlyAttr(idea, "quick_note")}>${escapeHtml(trValue(idea, "quick_note"))}</textarea>
+
+        <label class="field-label">${t("catalogIdLabel")}</label>
+        <input class="field list-field" id="f-catalog-id" value="${escapeHtml(idea.catalog_id || "")}" placeholder="${t("catalogIdPlaceholder")}" />
 
         <label class="field-label">${t("ownerNameLabel")}</label>
         <input class="field" id="f-owner-name" value="${escapeHtml(idea.owner_name || "")}" placeholder="${t("ownerNamePlaceholder")}" />
@@ -1913,16 +1917,24 @@ async function renderDetail(id) {
         </select>
 
         <label class="field-label">${t("tagsLabel")}</label>
-        <input class="field" id="f-tags" value="${escapeHtml(idea.tags || "")}" placeholder="${t("tagsPlaceholder")}" />
+        <input class="field list-field" id="f-tags" value="${escapeHtml(idea.tags || "")}" placeholder="${t("tagsPlaceholder")}" />
+      </div>
 
-        <label class="field-label">${t("problemLabel")}</label>
-        <textarea class="field" id="f-problem" placeholder="${t("problemPlaceholder")}"${trReadonlyAttr(idea, "problem")}>${escapeHtml(trValue(idea, "problem"))}</textarea>
+      <div class="card">
+        <label class="field-label" style="margin-top:0;">${t("problemLabel")}</label>
+        <textarea class="field list-field" id="f-problem" placeholder="${t("problemPlaceholder")}"${trReadonlyAttr(idea, "problem")}>${escapeHtml(trValue(idea, "problem"))}</textarea>
 
         <label class="field-label">${t("goalLabel")}</label>
-        <textarea class="field" id="f-goal" placeholder="${t("goalPlaceholder")}"${trReadonlyAttr(idea, "goal")}>${escapeHtml(trValue(idea, "goal"))}</textarea>
+        <textarea class="field list-field" id="f-goal" placeholder="${t("goalPlaceholder")}"${trReadonlyAttr(idea, "goal")}>${escapeHtml(trValue(idea, "goal"))}</textarea>
 
         <label class="field-label">${t("businessBenefitLabel")}</label>
-        <textarea class="field" id="f-business-benefit" placeholder="${t("businessBenefitPlaceholder")}"${trReadonlyAttr(idea, "business_benefit")}>${escapeHtml(trValue(idea, "business_benefit"))}</textarea>
+        <textarea class="field list-field" id="f-business-benefit" placeholder="${t("businessBenefitPlaceholder")}"${trReadonlyAttr(idea, "business_benefit")}>${escapeHtml(trValue(idea, "business_benefit"))}</textarea>
+
+        <label class="field-label">${t("quantifiedBenefitLabel")}</label>
+        <textarea class="field list-field" id="f-quantified-benefit" placeholder="${t("quantifiedBenefitPlaceholder")}">${escapeHtml(idea.quantified_benefit || "")}</textarea>
+
+        <label class="field-label">${t("qualitativeBenefitLabel")}</label>
+        <textarea class="field list-field" id="f-qualitative-benefit" placeholder="${t("qualitativeBenefitPlaceholder")}"${trReadonlyAttr(idea, "qualitative_benefit")}>${escapeHtml(trValue(idea, "qualitative_benefit"))}</textarea>
       </div>
 
       <div class="card">
@@ -1964,56 +1976,46 @@ async function renderDetail(id) {
       </div>
 
       <div class="card">
-        <label class="field-label" style="margin-top:0;">${t("toolsLabel")}</label>
-        <textarea class="field" id="f-tools" placeholder="${t("toolsPlaceholder")}">${escapeHtml(idea.tools || "")}</textarea>
-
-        <label class="field-label">${t("considerationsLabel")}</label>
-        <textarea class="field" id="f-considerations" placeholder="${t("considerationsPlaceholder")}"${trReadonlyAttr(idea, "considerations")}>${escapeHtml(trValue(idea, "considerations"))}</textarea>
-      </div>
-
-      <details class="card">
-        <summary style="cursor:pointer; font-size:14px; font-weight:600; color:var(--text);">${t("catalogFieldsTitle")}</summary>
-        <p style="font-size:13px; color:var(--text-dim); margin:10px 0 14px; line-height:1.5;">${t("catalogFieldsDesc")}</p>
-
-        <label class="field-label" style="margin-top:0;">${t("catalogIdLabel")}</label>
-        <input class="field" id="f-catalog-id" value="${escapeHtml(idea.catalog_id || "")}" placeholder="${t("catalogIdPlaceholder")}" />
-
-        <label class="field-label">${t("aiRoleLabel")}</label>
-        <select class="field" id="f-ai-role">
+        <div class="section-title" style="margin:0 0 10px;">${t("solutionApproachTitle")}</div>
+        <label class="field-label" style="margin-top:0;">${t("aiRoleLabel")}</label>
+        <select class="field list-field" id="f-ai-role">
           ${selectOptionsFrom(AI_ROLE_OPTIONS, idea.ai_role)}
         </select>
 
+        <label class="field-label">${t("toolsLabel")}</label>
+        <textarea class="field list-field" id="f-tools" placeholder="${t("toolsPlaceholder")}">${escapeHtml(idea.tools || "")}</textarea>
+
         <label class="field-label">${t("systemeLabel")}</label>
-        <textarea class="field" id="f-systeme" placeholder="${t("systemePlaceholder")}">${escapeHtml(idea.systeme || "")}</textarea>
+        <textarea class="field list-field" id="f-systeme" placeholder="${t("systemePlaceholder")}">${escapeHtml(idea.systeme || "")}</textarea>
 
         <label class="field-label">${t("inputSourceLabel")}</label>
-        <textarea class="field" id="f-input-source" placeholder="${t("inputSourcePlaceholder")}">${escapeHtml(idea.input_source || "")}</textarea>
+        <textarea class="field list-field" id="f-input-source" placeholder="${t("inputSourcePlaceholder")}">${escapeHtml(idea.input_source || "")}</textarea>
 
         <label class="field-label">${t("outputResultLabel")}</label>
-        <textarea class="field" id="f-output-result" placeholder="${t("outputResultPlaceholder")}">${escapeHtml(idea.output_result || "")}</textarea>
+        <textarea class="field list-field" id="f-output-result" placeholder="${t("outputResultPlaceholder")}">${escapeHtml(idea.output_result || "")}</textarea>
 
-        <label class="field-label">${t("kpiKindLabel")}</label>
-        <select class="field" id="f-kpi-kind">
+        <label class="field-label">${t("considerationsLabel")}</label>
+        <textarea class="field list-field" id="f-considerations" placeholder="${t("considerationsPlaceholder")}"${trReadonlyAttr(idea, "considerations")}>${escapeHtml(trValue(idea, "considerations"))}</textarea>
+      </div>
+
+      <div class="card">
+        <div class="section-title" style="margin:0 0 10px;">${t("listDetailsTitle")}</div>
+        <label class="field-label" style="margin-top:0;">${t("kpiKindLabel")}</label>
+        <select class="field list-field" id="f-kpi-kind">
           ${selectOptionsFrom(KPI_KIND_OPTIONS, idea.kpi_kind)}
         </select>
 
-        <label class="field-label">${t("quantifiedBenefitLabel")}</label>
-        <textarea class="field" id="f-quantified-benefit" placeholder="${t("quantifiedBenefitPlaceholder")}">${escapeHtml(idea.quantified_benefit || "")}</textarea>
-
-        <label class="field-label">${t("qualitativeBenefitLabel")}</label>
-        <textarea class="field" id="f-qualitative-benefit" placeholder="${t("qualitativeBenefitPlaceholder")}"${trReadonlyAttr(idea, "qualitative_benefit")}>${escapeHtml(trValue(idea, "qualitative_benefit"))}</textarea>
-
-        <label class="field-label">${t("commentLabel")}</label>
-        <textarea class="field" id="f-comment"${trReadonlyAttr(idea, "comment")}>${escapeHtml(trValue(idea, "comment"))}</textarea>
-
         <label class="field-label">${t("listPriorityLabel")}</label>
-        <select class="field" id="f-list-priority">
+        <select class="field list-field" id="f-list-priority">
           ${selectOptionsFrom(LIST_PRIORITY_OPTIONS, idea.list_priority)}
         </select>
 
+        <label class="field-label">${t("commentLabel")}</label>
+        <textarea class="field list-field" id="f-comment"${trReadonlyAttr(idea, "comment")}>${escapeHtml(trValue(idea, "comment"))}</textarea>
+
         <label class="field-label">${t("skillLevelLabel")}</label>
-        <input class="field" id="f-skill-level" value="${escapeHtml(idea.skill_level || "")}" placeholder="${t("skillLevelPlaceholder")}" />
-      </details>
+        <input class="field list-field" id="f-skill-level" value="${escapeHtml(idea.skill_level || "")}" placeholder="${t("skillLevelPlaceholder")}" />
+      </div>
 
       <details class="card">
         <summary style="cursor:pointer; font-size:14px; font-weight:600; color:var(--text);">${t("aiSupportTitle")}</summary>

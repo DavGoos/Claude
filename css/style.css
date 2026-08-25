@@ -432,6 +432,16 @@ input[type="email"], input[type="password"] {
 
 .field-label:first-child { margin-top: 0; }
 
+/* Dezente Markierung für Felder, die auch Spalten der AI Ambassadors
+   Usecase-Collection sind (siehe listFieldsHint in js/app.js) - nur ein
+   farbiger linker Rand, keine Hintergrundfläche, damit es nicht unruhig
+   wirkt. ".field.list-field" statt nur ".list-field", damit die Regel
+   spezifischer ist als "textarea.field, input.field, select.field" und
+   den kompletten border nicht wieder überschreibt. */
+.field.list-field {
+  border-left: 3px solid var(--accent);
+}
+
 textarea.field, input.field, select.field {
   width: 100%;
   background: var(--surface-2);
