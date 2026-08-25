@@ -163,6 +163,8 @@ const I18N = {
     catalogFieldsDesc:
       "Zusätzliche Felder für den Abgleich mit der zentralen AI Ambassadors Usecase-Collection. Für die tägliche Nutzung optional – möchtest du diese Idee aber später als Case in die Usecase-Collection kopieren (siehe 🔄 Export), sind genau diese Felder relevant und sollten vorher ausgefüllt sein.",
     aiRoleLabel: "KI-Rolle",
+    systemeLabel: "Systeme",
+    systemePlaceholder: "Beteiligte Systeme/Plattformen (eigene Spalte in der Liste, getrennt von KI-Lösung)",
     inputSourceLabel: "Input (Datenquelle)",
     inputSourcePlaceholder: "Woher kommen die Daten/Eingaben?",
     outputResultLabel: "Output (Datenausgabe)",
@@ -174,6 +176,8 @@ const I18N = {
     qualitativeBenefitPlaceholder: "z.B. bessere Entscheidungsgrundlage",
     commentLabel: "Kommentar",
     listPriorityLabel: "Priorität (Liste)",
+    skillLevelLabel: "Skill Level (Liste)",
+    skillLevelPlaceholder: "z.B. Skill 2 - Ambassador (in der Liste nur vereinzelt gepflegt)",
     catalogIdLabel: "Katalog-ID",
     catalogIdPlaceholder: "z.B. GC29 (muss eindeutig sein)",
     ownerNameLabel: "Usecase-Geber / Ansprechpartner",
@@ -181,9 +185,9 @@ const I18N = {
 
     exportTitle: "Neue Ideen für die AI Ambassadors Usecase-Collection kopieren",
     exportIntro:
-      "Hier stehen alle Ideen, die noch keine Katalog-ID haben – also noch nicht in der zentralen AI Ambassadors Usecase-Collection stehen. Wichtig: Das ist reines Copy & Paste, hier wird nichts automatisch geschrieben oder synchronisiert. Kopiere eine Idee (oder alle) und füge sie selbst als neue Zeile in die Usecase-Collection ein (am einfachsten mit der Tab-getrennt-Option unten), oder poste den Text stattdessen in den Chat mit Claude, wenn du beim Einordnen Unterstützung möchtest. Trag die dort vergebene Katalog-ID (z.B. GC30) anschließend hier bei der Idee ein, dann verschwindet sie aus dieser Liste.",
+      "Hier stehen alle Ideen, die noch keine Katalog-ID haben – also noch nicht in der zentralen AI Ambassadors Usecase-Collection stehen. Wichtig: Das ist reines Copy & Paste, hier wird nichts automatisch geschrieben oder synchronisiert. Kopiere eine Idee (oder alle) und füge sie selbst als neue Zeile in die Usecase-Collection ein (am einfachsten mit der Tab-getrennt-Option unten), oder poste den Text stattdessen in den Chat mit Claude, wenn du beim Einordnen Unterstützung möchtest. Trag die dort vergebene Katalog-ID (z.B. GC30) anschließend hier bei der Idee ein, dann verschwindet sie aus dieser Liste und taucht stattdessen unten bei den Aktualisierungen auf.",
     exportFieldsNote:
-      "Vor dem Kopieren prüfen: Bei der Idee gibt es einen ausklappbaren Bereich \"Weitere Katalog-Felder\" (KI-Rolle, Input, Output, Kind of KPI, quantifizierter/qualitativer Nutzen, Kommentar, Priorität). Die sind für die tägliche Nutzung optional – für einen vollständigen Case in der Usecase-Collection sind es aber genau die relevanten Felder und sollten ausgefüllt sein, bevor du kopierst.",
+      "Vor dem Kopieren prüfen: Bei der Idee gibt es einen ausklappbaren Bereich \"Weitere Katalog-Felder\" (KI-Rolle, Systeme, Input, Output, Kind of KPI, quantifizierter/qualitativer Nutzen, Kommentar, Priorität, Skill Level). Die sind für die tägliche Nutzung optional – für einen vollständigen Case in der Usecase-Collection sind es aber genau die relevanten Felder und sollten ausgefüllt sein, bevor du kopierst.",
     exportEmpty: "Alle Ideen haben bereits eine Katalog-ID – nichts zu kopieren.",
     copyOneBtn: "📋 Kopieren",
     copyAllBtn: "📋 Alle kopieren",
@@ -191,6 +195,15 @@ const I18N = {
     copyTsvAllBtn: "📋 Alle als Excel-Zeilen",
     exportTsvNote:
       "Reines Copy & Paste: die Excel-Zeile(n) direkt ab einer neuen Zeile in der AI Ambassadors Usecase-Collection einfügen (Strg+V) – nichts davon läuft automatisch. ID Nr bleibt leer – dort die nächste freie GC-Nummer aus der Collection eintragen. Brand/Agency werden mit \"Shared Service\"/\"Group Controlling\" vorbelegt. Die Übersetzungs-Formelspalten (\"#CONNECT!\") danach aus der Zeile darüber nach unten ziehen.",
+
+    updateExportTitle: "Bereits synchronisierte Cases aktualisieren",
+    updateExportIntro:
+      "Hier stehen alle Ideen, die schon eine Katalog-ID haben – also schon einmal in die Usecase-Collection übertragen wurden. Wenn du eine davon in der App weiter gepflegt hast, kannst du hier eine aktuelle Excel-Zeile kopieren und damit die bestehende Zeile mit der passenden ID Nr in der Collection überschreiben (Strg+V direkt auf der vorhandenen Zeile, nicht als neue Zeile einfügen!). Auch hier reines Copy & Paste, nichts läuft automatisch.",
+    updateExportFieldsNote:
+      "Die Zeile enthält zusätzlich Änderungsstatus (\"geändert\"), Geändert von (deine E-Mail) und Änderungsdatum (heute) – \"Was wurde geändert\" bleibt leer zum selbst Ausfüllen, das pflegt aktuell niemand in der Liste.",
+    updateExportEmpty: "Keine Ideen mit Katalog-ID vorhanden – nichts zu aktualisieren.",
+    copyUpdateTsvOneBtn: "📋 Update-Zeile (Excel)",
+    copyUpdateTsvAllBtn: "📋 Alle Update-Zeilen",
 
     evaluationTitle: "Bewertung",
     impactLabel: "Nutzen",
@@ -439,6 +452,8 @@ const I18N = {
     catalogFieldsDesc:
       "Extra fields to align with the central AI Ambassadors Usecase Collection. Optional for everyday use - but if you plan to copy this idea into the Usecase Collection as a case later (see 🔄 Export), these are exactly the fields that matter and should be filled in beforehand.",
     aiRoleLabel: "AI role",
+    systemeLabel: "Systems",
+    systemePlaceholder: "Systems/platforms involved (own column in the list, separate from AI solution)",
     inputSourceLabel: "Input (data source)",
     inputSourcePlaceholder: "Where does the data/input come from?",
     outputResultLabel: "Output (result)",
@@ -450,6 +465,8 @@ const I18N = {
     qualitativeBenefitPlaceholder: "e.g. better basis for decisions",
     commentLabel: "Comment",
     listPriorityLabel: "Priority (catalog)",
+    skillLevelLabel: "Skill level (catalog)",
+    skillLevelPlaceholder: "e.g. Skill 2 - Ambassador (only filled in sporadically in the list)",
     catalogIdLabel: "Catalog ID",
     catalogIdPlaceholder: "e.g. GC29 (must be unique)",
     ownerNameLabel: "Use case owner / contact",
@@ -457,9 +474,9 @@ const I18N = {
 
     exportTitle: "Copy new ideas into the AI Ambassadors Usecase Collection",
     exportIntro:
-      "This lists every idea that doesn't have a catalog ID yet - i.e. isn't in the central AI Ambassadors Usecase Collection yet. Important: this is plain copy & paste, nothing here writes or syncs anything automatically. Copy one idea (or all of them) and paste it yourself as a new row into the Usecase Collection (easiest with the tab-separated option below), or post the text into the chat with Claude instead if you'd like help sorting it out. Enter the catalog ID assigned there (e.g. GC30) back on the idea afterwards, then it disappears from this list.",
+      "This lists every idea that doesn't have a catalog ID yet - i.e. isn't in the central AI Ambassadors Usecase Collection yet. Important: this is plain copy & paste, nothing here writes or syncs anything automatically. Copy one idea (or all of them) and paste it yourself as a new row into the Usecase Collection (easiest with the tab-separated option below), or post the text into the chat with Claude instead if you'd like help sorting it out. Enter the catalog ID assigned there (e.g. GC30) back on the idea afterwards, then it disappears from this list and shows up under the updates section below instead.",
     exportFieldsNote:
-      "Check before copying: the idea has an expandable \"Additional catalog fields\" section (AI role, input, output, kind of KPI, quantified/qualitative benefit, comment, priority). Those are optional for everyday use - but for a complete case in the Usecase Collection they're exactly the fields that matter, so fill them in before copying.",
+      "Check before copying: the idea has an expandable \"Additional catalog fields\" section (AI role, systems, input, output, kind of KPI, quantified/qualitative benefit, comment, priority, skill level). Those are optional for everyday use - but for a complete case in the Usecase Collection they're exactly the fields that matter, so fill them in before copying.",
     exportEmpty: "Every idea already has a catalog ID - nothing to copy.",
     copyOneBtn: "📋 Copy",
     copyAllBtn: "📋 Copy all",
@@ -467,6 +484,15 @@ const I18N = {
     copyTsvAllBtn: "📋 All as Excel rows",
     exportTsvNote:
       "Plain copy & paste: paste the Excel row(s) starting at a new row in the AI Ambassadors Usecase Collection (Ctrl+V) - none of this happens automatically. ID Nr stays blank - fill in the next free GC number from the Collection there. Brand/Agency default to \"Shared Service\"/\"Group Controlling\". Afterwards drag the translation formula columns (\"#CONNECT!\") down from the row above.",
+
+    updateExportTitle: "Update already-synced cases",
+    updateExportIntro:
+      "This lists every idea that already has a catalog ID - i.e. was already copied into the Usecase Collection before. If you kept editing one of them in the app, copy an up-to-date Excel row here and use it to overwrite the existing row with that ID Nr in the Collection (Ctrl+V directly onto the existing row, not as a new row!). Also plain copy & paste, nothing runs automatically.",
+    updateExportFieldsNote:
+      "The row additionally fills in Änderungsstatus (\"geändert\"), Geändert von (your email) and Änderungsdatum (today) - \"Was wurde geändert\" stays blank for you to fill in yourself, nobody currently maintains that column in the list.",
+    updateExportEmpty: "No ideas with a catalog ID yet - nothing to update.",
+    copyUpdateTsvOneBtn: "📋 Update row (Excel)",
+    copyUpdateTsvAllBtn: "📋 All update rows",
 
     evaluationTitle: "Scoring",
     impactLabel: "Impact",
@@ -1906,6 +1932,9 @@ async function renderDetail(id) {
           ${selectOptionsFrom(AI_ROLE_OPTIONS, idea.ai_role)}
         </select>
 
+        <label class="field-label">${t("systemeLabel")}</label>
+        <textarea class="field" id="f-systeme" placeholder="${t("systemePlaceholder")}">${escapeHtml(idea.systeme || "")}</textarea>
+
         <label class="field-label">${t("inputSourceLabel")}</label>
         <textarea class="field" id="f-input-source" placeholder="${t("inputSourcePlaceholder")}">${escapeHtml(idea.input_source || "")}</textarea>
 
@@ -1930,6 +1959,9 @@ async function renderDetail(id) {
         <select class="field" id="f-list-priority">
           ${selectOptionsFrom(LIST_PRIORITY_OPTIONS, idea.list_priority)}
         </select>
+
+        <label class="field-label">${t("skillLevelLabel")}</label>
+        <input class="field" id="f-skill-level" value="${escapeHtml(idea.skill_level || "")}" placeholder="${t("skillLevelPlaceholder")}" />
       </details>
 
       <details class="card">
@@ -2044,11 +2076,13 @@ async function renderDetail(id) {
       tools: document.getElementById("f-tools").value.trim(),
       initial_prompt: document.getElementById("f-initial-prompt").value.trim(),
       ai_role: document.getElementById("f-ai-role").value,
+      systeme: document.getElementById("f-systeme").value.trim(),
       input_source: document.getElementById("f-input-source").value.trim(),
       output_result: document.getElementById("f-output-result").value.trim(),
       kpi_kind: document.getElementById("f-kpi-kind").value,
       quantified_benefit: document.getElementById("f-quantified-benefit").value.trim(),
       list_priority: document.getElementById("f-list-priority").value,
+      skill_level: document.getElementById("f-skill-level").value.trim(),
       catalog_id: document.getElementById("f-catalog-id").value.trim() || null,
       owner_name: document.getElementById("f-owner-name").value.trim(),
       ai_plan_notes: document.getElementById("f-ai-plan-notes").value.trim(),
@@ -2621,10 +2655,12 @@ function buildExportBlock(idea) {
     idea.ai_role ? `KI-Rolle: ${idea.ai_role}` : "",
     idea.kpi_kind ? `Kind of KPI: ${idea.kpi_kind}` : "",
     idea.list_priority ? `Priorität (Liste): ${idea.list_priority}` : "",
+    idea.skill_level ? `Skill Level: ${idea.skill_level}` : "",
     section("Problem", idea.problem),
     section("Ziel", idea.goal),
     section("Business Benefit", idea.business_benefit),
-    section("Tools/Systeme", idea.tools),
+    section("Tools (KI-Lösung)", idea.tools),
+    section("Systeme", idea.systeme),
     section("Wichtige Gedanken vorab / Risiken", idea.considerations),
     section("Input", idea.input_source),
     section("Output", idea.output_result),
@@ -2641,15 +2677,16 @@ function buildExportBlock(idea) {
 // Exakte Spaltenreihenfolge des Excel-Katalogs (46 Spalten, A:AT). Leere
 // Positionen sind Formel- ("#CONNECT!"-Übersetzung) oder Leerspalten, die
 // beim Einfügen nicht überschrieben werden sollen. Brand/Agency sind für
-// diesen Katalog (Group Controlling) fix; ID Nr bleibt leer, weil die
-// nächste freie GC-Nummer nur im Blick auf die aktuelle Live-Liste
-// bestimmt werden kann.
+// diesen Katalog (Group Controlling) fix. ID Nr bleibt bei buildExportRow
+// (neuer Case) leer, weil die nächste freie GC-Nummer nur im Blick auf die
+// aktuelle Live-Liste bestimmt werden kann; buildUpdateRow (bereits
+// synchronisierter Case, siehe unten) schreibt sie dagegen mit.
 function tsvField(value) {
   const v = (value || "").toString();
   return /[\t\n"]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v;
 }
 
-function buildExportRow(idea) {
+function baseExportCols(idea) {
   const cols = new Array(46).fill("");
   cols[1] = "Shared Service"; // Brand
   cols[2] = "Group Controlling"; // Agency
@@ -2660,6 +2697,7 @@ function buildExportRow(idea) {
   cols[10] = idea.business_benefit || ""; // Business Benefit
   cols[12] = idea.ai_role || ""; // KI Rolle
   cols[14] = idea.tools || ""; // KI Lösung
+  cols[16] = idea.systeme || ""; // Systeme
   cols[18] = idea.input_source || ""; // Input (Datenquelle)
   cols[20] = idea.output_result || ""; // Output (Datenausgabe)
   cols[22] = idea.considerations || ""; // Risks
@@ -2668,12 +2706,45 @@ function buildExportRow(idea) {
   cols[31] = idea.kpi_kind || ""; // Kind of KPI
   cols[32] = idea.quantified_benefit || ""; // Description if Quantity
   cols[33] = idea.qualitative_benefit || ""; // Description if Quality
+  cols[41] = idea.skill_level || ""; // Skill Level
+  return cols;
+}
+
+function buildExportRow(idea) {
+  // Neuer Case ohne Katalog-ID: ID Nr bleibt leer, die nächste freie
+  // GC-Nummer bestimmt sich erst beim Einfügen aus der Live-Liste.
+  return baseExportCols(idea).map(tsvField).join("\t");
+}
+
+function formatDateOnly(iso) {
+  if (!iso) return "";
+  // Der Katalog ist immer auf Deutsch (siehe README "Zweisprachige
+  // Inhalte") - hier bewusst unabhängig vom Sprachschalter der App.
+  return new Date(iso).toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" });
+}
+
+function buildUpdateRow(idea) {
+  // Update-Zeile für einen bereits synchronisierten Case (hat schon eine
+  // Katalog-ID): anders als bei buildExportRow wird ID Nr mitgeschrieben
+  // (zur Kontrolle vor dem Überschreiben der bestehenden Zeile), und die
+  // vier rechten Änderungsspalten werden zur Laufzeit befüllt - "Was wurde
+  // geändert" bleibt bewusst leer (siehe Kommentar in supabase/schema.sql,
+  // die Spalte wird in der Liste ohnehin von niemandem gepflegt).
+  const cols = baseExportCols(idea);
+  cols[0] = idea.catalog_id || ""; // ID Nr
+  cols[42] = "geändert"; // Änderungsstatus
+  cols[43] = (currentUser && currentUser.email) || ""; // Geändert von
+  cols[44] = formatDateOnly(idea.updated_at); // Änderungsdatum
+  cols[45] = ""; // Was wurde geändert
   return cols.map(tsvField).join("\t");
 }
 
 async function renderExportSync() {
   ideasCache = await loadIdeas();
   const list = ideasCache.filter((i) => !i.catalog_id);
+  const updateList = ideasCache
+    .filter((i) => i.catalog_id)
+    .sort((a, b) => a.catalog_id.localeCompare(b.catalog_id));
 
   $app.innerHTML = `
     <header class="topbar">
@@ -2724,6 +2795,41 @@ async function renderExportSync() {
             : `<div class="empty-state">${t("exportEmpty")}</div>`
         }
       </div>
+
+      <div class="card">
+        <div class="section-title" style="margin:0 0 10px;">${t("updateExportTitle")}</div>
+        <p style="font-size:13.5px; color:var(--text-dim); margin:0 0 14px; line-height:1.5;">${t("updateExportIntro")}</p>
+        <p style="font-size:13px; color:var(--text); background:var(--surface-2); border-left:3px solid var(--accent); border-radius:6px; padding:10px 12px; margin:0 0 14px; line-height:1.5;">${t("updateExportFieldsNote")}</p>
+        ${
+          updateList.length
+            ? `<div class="row">
+                 <button class="btn-secondary" id="copy-all-update-tsv-btn" style="width:100%;">${t("copyUpdateTsvAllBtn")} (${updateList.length})</button>
+               </div>`
+            : ""
+        }
+      </div>
+      <div class="idea-list" id="update-export-list">
+        ${
+          updateList.length
+            ? updateList
+                .map(
+                  (idea) => `
+                <div class="idea-item" style="cursor:default;">
+                  <div class="idea-title">${escapeHtml(idea.catalog_id)} · ${escapeHtml(idea.quick_note)}</div>
+                  <div class="idea-meta">
+                    <span class="badge status-${idea.status}">${t(`status_${idea.status}`)}</span>
+                    ${idea.team_id ? `<span class="badge">${escapeHtml(teamName(idea.team_id))}</span>` : ""}
+                  </div>
+                  <div class="row" style="margin-top:10px;">
+                    <button class="btn-secondary" data-copy-update-tsv-one="${idea.id}" style="width:100%;">${t("copyUpdateTsvOneBtn")}</button>
+                  </div>
+                </div>
+              `
+                )
+                .join("")
+            : `<div class="empty-state">${t("updateExportEmpty")}</div>`
+        }
+      </div>
     </main>
   `;
 
@@ -2767,6 +2873,20 @@ async function renderExportSync() {
   if (copyAllTsvBtn) {
     copyAllTsvBtn.addEventListener("click", () => {
       copyText(list.map(buildExportRow).join("\n"));
+    });
+  }
+
+  document.querySelectorAll("[data-copy-update-tsv-one]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const idea = updateList.find((i) => i.id === btn.dataset.copyUpdateTsvOne);
+      copyText(buildUpdateRow(idea));
+    });
+  });
+
+  const copyAllUpdateTsvBtn = document.getElementById("copy-all-update-tsv-btn");
+  if (copyAllUpdateTsvBtn) {
+    copyAllUpdateTsvBtn.addEventListener("click", () => {
+      copyText(updateList.map(buildUpdateRow).join("\n"));
     });
   }
 }

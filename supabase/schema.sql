@@ -464,6 +464,22 @@ alter table ideas add column if not exists qualitative_benefit text not null def
 alter table ideas add column if not exists comment text not null default '';
 alter table ideas add column if not exists list_priority text not null default '';
 
+-- Spalte "Systeme" des Excel-Katalogs (zwischen "KI Lösung" und "Input" -
+-- eigene Spalte, kein Teil von "tools"). "skill_level" entspricht der
+-- gleichnamigen Spalte ganz rechts im Katalog (z.B. "Skill 2 - Ambassador"),
+-- die dort nur vereinzelt gepflegt wird - daher Freitext statt Dropdown.
+alter table ideas add column if not exists systeme text not null default '';
+alter table ideas add column if not exists skill_level text not null default '';
+
+-- Die übrigen rechten Katalog-Spalten ("Änderungsstatus", "Geändert von",
+-- "Änderungsdatum", "Was wurde geändert") werden bewusst NICHT als eigene
+-- Felder abgebildet: Sie stehen in der Liste bei keiner einzigen der 32
+-- bestehenden Zeilen befüllt (Stand 2026-08), sind also totes Gewicht.
+-- Für den Update-Export (siehe js/app.js buildUpdateRow) werden sie
+-- stattdessen zur Laufzeit erzeugt: Änderungsdatum aus "updated_at",
+-- Geändert von aus der eingeloggten Nutzer-E-Mail, Änderungsstatus als
+-- fixer Text "geändert" - "Was wurde geändert" bleibt leer.
+
 -- Eindeutige ID aus dem Excel-Katalog (z.B. "GC29"), für den Abgleich
 -- zwischen App und Liste. Nullable, da nur importierte Ideen eine haben;
 -- ein Unique-Index statt eines Constraints, damit "add ... if not exists"

@@ -336,14 +336,21 @@ Gedächtnisstütze, die mit der Idee gespeichert wird.
   aufzuteilen ist).
 - **Katalog-Abgleich (optional)**: In der Idee-Detailansicht gibt es einen
   ausklappbaren Bereich "Weitere Katalog-Felder" (Katalog-ID, KI-Rolle,
-  Input, Output, Kind of KPI, quantifizierter/qualitativer Nutzen,
-  Kommentar, Priorität laut Liste) – für den Abgleich mit der zentralen
-  AI Ambassadors Usecase-Collection (der SharePoint-Excel-Datei). Für die
-  tägliche Nutzung optional – wer eine Idee aber später per 🔄 Export als
-  Case in die Collection kopieren will, sollte genau diese Felder vorher
-  ausfüllen, da sie dort die eigentlichen Inhaltsspalten sind. Die
-  Katalog-ID (z.B. "GC29") muss eindeutig sein und dient als Schlüssel für
-  spätere Abgleiche zwischen App und Collection.
+  Systeme, Input, Output, Kind of KPI, quantifizierter/qualitativer Nutzen,
+  Kommentar, Priorität laut Liste, Skill Level laut Liste) – für den
+  Abgleich mit der zentralen AI Ambassadors Usecase-Collection (der
+  SharePoint-Excel-Datei). Für die tägliche Nutzung optional – wer eine
+  Idee aber später per 🔄 Export als Case in die Collection kopieren will,
+  sollte genau diese Felder vorher ausfüllen, da sie dort die eigentlichen
+  Inhaltsspalten sind. Die Katalog-ID (z.B. "GC29") muss eindeutig sein und
+  dient als Schlüssel für spätere Abgleiche zwischen App und Collection.
+  "Systeme" ist bewusst ein eigenes Feld, getrennt von "KI-Rolle"/den Tools
+  weiter oben, weil es in der Collection eine eigene Spalte zwischen
+  "KI Lösung" und "Input" ist. Die vier ganz rechten Spalten der Collection
+  (Änderungsstatus, Geändert von, Änderungsdatum, Was wurde geändert) haben
+  bewusst kein eigenes Feld in der App – sie werden in der Collection
+  praktisch nie gepflegt und beim Update-Export (siehe unten) automatisch
+  erzeugt statt gespeichert.
 - **Usecase-Geber / Ansprechpartner**: Direkt im Hauptbereich jeder Idee
   lässt sich der Name der verantwortlichen Person hinterlegen, damit klar
   ist, wer bei Rückfragen anzusprechen ist.
@@ -358,10 +365,22 @@ Gedächtnisstütze, die mit der Idee gespeichert wird.
   beim Einordnen Unterstützung möchte (Claude kann die Datei aus
   technischen Gründen nicht selbst beschreiben, nur den Text dafür
   vorbereiten). Nach dem Eintragen die vergebene GC-Nummer als Katalog-ID
-  bei der Idee eintragen, danach taucht sie hier nicht mehr auf. Der
-  umgekehrte Weg (Import aus der Collection in die App) läuft über den
+  bei der Idee eintragen, danach taucht sie hier nicht mehr auf, sondern
+  weiter unten im Abschnitt "Bereits synchronisierte Cases aktualisieren".
+  Der umgekehrte Weg (Import aus der Collection in die App) läuft über den
   Chat mit Claude: Case-Nummer(n) nennen, Claude liest sie aus der
   Collection und erzeugt SQL zum Einfügen in Supabase.
+- **Bereits synchronisierte Cases aktualisieren (🔄 Export, zweiter
+  Abschnitt)**: Zeigt alle Ideen, die schon eine Katalog-ID haben. Wird
+  eine solche Idee in der App weitergepflegt (sie ist ab dann die führende
+  Quelle für diesen Case), veraltet die Collection dadurch punktuell –
+  dieser Abschnitt liefert dafür eine "Update-Zeile (Excel)" pro Idee: eine
+  Excel-Zeile mit derselben Spaltenreihenfolge wie beim normalen Export,
+  aber mit ausgefüllter ID Nr (zur Kontrolle vor dem Überschreiben) und
+  automatisch befüllten Änderungsspalten (Änderungsstatus "geändert",
+  Geändert von = eigene E-Mail, Änderungsdatum = heute). Auch hier reines
+  Copy & Paste: die Zeile direkt **auf die bestehende Zeile mit dieser
+  ID Nr** einfügen (Strg+V), nicht als neue Zeile darunter.
 - **Onboarding-Anleitung fest in der Kopfzeile**: Der Button "📋 Anleitung"
   oben bei den Ideen und Prozessen (nach der Anmeldung) verlinkt auf eine
   kurze, für Kolleg:innen gedachte Erklärseite (was die App kann, wie man
