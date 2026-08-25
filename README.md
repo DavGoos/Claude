@@ -254,6 +254,17 @@ Gedächtnisstütze, die mit der Idee gespeichert wird.
   automatisch an breitere Bildschirme an.
 - **Prozesse dokumentieren**: Im Tab "Prozesse" alle Abläufe eures Bereichs
   erfassen und mit einer AI-Potenzial-Einschätzung versehen.
+- **Ablauf als Flowchart visualisieren**: Unter der Beschreibung eines
+  Prozesses lässt sich der Ablauf als geordnete Kette von Schritten
+  aufbauen (Start/Schritt/Entscheidung/Ende, jeweils mit Titel + Notiz,
+  per ▲/▼ sortierbar) – mit verbindenden Pfeilen dargestellt wie ein
+  einfaches Flowchart. Bewusst kein frei verzweigbares Diagramm mit
+  Drag & Drop, damit es auch am Handy zuverlässig bedienbar bleibt.
+- **Dokumente & Links hinterlegen**: Ebenfalls bei jedem Prozess – eine
+  einfache Liste aus Titel + URL (z.B. Link zu einer Datei in
+  SharePoint/Teams/OneDrive oder einer Webseite). Es gibt keinen
+  eigenen Datei-Upload/Storage, nur Links zu bereits woanders
+  gespeicherten Dokumenten.
 - **Teilprozesse strukturieren**: Jeder Prozess kann optional einem
   übergeordneten Gesamtprozess zugeordnet werden; die Detailansicht zeigt
   alle Teilprozesse eines übergeordneten Prozesses.

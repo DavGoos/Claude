@@ -565,3 +565,105 @@ drop policy if exists "Ideas: delete with kostenstelle access" on ideas;
 create policy "Ideas: delete with kostenstelle access"
   on ideas for delete
   using (is_approved_user() and can_write_kostenstelle(department, team_id));
+
+-- ============================================================
+-- Prozessschritte: geordnete Kette statt freiem Diagramm (bewusste
+-- Entscheidung, siehe README) - "position" bestimmt die Reihenfolge,
+-- Umsortieren tauscht die position zweier benachbarter Schritte. Der
+-- Zugriff hängt am Elternprozess (department/team_id), deshalb per
+-- Subquery auf "processes" statt eigener Kostenstelle/Team-Spalte.
+-- ============================================================
+create table if not exists process_steps (
+  id uuid primary key default gen_random_uuid(),
+  process_id uuid not null references processes (id) on delete cascade,
+  position integer not null default 0,
+  step_type text not null default 'step' check (step_type in ('start', 'step', 'decision', 'end')),
+  title text not null default '',
+  description text not null default '',
+  created_at timestamptz not null default now()
+);
+
+create index if not exists process_steps_process_id_idx on process_steps (process_id, position);
+
+alter table process_steps enable row level security;
+
+drop policy if exists "Process steps: select with kostenstelle access" on process_steps;
+create policy "Process steps: select with kostenstelle access"
+  on process_steps for select
+  using (is_approved_user() and exists (
+    select 1 from processes pr where pr.id = process_id and can_read_kostenstelle(pr.department, pr.team_id)
+  ));
+
+drop policy if exists "Process steps: insert with kostenstelle access" on process_steps;
+create policy "Process steps: insert with kostenstelle access"
+  on process_steps for insert
+  with check (is_approved_user() and exists (
+    select 1 from processes pr where pr.id = process_id and can_write_kostenstelle(pr.department, pr.team_id)
+  ));
+
+drop policy if exists "Process steps: update with kostenstelle access" on process_steps;
+create policy "Process steps: update with kostenstelle access"
+  on process_steps for update
+  using (is_approved_user() and exists (
+    select 1 from processes pr where pr.id = process_id and can_write_kostenstelle(pr.department, pr.team_id)
+  ))
+  with check (is_approved_user() and exists (
+    select 1 from processes pr where pr.id = process_id and can_write_kostenstelle(pr.department, pr.team_id)
+  ));
+
+drop policy if exists "Process steps: delete with kostenstelle access" on process_steps;
+create policy "Process steps: delete with kostenstelle access"
+  on process_steps for delete
+  using (is_approved_user() and exists (
+    select 1 from processes pr where pr.id = process_id and can_write_kostenstelle(pr.department, pr.team_id)
+  ));
+
+-- ============================================================
+-- Dokumente & Links: reine URL-Liste (z.B. Link zu einer Datei in
+-- SharePoint/Teams/OneDrive oder eine Webseite) statt echtem
+-- Datei-Upload - braucht deshalb keinen eigenen Storage-Bucket (bewusste
+-- Entscheidung, siehe README).
+-- ============================================================
+create table if not exists process_resources (
+  id uuid primary key default gen_random_uuid(),
+  process_id uuid not null references processes (id) on delete cascade,
+  kind text not null default 'link' check (kind in ('link', 'document')),
+  label text not null default '',
+  url text not null,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists process_resources_process_id_idx on process_resources (process_id);
+
+alter table process_resources enable row level security;
+
+drop policy if exists "Process resources: select with kostenstelle access" on process_resources;
+create policy "Process resources: select with kostenstelle access"
+  on process_resources for select
+  using (is_approved_user() and exists (
+    select 1 from processes pr where pr.id = process_id and can_read_kostenstelle(pr.department, pr.team_id)
+  ));
+
+drop policy if exists "Process resources: insert with kostenstelle access" on process_resources;
+create policy "Process resources: insert with kostenstelle access"
+  on process_resources for insert
+  with check (is_approved_user() and exists (
+    select 1 from processes pr where pr.id = process_id and can_write_kostenstelle(pr.department, pr.team_id)
+  ));
+
+drop policy if exists "Process resources: update with kostenstelle access" on process_resources;
+create policy "Process resources: update with kostenstelle access"
+  on process_resources for update
+  using (is_approved_user() and exists (
+    select 1 from processes pr where pr.id = process_id and can_write_kostenstelle(pr.department, pr.team_id)
+  ))
+  with check (is_approved_user() and exists (
+    select 1 from processes pr where pr.id = process_id and can_write_kostenstelle(pr.department, pr.team_id)
+  ));
+
+drop policy if exists "Process resources: delete with kostenstelle access" on process_resources;
+create policy "Process resources: delete with kostenstelle access"
+  on process_resources for delete
+  using (is_approved_user() and exists (
+    select 1 from processes pr where pr.id = process_id and can_write_kostenstelle(pr.department, pr.team_id)
+  ));

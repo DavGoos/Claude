@@ -268,6 +268,37 @@ const I18N = {
     processDeletedMsg: "Prozess gelöscht",
     subProcessSavedMsg: "Teilprozess gespeichert",
 
+    processStepsTitle: "Prozessschritte",
+    processStepsDesc: "Baue den Ablauf als Kette von Schritten auf – für einen visuellen Überblick wie bei einem Flowchart.",
+    stepType_start: "Start",
+    stepType_step: "Schritt",
+    stepType_decision: "Entscheidung",
+    stepType_end: "Ende",
+    newStepPlaceholder: "Neuer Schritt, z.B. Rechnung prüfen",
+    addStepBtn: "+ Schritt hinzufügen",
+    editStepBtn: "Bearbeiten",
+    deleteStepBtn: "Löschen",
+    deleteStepConfirm: "Diesen Schritt wirklich löschen?",
+    editStepTitlePrompt: "Titel des Schritts:",
+    editStepDescPrompt: "Notiz zum Schritt (optional):",
+    emptyProcessSteps: "Noch keine Schritte erfasst.",
+    stepSavedMsg: "Schritt gespeichert",
+    stepDeletedMsg: "Schritt gelöscht",
+
+    processResourcesTitle: "Dokumente & Links",
+    processResourcesDesc:
+      "Links zu Dokumenten (z.B. SharePoint, Teams, OneDrive) oder Webseiten, die zu diesem Prozess gehören. Kein Datei-Upload – einfach die URL eintragen.",
+    resourceKind_link: "Link",
+    resourceKind_document: "Dokument",
+    newResourceLabelPlaceholder: "Titel",
+    newResourceUrlPlaceholder: "https://...",
+    addResourceBtn: "+ Hinzufügen",
+    emptyProcessResources: "Noch keine Dokumente/Links hinterlegt.",
+    deleteResourceConfirm: "Diesen Eintrag wirklich löschen?",
+    invalidUrlMsg: "Bitte eine gültige URL beginnend mit http:// oder https:// eingeben.",
+    resourceSavedMsg: "Eintrag gespeichert",
+    resourceDeletedMsg: "Eintrag gelöscht",
+
     pendingApprovalTitlePrefix: "Wartet auf Freigabe (",
     noPendingMsg: "Aktuell wartet niemand auf Freigabe.",
     approveBtn: "Freigeben",
@@ -556,6 +587,37 @@ const I18N = {
     deleteProcessConfirm: "Really delete this process? Linked ideas stay, but lose their assignment.",
     processDeletedMsg: "Process deleted",
     subProcessSavedMsg: "Sub-process saved",
+
+    processStepsTitle: "Process steps",
+    processStepsDesc: "Build the workflow as a chain of steps - for a visual overview like a flowchart.",
+    stepType_start: "Start",
+    stepType_step: "Step",
+    stepType_decision: "Decision",
+    stepType_end: "End",
+    newStepPlaceholder: "New step, e.g. Review invoice",
+    addStepBtn: "+ Add step",
+    editStepBtn: "Edit",
+    deleteStepBtn: "Delete",
+    deleteStepConfirm: "Really delete this step?",
+    editStepTitlePrompt: "Step title:",
+    editStepDescPrompt: "Note for this step (optional):",
+    emptyProcessSteps: "No steps yet.",
+    stepSavedMsg: "Step saved",
+    stepDeletedMsg: "Step deleted",
+
+    processResourcesTitle: "Documents & links",
+    processResourcesDesc:
+      "Links to documents (e.g. SharePoint, Teams, OneDrive) or websites related to this process. No file upload - just paste the URL.",
+    resourceKind_link: "Link",
+    resourceKind_document: "Document",
+    newResourceLabelPlaceholder: "Title",
+    newResourceUrlPlaceholder: "https://...",
+    addResourceBtn: "+ Add",
+    emptyProcessResources: "No documents/links yet.",
+    deleteResourceConfirm: "Really delete this entry?",
+    invalidUrlMsg: "Please enter a valid URL starting with http:// or https://.",
+    resourceSavedMsg: "Entry saved",
+    resourceDeletedMsg: "Entry deleted",
 
     pendingApprovalTitlePrefix: "Waiting for approval (",
     noPendingMsg: "No one is currently waiting for approval.",
@@ -1234,8 +1296,103 @@ async function updateProcess(id, patch) {
   return data;
 }
 
-async function deleteProcess(id) {
-  const { error } = await sb.from("processes").delete().eq("id", id);
+// Prozessschritte: geordnete Kette statt freiem Diagramm (siehe Diskussion
+// im Chat) - "position" bestimmt die Reihenfolge, Auf/Ab tauscht die
+// position zweier benachbarter Schritte.
+const PROCESS_STEP_TYPES = ["start", "step", "decision", "end"];
+
+const PROCESS_STEP_TYPE_STYLE = {
+  start: { icon: "▶️", color: "#22c55e" },
+  step: { icon: "🔷", color: "#0ea5e9" },
+  decision: { icon: "🔶", color: "#f59e0b" },
+  end: { icon: "⏹️", color: "#ef4444" },
+};
+
+function stepTypeIcon(type) {
+  return (PROCESS_STEP_TYPE_STYLE[type] || PROCESS_STEP_TYPE_STYLE.step).icon;
+}
+
+function stepTypeColor(type) {
+  return (PROCESS_STEP_TYPE_STYLE[type] || PROCESS_STEP_TYPE_STYLE.step).color;
+}
+
+async function loadProcessSteps(processId) {
+  const { data, error } = await sb
+    .from("process_steps")
+    .select("*")
+    .eq("process_id", processId)
+    .order("position", { ascending: true });
+  if (error) {
+    toast(t("loadErrorPrefix") + error.message);
+    return [];
+  }
+  return data || [];
+}
+
+async function createProcessStep(processId, position, stepType, title) {
+  const { data, error } = await sb
+    .from("process_steps")
+    .insert({ process_id: processId, position, step_type: stepType, title })
+    .select("*")
+    .single();
+  if (error) {
+    toast(t("saveErrorPrefix") + error.message);
+    return null;
+  }
+  return data;
+}
+
+async function updateProcessStep(id, patch) {
+  const { data, error } = await sb.from("process_steps").update(patch).eq("id", id).select("*").single();
+  if (error) {
+    toast(t("saveErrorPrefix") + error.message);
+    return null;
+  }
+  return data;
+}
+
+async function deleteProcessStep(id) {
+  const { error } = await sb.from("process_steps").delete().eq("id", id);
+  if (error) {
+    toast(t("deleteErrorPrefix") + error.message);
+    return false;
+  }
+  return true;
+}
+
+// Dokumente & Links: reine URL-Liste (z.B. Link zu einer Datei in
+// SharePoint/Teams/OneDrive oder eine Webseite) statt echtem Datei-Upload
+// - braucht deshalb keinen eigenen Storage-Bucket (siehe Diskussion im Chat).
+const PROCESS_RESOURCE_KINDS = ["link", "document"];
+
+async function loadProcessResources(processId) {
+  const { data, error } = await sb
+    .from("process_resources")
+    .select("*")
+    .eq("process_id", processId)
+    .order("created_at", { ascending: true });
+  if (error) {
+    toast(t("loadErrorPrefix") + error.message);
+    return [];
+  }
+  return data || [];
+}
+
+async function createProcessResource(processId, kind, label, url) {
+  const { data, error } = await sb
+    .from("process_resources")
+    .insert({ process_id: processId, kind, label, url })
+    .select("*")
+    .single();
+  if (error) {
+    toast(t("saveErrorPrefix") + error.message);
+    return null;
+  }
+  return data;
+}
+
+async function deleteProcessResource(id) {
+  const { error } = await sb.from("process_resources").delete().eq("id", id);
   if (error) {
     toast(t("deleteErrorPrefix") + error.message);
     return false;
@@ -2393,6 +2550,160 @@ async function renderProcessDetail(id) {
 
   const subProcesses = processesCache.filter((p) => p.parent_process_id === proc.id);
   const canWrite = canWriteCombo(proc.department, proc.team_id);
+  let processSteps = await loadProcessSteps(proc.id);
+  let processResources = await loadProcessResources(proc.id);
+
+  function renderStepsListHtml() {
+    if (!processSteps.length) {
+      return `<div class="empty-state" style="padding:16px 4px;">${t("emptyProcessSteps")}</div>`;
+    }
+    return processSteps
+      .map((step, idx) => {
+        const isFirst = idx === 0;
+        const isLast = idx === processSteps.length - 1;
+        const controls = canWrite
+          ? `
+            <div class="row" style="margin-top:8px; align-items:center; gap:6px;">
+              <select class="field" data-step-type="${step.id}" style="flex:1;">
+                ${PROCESS_STEP_TYPES.map(
+                  (ty) => `<option value="${ty}" ${ty === step.step_type ? "selected" : ""}>${t(`stepType_${ty}`)}</option>`
+                ).join("")}
+              </select>
+              <button class="icon-btn" data-step-up="${step.id}" ${isFirst ? "disabled" : ""}>▲</button>
+              <button class="icon-btn" data-step-down="${step.id}" ${isLast ? "disabled" : ""}>▼</button>
+              <button class="icon-btn" data-step-edit="${step.id}" title="${t("editStepBtn")}">✏️</button>
+              <button class="icon-btn" data-step-delete="${step.id}" title="${t("deleteStepBtn")}">🗑</button>
+            </div>`
+          : "";
+        return `
+          <div class="process-step" style="border-left-color:${stepTypeColor(step.step_type)};">
+            <div>${stepTypeIcon(step.step_type)} <strong>${escapeHtml(step.title)}</strong></div>
+            ${
+              step.description
+                ? `<div style="font-size:12.5px; color:var(--text-dim); margin-top:4px; white-space:pre-wrap;">${escapeHtml(step.description)}</div>`
+                : ""
+            }
+            ${controls}
+          </div>
+          ${isLast ? "" : `<div class="process-step-arrow">↓</div>`}
+        `;
+      })
+      .join("");
+  }
+
+  function bindStepsListEvents() {
+    document.querySelectorAll("[data-step-type]").forEach((sel) => {
+      sel.addEventListener("change", async () => {
+        sel.disabled = true;
+        const updated = await updateProcessStep(sel.dataset.stepType, { step_type: sel.value });
+        sel.disabled = false;
+        if (updated) {
+          toast(t("stepSavedMsg"));
+          if (unsavedChangesReset) unsavedChangesReset();
+          await refreshSteps();
+        }
+      });
+    });
+    document.querySelectorAll("[data-step-up]").forEach((btn) => {
+      btn.addEventListener("click", () => moveStep(btn.dataset.stepUp, -1));
+    });
+    document.querySelectorAll("[data-step-down]").forEach((btn) => {
+      btn.addEventListener("click", () => moveStep(btn.dataset.stepDown, 1));
+    });
+    document.querySelectorAll("[data-step-edit]").forEach((btn) => {
+      btn.addEventListener("click", () => editStep(btn.dataset.stepEdit));
+    });
+    document.querySelectorAll("[data-step-delete]").forEach((btn) => {
+      btn.addEventListener("click", () => removeStep(btn.dataset.stepDelete));
+    });
+  }
+
+  async function refreshSteps() {
+    processSteps = await loadProcessSteps(proc.id);
+    document.getElementById("process-steps-list").innerHTML = renderStepsListHtml();
+    bindStepsListEvents();
+  }
+
+  async function moveStep(id, direction) {
+    const idx = processSteps.findIndex((s) => s.id === id);
+    const otherIdx = idx + direction;
+    if (idx < 0 || otherIdx < 0 || otherIdx >= processSteps.length) return;
+    const a = processSteps[idx];
+    const b = processSteps[otherIdx];
+    await Promise.all([
+      updateProcessStep(a.id, { position: b.position }),
+      updateProcessStep(b.id, { position: a.position }),
+    ]);
+    if (unsavedChangesReset) unsavedChangesReset();
+    await refreshSteps();
+  }
+
+  async function editStep(id) {
+    const step = processSteps.find((s) => s.id === id);
+    if (!step) return;
+    const newTitle = prompt(t("editStepTitlePrompt"), step.title);
+    if (newTitle === null || !newTitle.trim()) return;
+    const newDesc = prompt(t("editStepDescPrompt"), step.description || "");
+    if (newDesc === null) return;
+    const updated = await updateProcessStep(id, { title: newTitle.trim(), description: newDesc.trim() });
+    if (updated) {
+      toast(t("stepSavedMsg"));
+      if (unsavedChangesReset) unsavedChangesReset();
+      await refreshSteps();
+    }
+  }
+
+  async function removeStep(id) {
+    if (!confirm(t("deleteStepConfirm"))) return;
+    const ok = await deleteProcessStep(id);
+    if (ok) {
+      toast(t("stepDeletedMsg"));
+      if (unsavedChangesReset) unsavedChangesReset();
+      await refreshSteps();
+    }
+  }
+
+  function renderResourcesListHtml() {
+    if (!processResources.length) {
+      return `<div class="empty-state" style="padding:16px 4px;">${t("emptyProcessResources")}</div>`;
+    }
+    return processResources
+      .map((r) => {
+        const icon = r.kind === "document" ? "📄" : "🔗";
+        const del = canWrite
+          ? `<button class="icon-btn" data-resource-delete="${r.id}" title="${t("deleteStepBtn")}">🗑</button>`
+          : "";
+        return `
+          <div class="resource-item">
+            <a href="${escapeHtml(r.url)}" target="_blank" rel="noopener noreferrer">${icon} ${escapeHtml(r.label || r.url)}</a>
+            ${del}
+          </div>
+        `;
+      })
+      .join("");
+  }
+
+  function bindResourcesListEvents() {
+    document.querySelectorAll("[data-resource-delete]").forEach((btn) => {
+      btn.addEventListener("click", () => removeResource(btn.dataset.resourceDelete));
+    });
+  }
+
+  async function refreshResources() {
+    processResources = await loadProcessResources(proc.id);
+    document.getElementById("process-resources-list").innerHTML = renderResourcesListHtml();
+    bindResourcesListEvents();
+  }
+
+  async function removeResource(id) {
+    if (!confirm(t("deleteResourceConfirm"))) return;
+    const ok = await deleteProcessResource(id);
+    if (ok) {
+      toast(t("resourceDeletedMsg"));
+      if (unsavedChangesReset) unsavedChangesReset();
+      await refreshResources();
+    }
+  }
 
   $app.innerHTML = `
     <header class="topbar">
@@ -2428,6 +2739,49 @@ async function renderProcessDetail(id) {
 
         <label class="field-label">${t("descriptionLabel")}</label>
         <textarea class="field" id="f-description" placeholder="${t("processDescPlaceholder")}"${trReadonlyAttr(proc, "description")}>${escapeHtml(trValue(proc, "description"))}</textarea>
+      </div>
+
+      <div class="card">
+        <div class="section-title" style="margin:0 0 10px;">${t("processStepsTitle")}</div>
+        <p style="font-size:13px; color:var(--text-dim); margin:0 0 12px; line-height:1.5;">${t("processStepsDesc")}</p>
+        <div id="process-steps-list">${renderStepsListHtml()}</div>
+        ${
+          canWrite
+            ? `
+          <div class="row" style="margin-top:12px;">
+            <input class="field" id="new-step-title" placeholder="${t("newStepPlaceholder")}" style="flex:2;" />
+            <select class="field" id="new-step-type" style="flex:1;">
+              ${PROCESS_STEP_TYPES.map((ty) => `<option value="${ty}" ${ty === "step" ? "selected" : ""}>${t(`stepType_${ty}`)}</option>`).join("")}
+            </select>
+          </div>
+          <div class="row">
+            <button class="btn-secondary" id="add-step-btn" style="width:100%;">${t("addStepBtn")}</button>
+          </div>
+        `
+            : ""
+        }
+      </div>
+
+      <div class="card">
+        <div class="section-title" style="margin:0 0 10px;">${t("processResourcesTitle")}</div>
+        <p style="font-size:13px; color:var(--text-dim); margin:0 0 12px; line-height:1.5;">${t("processResourcesDesc")}</p>
+        <div id="process-resources-list">${renderResourcesListHtml()}</div>
+        ${
+          canWrite
+            ? `
+          <div class="row" style="margin-top:12px;">
+            <input class="field" id="new-resource-label" placeholder="${t("newResourceLabelPlaceholder")}" style="flex:1;" />
+            <select class="field" id="new-resource-kind" style="flex:1;">
+              ${PROCESS_RESOURCE_KINDS.map((k) => `<option value="${k}" ${k === "link" ? "selected" : ""}>${t(`resourceKind_${k}`)}</option>`).join("")}
+            </select>
+          </div>
+          <input class="field" id="new-resource-url" placeholder="${t("newResourceUrlPlaceholder")}" style="margin-top:8px;" />
+          <div class="row">
+            <button class="btn-secondary" id="add-resource-btn" style="width:100%;">${t("addResourceBtn")}</button>
+          </div>
+        `
+            : ""
+        }
       </div>
 
       <div class="card">
@@ -2473,6 +2827,8 @@ async function renderProcessDetail(id) {
   `;
 
   bindDepartmentTeamFields("pdetail");
+  bindStepsListEvents();
+  bindResourcesListEvents();
 
   if (!canWrite) {
     document.querySelectorAll("main input, main textarea, main select, main button").forEach((el) => {
@@ -2480,6 +2836,42 @@ async function renderProcessDetail(id) {
     });
   } else {
     watchUnsavedChanges(document.querySelector("main"));
+
+    document.getElementById("add-step-btn").addEventListener("click", async () => {
+      const input = document.getElementById("new-step-title");
+      const title = input.value.trim();
+      if (!title) return;
+      const type = document.getElementById("new-step-type").value;
+      const nextPosition = processSteps.length ? Math.max(...processSteps.map((s) => s.position)) + 1 : 0;
+      const created = await createProcessStep(proc.id, nextPosition, type, title);
+      if (created) {
+        input.value = "";
+        toast(t("stepSavedMsg"));
+        if (unsavedChangesReset) unsavedChangesReset();
+        await refreshSteps();
+      }
+    });
+
+    document.getElementById("add-resource-btn").addEventListener("click", async () => {
+      const labelInput = document.getElementById("new-resource-label");
+      const urlInput = document.getElementById("new-resource-url");
+      const label = labelInput.value.trim();
+      const url = urlInput.value.trim();
+      if (!url) return;
+      if (!/^https?:\/\//i.test(url)) {
+        toast(t("invalidUrlMsg"));
+        return;
+      }
+      const kind = document.getElementById("new-resource-kind").value;
+      const created = await createProcessResource(proc.id, kind, label || url, url);
+      if (created) {
+        labelInput.value = "";
+        urlInput.value = "";
+        toast(t("resourceSavedMsg"));
+        if (unsavedChangesReset) unsavedChangesReset();
+        await refreshResources();
+      }
+    });
   }
 
   function updateAiBanner() {

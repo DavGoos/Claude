@@ -545,6 +545,46 @@ textarea.field { min-height: 70px; resize: vertical; }
   color: var(--text);
 }
 
+/* Prozessschritte: geordnete Kette mit Pfeilen statt freiem Diagramm
+   (siehe README) - "process-step" bekommt seine Randfarbe je Schritt-Typ
+   per Inline-Style, da die Farbe vom step_type abhängt. */
+.process-step {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--accent);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+}
+
+.process-step-arrow {
+  text-align: center;
+  color: var(--text-dim);
+  font-size: 18px;
+  line-height: 1;
+  margin: 2px 0;
+}
+
+.resource-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  font-size: 14px;
+}
+
+.resource-item a {
+  color: var(--text);
+  text-decoration: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .stage-chain {
   display: flex;
   align-items: center;
