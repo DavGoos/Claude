@@ -580,8 +580,16 @@ create table if not exists process_steps (
   step_type text not null default 'step' check (step_type in ('start', 'step', 'decision', 'end')),
   title text not null default '',
   description text not null default '',
+  ai_potential smallint not null default 3 check (ai_potential between 1 and 5),
+  ai_potential_note text not null default '',
   created_at timestamptz not null default now()
 );
+
+-- Für Installationen, bei denen process_steps schon vor der
+-- AI-Potenzial-Einschätzung pro Schritt angelegt wurde: Spalten
+-- nachträglich ergänzen.
+alter table process_steps add column if not exists ai_potential smallint not null default 3 check (ai_potential between 1 and 5);
+alter table process_steps add column if not exists ai_potential_note text not null default '';
 
 create index if not exists process_steps_process_id_idx on process_steps (process_id, position);
 

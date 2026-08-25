@@ -284,6 +284,7 @@ const I18N = {
     emptyProcessSteps: "Noch keine Schritte erfasst.",
     stepSavedMsg: "Schritt gespeichert",
     stepDeletedMsg: "Schritt gelöscht",
+    stepAiPotentialNotePlaceholder: "Kurze Notiz zum AI-Potenzial dieses Schritts",
 
     processResourcesTitle: "Dokumente & Links",
     processResourcesDesc:
@@ -604,6 +605,7 @@ const I18N = {
     emptyProcessSteps: "No steps yet.",
     stepSavedMsg: "Step saved",
     stepDeletedMsg: "Step deleted",
+    stepAiPotentialNotePlaceholder: "Short note on this step's AI potential",
 
     processResourcesTitle: "Documents & links",
     processResourcesDesc:
@@ -2575,6 +2577,7 @@ async function renderProcessDetail(id) {
               <button class="icon-btn" data-step-delete="${step.id}" title="${t("deleteStepBtn")}">🗑</button>
             </div>`
           : "";
+        const ai = aiPotentialInfo(step.ai_potential);
         return `
           <div class="process-step" style="border-left-color:${stepTypeColor(step.step_type)};">
             <div>${stepTypeIcon(step.step_type)} <strong>${escapeHtml(step.title)}</strong></div>
@@ -2583,6 +2586,15 @@ async function renderProcessDetail(id) {
                 ? `<div style="font-size:12.5px; color:var(--text-dim); margin-top:4px; white-space:pre-wrap;">${escapeHtml(step.description)}</div>`
                 : ""
             }
+            <div class="priority-banner" data-step-ai-badge="${step.id}" style="margin-top:8px; margin-bottom:0; padding:8px 10px; font-size:12.5px;">
+              <span class="priority-dot" style="background:${ai.color}"></span> ${ai.label}
+            </div>
+            <div class="slider-row" style="margin-top:6px; margin-bottom:6px;">
+              <label>${t("aiPotentialLabel")}</label>
+              <input type="range" min="1" max="5" step="1" value="${step.ai_potential || 3}" data-step-ai-potential="${step.id}" />
+              <span class="val" data-step-ai-potential-val="${step.id}">${step.ai_potential || 3}</span>
+            </div>
+            <input class="field" data-step-ai-note="${step.id}" value="${escapeHtml(step.ai_potential_note || "")}" placeholder="${t("stepAiPotentialNotePlaceholder")}" />
             ${controls}
           </div>
           ${isLast ? "" : `<div class="process-step-arrow">↓</div>`}
@@ -2615,6 +2627,38 @@ async function renderProcessDetail(id) {
     });
     document.querySelectorAll("[data-step-delete]").forEach((btn) => {
       btn.addEventListener("click", () => removeStep(btn.dataset.stepDelete));
+    });
+    document.querySelectorAll("[data-step-ai-potential]").forEach((slider) => {
+      const id = slider.dataset.stepAiPotential;
+      slider.addEventListener("input", () => {
+        const val = Number(slider.value);
+        const valEl = document.querySelector(`[data-step-ai-potential-val="${id}"]`);
+        if (valEl) valEl.textContent = val;
+        const badgeEl = document.querySelector(`[data-step-ai-badge="${id}"]`);
+        if (badgeEl) {
+          const info = aiPotentialInfo(val);
+          badgeEl.innerHTML = `<span class="priority-dot" style="background:${info.color}"></span> ${info.label}`;
+        }
+      });
+      slider.addEventListener("change", async () => {
+        const updated = await updateProcessStep(id, { ai_potential: Number(slider.value) });
+        if (updated) {
+          toast(t("stepSavedMsg"));
+          if (unsavedChangesReset) unsavedChangesReset();
+          await refreshSteps();
+        }
+      });
+    });
+    document.querySelectorAll("[data-step-ai-note]").forEach((input) => {
+      input.addEventListener("blur", async () => {
+        if (input.value === input.defaultValue) return;
+        const updated = await updateProcessStep(input.dataset.stepAiNote, { ai_potential_note: input.value.trim() });
+        if (updated) {
+          toast(t("stepSavedMsg"));
+          if (unsavedChangesReset) unsavedChangesReset();
+          await refreshSteps();
+        }
+      });
     });
   }
 

@@ -260,6 +260,10 @@ Gedächtnisstütze, die mit der Idee gespeichert wird.
   per ▲/▼ sortierbar) – mit verbindenden Pfeilen dargestellt wie ein
   einfaches Flowchart. Bewusst kein frei verzweigbares Diagramm mit
   Drag & Drop, damit es auch am Handy zuverlässig bedienbar bleibt.
+  Jeder einzelne Schritt hat außerdem seine eigene AI-Potenzial-
+  Einschätzung (1-5) plus kurze Notiz – so lässt sich auf einen Blick
+  erkennen, an welcher Stelle im Ablauf der größte Hebel steckt, statt
+  nur den Prozess als Ganzes zu bewerten.
 - **Dokumente & Links hinterlegen**: Ebenfalls bei jedem Prozess – eine
   einfache Liste aus Titel + URL (z.B. Link zu einer Datei in
   SharePoint/Teams/OneDrive oder einer Webseite). Es gibt keinen
