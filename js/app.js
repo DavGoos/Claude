@@ -102,6 +102,7 @@ const I18N = {
     filterAll: "Alle",
     filterAllKostenstellenOption: "Alle Kostenstellen",
     filterAllTeamsOption: "Alle Teams",
+    filterAllOwnersOption: "Alle Usecase-Geber",
     emptyIdeas: "Noch keine Ideen hier. Trag oben deine erste Idee ein!",
     loadingIdeas: "Lade Ideen...",
 
@@ -391,6 +392,7 @@ const I18N = {
     filterAll: "All",
     filterAllKostenstellenOption: "All cost centers",
     filterAllTeamsOption: "All teams",
+    filterAllOwnersOption: "All use case owners",
     emptyIdeas: "No ideas yet. Add your first one above!",
     loadingIdeas: "Loading ideas...",
 
@@ -672,6 +674,7 @@ let accessCache = [];
 let activeFilter = "all";
 let activeDeptFilter = "";
 let activeTeamFilter = "";
+let activeOwnerFilter = "";
 let passwordRecoveryMode = false;
 let authMode = "login";
 
@@ -1352,6 +1355,43 @@ function deptTeamFilterRow(idPrefix, activeDept, activeTeamId) {
   `;
 }
 
+// Usecase-Geber ist Freitext (kein fester Kostenstellen-/Team-Katalog),
+// daher werden die Filter-Optionen aus den tatsächlich vergebenen Namen in
+// ideasCache abgeleitet statt aus einer festen Liste.
+function distinctOwnerNames() {
+  return Array.from(new Set(ideasCache.map((i) => (i.owner_name || "").trim()).filter(Boolean))).sort((a, b) =>
+    a.localeCompare(b, "de")
+  );
+}
+
+function ownerFilterOptionsFrom(owners, selectedValue) {
+  const options = [`<option value="" ${selectedValue ? "" : "selected"}>${t("filterAllOwnersOption")}</option>`];
+  owners.forEach((owner) => {
+    options.push(`<option value="${escapeHtml(owner)}" ${owner === selectedValue ? "selected" : ""}>${escapeHtml(owner)}</option>`);
+  });
+  return options.join("");
+}
+
+// Wie deptTeamFilterRow, aber nur für die Ideenliste: dort kommt noch der
+// Usecase-Geber-Filter dazu (Prozesse haben kein owner_name-Feld).
+function ideaFilterRow(activeDept, activeTeamId, activeOwner) {
+  const codes = readableCodes();
+  const teams = activeDept ? readableTeamsForCode(activeDept) : [];
+  return `
+    <div class="filter-select-row">
+      <select class="filter-select" id="ideafilter-dept-filter">
+        ${kostenstelleFilterOptionsFrom(codes, activeDept)}
+      </select>
+      <select class="filter-select" id="ideafilter-team-filter">
+        ${teamFilterOptionsFrom(teams, activeTeamId)}
+      </select>
+      <select class="filter-select" id="ideafilter-owner-filter">
+        ${ownerFilterOptionsFrom(distinctOwnerNames(), activeOwner)}
+      </select>
+    </div>
+  `;
+}
+
 // Team-Dropdown ist von der gewählten Kostenstelle abhängig (jede
 // Kostenstelle hat ihre eigene Teamliste) - bei jedem Wechsel der
 // Kostenstelle die Team-Optionen neu berechnen.
@@ -1655,7 +1695,7 @@ async function renderList() {
         </div>
       </div>
       ${filterChips()}
-      ${deptTeamFilterRow("ideafilter", activeDeptFilter, activeTeamFilter)}
+      ${ideaFilterRow(activeDeptFilter, activeTeamFilter, activeOwnerFilter)}
       <div class="idea-list" id="idea-list">
         <div class="empty-state">${t("loadingIdeas")}</div>
       </div>
@@ -1680,6 +1720,10 @@ async function renderList() {
   });
   document.getElementById("ideafilter-team-filter").addEventListener("change", (e) => {
     activeTeamFilter = e.target.value;
+    renderIdeaList();
+  });
+  document.getElementById("ideafilter-owner-filter").addEventListener("change", (e) => {
+    activeOwnerFilter = e.target.value;
     renderIdeaList();
   });
   document.getElementById("logout-btn").addEventListener("click", guardedLogout);
@@ -1718,6 +1762,12 @@ async function renderList() {
   });
 
   ideasCache = await loadIdeas();
+  // Die Usecase-Geber-Optionen hängen von den geladenen Ideen ab, standen
+  // beim ersten Rendern der Filterzeile oben also noch nicht fest.
+  document.getElementById("ideafilter-owner-filter").innerHTML = ownerFilterOptionsFrom(
+    distinctOwnerNames(),
+    activeOwnerFilter
+  );
   renderIdeaList();
 }
 
@@ -1757,7 +1807,8 @@ function renderIdeaList() {
     (i) =>
       (activeFilter === "all" || i.status === activeFilter) &&
       (!activeDeptFilter || i.department === activeDeptFilter) &&
-      (!activeTeamFilter || i.team_id === activeTeamFilter)
+      (!activeTeamFilter || i.team_id === activeTeamFilter) &&
+      (!activeOwnerFilter || i.owner_name === activeOwnerFilter)
   );
   if (filtered.length === 0) {
     listEl.innerHTML = `<div class="empty-state">${t("emptyIdeas")}</div>`;
