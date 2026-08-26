@@ -599,6 +599,13 @@ alter table process_steps add column if not exists ai_potential_note text not nu
 -- die App (Dropdown zeigt nur die eigenen Teilprozesse).
 alter table process_steps add column if not exists linked_process_id uuid references processes (id) on delete set null;
 
+-- Freitext statt Zahl: "position" (siehe oben) bestimmt weiterhin die
+-- tatsächliche Reihenfolge/Sortierung, "step_number" ist nur ein von Hand
+-- gepflegtes Anzeige-Label - so lassen sich parallel laufende Schritte
+-- z.B. als "2.1", "2.2", "2.3" kennzeichnen, ohne eine echte
+-- Verzweigungslogik im Datenmodell zu brauchen.
+alter table process_steps add column if not exists step_number text not null default '';
+
 create index if not exists process_steps_process_id_idx on process_steps (process_id, position);
 
 alter table process_steps enable row level security;
@@ -632,6 +639,58 @@ create policy "Process steps: delete with kostenstelle access"
   on process_steps for delete
   using (is_approved_user() and exists (
     select 1 from processes pr where pr.id = process_id and can_write_kostenstelle(pr.department, pr.team_id)
+  ));
+
+-- ============================================================
+-- Schritt <-> Use Case: markiert, bei welchen Prozessschritten welcher
+-- (dem Gesamtprozess bereits zugeordnete) Use Case tatsächlich zum Einsatz
+-- kommt. Bewusst keine neue Verknüpfung, sondern nur ein Flag auf die
+-- bestehende Beziehung "ideas.process_id" - ein Use Case muss also schon
+-- am Gesamtprozess hängen, bevor er an einem Schritt markiert werden kann.
+-- ============================================================
+create table if not exists process_step_ideas (
+  step_id uuid not null references process_steps (id) on delete cascade,
+  idea_id uuid not null references ideas (id) on delete cascade,
+  created_at timestamptz not null default now(),
+  primary key (step_id, idea_id)
+);
+
+alter table process_step_ideas enable row level security;
+
+drop policy if exists "Process step ideas: select with kostenstelle access" on process_step_ideas;
+create policy "Process step ideas: select with kostenstelle access"
+  on process_step_ideas for select
+  using (is_approved_user() and exists (
+    select 1 from process_steps ps join processes pr on pr.id = ps.process_id
+    where ps.id = step_id and can_read_kostenstelle(pr.department, pr.team_id)
+  ));
+
+drop policy if exists "Process step ideas: insert with kostenstelle access" on process_step_ideas;
+create policy "Process step ideas: insert with kostenstelle access"
+  on process_step_ideas for insert
+  with check (is_approved_user() and exists (
+    select 1 from process_steps ps join processes pr on pr.id = ps.process_id
+    where ps.id = step_id and can_write_kostenstelle(pr.department, pr.team_id)
+  ));
+
+drop policy if exists "Process step ideas: update with kostenstelle access" on process_step_ideas;
+create policy "Process step ideas: update with kostenstelle access"
+  on process_step_ideas for update
+  using (is_approved_user() and exists (
+    select 1 from process_steps ps join processes pr on pr.id = ps.process_id
+    where ps.id = step_id and can_write_kostenstelle(pr.department, pr.team_id)
+  ))
+  with check (is_approved_user() and exists (
+    select 1 from process_steps ps join processes pr on pr.id = ps.process_id
+    where ps.id = step_id and can_write_kostenstelle(pr.department, pr.team_id)
+  ));
+
+drop policy if exists "Process step ideas: delete with kostenstelle access" on process_step_ideas;
+create policy "Process step ideas: delete with kostenstelle access"
+  on process_step_ideas for delete
+  using (is_approved_user() and exists (
+    select 1 from process_steps ps join processes pr on pr.id = ps.process_id
+    where ps.id = step_id and can_write_kostenstelle(pr.department, pr.team_id)
   ));
 
 -- ============================================================

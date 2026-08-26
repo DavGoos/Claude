@@ -288,7 +288,24 @@ Gedächtnisstütze, die mit der Idee gespeichert wird.
   "Ja → weiter mit Schritt 4, Nein → Ende"); für einen eigenständigen
   Parallelzweig oder eine komplexere Verzweigung lohnt sich oft ein
   eigener Teilprozess, den man dann per Drill-down (siehe oben) direkt
-  am betreffenden Schritt verlinkt.
+  am betreffenden Schritt verlinkt. Für parallel laufende Schritte, die
+  eigentlich zusammengehören, gibt es außerdem die frei vergebbare
+  Schritt-Nummer (siehe nächster Punkt) – z.B. "2.1", "2.2", "2.3" für
+  drei Schritte, die gleichzeitig zu Schritt 2 gehören.
+- **Schritt-Nummern frei vergeben**: Jeder Prozessschritt hat ein eigenes
+  Textfeld für eine Nummer/Bezeichnung (z.B. "1", "2.1", "3"). Diese
+  Nummer ist rein ein von Hand gepflegtes Anzeige-Label und hat keinen
+  Einfluss auf die tatsächliche Reihenfolge – die bestimmt weiterhin
+  allein die Position in der Kette (▲/▼). So lassen sich parallel
+  laufende Schritte kenntlich machen, ohne eine echte Verzweigungslogik
+  im Datenmodell zu brauchen.
+- **AI-Support pro Schritt markieren**: Ist einem Prozess bereits mindestens
+  ein Use Case zugeordnet (siehe "Use Cases zu Prozessen zuordnen" unten),
+  kann bei jedem einzelnen Prozessschritt per Checkbox markiert werden,
+  welcher dieser Use Cases an genau dieser Stelle im Ablauf zum Einsatz
+  kommt. So ist auf einen Blick erkennbar, an welchen Schritten welcher
+  AI Support tatsächlich greift, statt nur zu wissen, dass ein Use Case
+  irgendwo im Gesamtprozess relevant ist.
 - **Dokumente & Links hinterlegen**: Ganz am Ende der Prozessansicht –
   eine einfache Liste aus Titel + URL (z.B. Link zu einer Datei in
   SharePoint/Teams/OneDrive oder einer Webseite). Es gibt keinen

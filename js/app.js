@@ -281,6 +281,8 @@ const I18N = {
     stepDeletedMsg: "Schritt gelöscht",
     stepAiPotentialNotePlaceholder: "Kurze Notiz zum AI-Potenzial dieses Schritts",
     stepNoLinkedProcessOption: "— Kein Detail-Prozess —",
+    stepNumberPlaceholder: "Nr. (z.B. 2.1)",
+    stepIdeaFlagsLabel: "AI Support durch:",
 
     processResourcesTitle: "Dokumente & Links",
     processResourcesDesc:
@@ -598,6 +600,8 @@ const I18N = {
     stepDeletedMsg: "Step deleted",
     stepAiPotentialNotePlaceholder: "Short note on this step's AI potential",
     stepNoLinkedProcessOption: "— No detail process —",
+    stepNumberPlaceholder: "No. (e.g. 2.1)",
+    stepIdeaFlagsLabel: "AI support from:",
 
     processResourcesTitle: "Documents & links",
     processResourcesDesc:
@@ -1353,6 +1357,39 @@ async function deleteProcessStep(id) {
   return true;
 }
 
+async function loadProcessStepIdeas(stepIds) {
+  if (!stepIds.length) return [];
+  const results = await Promise.all(
+    stepIds.map((id) => sb.from("process_step_ideas").select("*").eq("step_id", id))
+  );
+  const rows = [];
+  for (const { data, error } of results) {
+    if (error) {
+      toast(t("loadErrorPrefix") + error.message);
+      continue;
+    }
+    if (data) rows.push(...data);
+  }
+  return rows;
+}
+
+async function setStepIdeaFlag(stepId, ideaId, flagged) {
+  if (flagged) {
+    const { error } = await sb.from("process_step_ideas").insert({ step_id: stepId, idea_id: ideaId });
+    if (error) {
+      toast(t("saveErrorPrefix") + error.message);
+      return false;
+    }
+    return true;
+  }
+  const { error } = await sb.from("process_step_ideas").delete().eq("step_id", stepId).eq("idea_id", ideaId);
+  if (error) {
+    toast(t("deleteErrorPrefix") + error.message);
+    return false;
+  }
+  return true;
+}
+
 // Dokumente & Links: reine URL-Liste (z.B. Link zu einer Datei in
 // SharePoint/Teams/OneDrive oder eine Webseite) statt echtem Datei-Upload
 // - braucht deshalb keinen eigenen Storage-Bucket (siehe Diskussion im Chat).
@@ -1398,8 +1435,8 @@ async function deleteProcessResource(id) {
 function tabBar(active) {
   return `
     <div class="tabbar">
-      <button data-tab="ideas" class="${active === "ideas" ? "active" : ""}">${t("ideasTab")}</button>
       <button data-tab="processes" class="${active === "processes" ? "active" : ""}">${t("processesTab")}</button>
+      <button data-tab="ideas" class="${active === "ideas" ? "active" : ""}">${t("ideasTab")}</button>
       <button data-tab="dashboard" class="${active === "dashboard" ? "active" : ""}">${t("dashboardTab")}</button>
     </div>
   `;
@@ -2514,6 +2551,7 @@ async function renderProcessDetail(id) {
   const canWrite = canWriteCombo(proc.department, proc.team_id);
   let processSteps = await loadProcessSteps(proc.id);
   let processResources = await loadProcessResources(proc.id);
+  let processStepIdeas = await loadProcessStepIdeas(processSteps.map((s) => s.id));
 
   function renderStepsListHtml() {
     if (!processSteps.length) {
@@ -2525,7 +2563,8 @@ async function renderProcessDetail(id) {
         const isLast = idx === processSteps.length - 1;
         const controls = canWrite
           ? `
-            <div class="row" style="margin-top:8px;">
+            <div class="row" style="margin-top:8px; gap:6px;">
+              <input class="field" data-step-number="${step.id}" value="${escapeHtml(step.step_number || "")}" placeholder="${t("stepNumberPlaceholder")}" style="flex:0 0 90px;" />
               <select class="field" data-step-linked-process="${step.id}" style="flex:1;">
                 <option value="">${t("stepNoLinkedProcessOption")}</option>
                 ${subProcesses
@@ -2549,9 +2588,30 @@ async function renderProcessDetail(id) {
         const titleHtml = step.linked_process_id
           ? `<a href="#/process/${step.linked_process_id}">${escapeHtml(step.title)} ↗</a>`
           : escapeHtml(step.title);
+        const stepNumberBadge = step.step_number
+          ? `<span style="font-weight:600; color:var(--text-dim); margin-right:6px;">${escapeHtml(step.step_number)}</span>`
+          : "";
+        const ideaFlagsHtml = linkedIdeas.length
+          ? `
+            <div style="margin-top:8px;">
+              <div style="font-size:12px; color:var(--text-dim); margin-bottom:4px;">${t("stepIdeaFlagsLabel")}</div>
+              <div style="display:flex; flex-direction:column; gap:4px;">
+                ${linkedIdeas
+                  .map((idea) => {
+                    const checked = processStepIdeas.some((psi) => psi.step_id === step.id && psi.idea_id === idea.id);
+                    return `
+                      <label style="display:flex; align-items:center; gap:6px; font-size:13px;">
+                        <input type="checkbox" data-step-idea-flag="${step.id}" data-idea-id="${idea.id}" ${checked ? "checked" : ""} ${canWrite ? "" : "disabled"} />
+                        ${escapeHtml(trValue(idea, "quick_note"))}
+                      </label>`;
+                  })
+                  .join("")}
+              </div>
+            </div>`
+          : "";
         return `
           <div class="process-step" style="border-left-color:${stepTypeColor(step.step_type)};">
-            <div>${stepTypeIcon(step.step_type)} <strong>${titleHtml}</strong></div>
+            <div>${stepNumberBadge}${stepTypeIcon(step.step_type)} <strong>${titleHtml}</strong></div>
             ${
               step.description
                 ? `<div style="font-size:12.5px; color:var(--text-dim); margin-top:4px; white-space:pre-wrap;">${escapeHtml(step.description)}</div>`
@@ -2566,6 +2626,7 @@ async function renderProcessDetail(id) {
               <span class="val" data-step-ai-potential-val="${step.id}">${step.ai_potential || 3}</span>
             </div>
             <input class="field" data-step-ai-note="${step.id}" value="${escapeHtml(step.ai_potential_note || "")}" placeholder="${t("stepAiPotentialNotePlaceholder")}" />
+            ${ideaFlagsHtml}
             ${controls}
           </div>
           ${isLast ? "" : `<div class="process-step-arrow">↓</div>`}
@@ -2643,10 +2704,35 @@ async function renderProcessDetail(id) {
         }
       });
     });
+    document.querySelectorAll("[data-step-number]").forEach((input) => {
+      input.addEventListener("blur", async () => {
+        if (input.value === input.defaultValue) return;
+        const updated = await updateProcessStep(input.dataset.stepNumber, { step_number: input.value.trim() });
+        if (updated) {
+          toast(t("stepSavedMsg"));
+          if (unsavedChangesReset) unsavedChangesReset();
+          await refreshSteps();
+        }
+      });
+    });
+    document.querySelectorAll("[data-step-idea-flag]").forEach((checkbox) => {
+      checkbox.addEventListener("change", async () => {
+        checkbox.disabled = true;
+        const ok = await setStepIdeaFlag(checkbox.dataset.stepIdeaFlag, checkbox.dataset.ideaId, checkbox.checked);
+        checkbox.disabled = false;
+        if (ok) {
+          if (unsavedChangesReset) unsavedChangesReset();
+          await refreshSteps();
+        } else {
+          checkbox.checked = !checkbox.checked;
+        }
+      });
+    });
   }
 
   async function refreshSteps() {
     processSteps = await loadProcessSteps(proc.id);
+    processStepIdeas = await loadProcessStepIdeas(processSteps.map((s) => s.id));
     document.getElementById("process-steps-list").innerHTML = renderStepsListHtml();
     bindStepsListEvents();
   }
