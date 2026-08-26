@@ -591,6 +591,14 @@ create table if not exists process_steps (
 alter table process_steps add column if not exists ai_potential smallint not null default 3 check (ai_potential between 1 and 5);
 alter table process_steps add column if not exists ai_potential_note text not null default '';
 
+-- Drill-down: ein grober Schritt kann auf einen (bereits als Teilprozess
+-- angelegten) Detailprozess verweisen, der diesen Schritt genauer
+-- dokumentiert. Bewusst kein neues Konzept, sondern eine Verknüpfung auf
+-- die bestehende Teilprozess-Beziehung (parent_process_id) - deshalb kein
+-- eigener Check auf "gehört wirklich zu diesem Prozess", das regelt allein
+-- die App (Dropdown zeigt nur die eigenen Teilprozesse).
+alter table process_steps add column if not exists linked_process_id uuid references processes (id) on delete set null;
+
 create index if not exists process_steps_process_id_idx on process_steps (process_id, position);
 
 alter table process_steps enable row level security;

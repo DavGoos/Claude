@@ -564,6 +564,13 @@ textarea.field { min-height: 70px; resize: vertical; }
   margin: 2px 0;
 }
 
+/* Drill-down: Schritt-Titel wird zum Link, wenn ein Detailprozess
+   verknüpft ist (siehe README "Von groben Schritten in den Detailprozess"). */
+.process-step a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
 .resource-item {
   display: flex;
   align-items: center;

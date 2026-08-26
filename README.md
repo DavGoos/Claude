@@ -253,28 +253,50 @@ Gedächtnisstütze, die mit der Idee gespeichert wird.
 - **Am PC nutzen**: Läuft genauso im Desktop-Browser, das Layout passt sich
   automatisch an breitere Bildschirme an.
 - **Prozesse dokumentieren**: Im Tab "Prozesse" alle Abläufe eures Bereichs
-  erfassen und mit einer AI-Potenzial-Einschätzung versehen.
-- **Ablauf als Flowchart visualisieren**: Unter der Beschreibung eines
-  Prozesses lässt sich der Ablauf als geordnete Kette von Schritten
-  aufbauen (Start/Schritt/Entscheidung/Ende, jeweils mit Titel + Notiz,
-  per ▲/▼ sortierbar) – mit verbindenden Pfeilen dargestellt wie ein
-  einfaches Flowchart. Bewusst kein frei verzweigbares Diagramm mit
-  Drag & Drop, damit es auch am Handy zuverlässig bedienbar bleibt.
-  Jeder einzelne Schritt hat außerdem seine eigene AI-Potenzial-
-  Einschätzung (1-5) plus kurze Notiz – so lässt sich auf einen Blick
-  erkennen, an welcher Stelle im Ablauf der größte Hebel steckt, statt
-  nur den Prozess als Ganzes zu bewerten.
-- **Dokumente & Links hinterlegen**: Ebenfalls bei jedem Prozess – eine
-  einfache Liste aus Titel + URL (z.B. Link zu einer Datei in
+  erfassen und mit einer AI-Potenzial-Einschätzung versehen. Die
+  Detailansicht ist bewusst schlank gehalten: Status und eine separate
+  Freitext-Beschreibung gibt es hier nicht (mehr) – der Ablauf steckt
+  stattdessen detailliert in den Prozessschritten (siehe unten).
+- **Teilprozesse & Use Cases im ersten Block**: Ganz oben bei Name,
+  Kostenstelle/Team und übergeordnetem Prozess stehen auch gleich die
+  Teilprozesse und die zugehörigen Use Cases dieses Prozesses – mit
+  Verlinkung und Möglichkeit, direkt einen neuen Teilprozess bzw. eine
+  neue Idee dafür anzulegen.
+- **Ablauf als Flowchart visualisieren**: Danach folgt der Ablauf als
+  geordnete Kette von Schritten (Start/Schritt/Entscheidung/Ende, jeweils
+  mit Titel + Notiz, per ▲/▼ sortierbar) – mit verbindenden Pfeilen
+  dargestellt wie ein einfaches Flowchart. Bewusst kein frei
+  verzweigbares Diagramm mit Drag & Drop, damit es auch am Handy
+  zuverlässig bedienbar bleibt (siehe unten "Verzweigungen &
+  Parallelprozesse" für den Umgang mit Entscheidungspunkten). Jeder
+  einzelne Schritt hat außerdem seine eigene AI-Potenzial-Einschätzung
+  (1-5) plus kurze Notiz – so lässt sich auf einen Blick erkennen, an
+  welcher Stelle im Ablauf der größte Hebel steckt, statt nur den
+  Prozess als Ganzes zu bewerten.
+- **Von groben Schritten in den Detailprozess drillen**: Jeder
+  Prozessschritt kann optional mit einem der eigenen Teilprozesse
+  verknüpft werden (Dropdown zeigt nur die Teilprozesse dieses
+  Prozesses, siehe oben). Ist ein Schritt verknüpft, wird sein Titel zu
+  einem Link (↗), der direkt zur Detailansicht dieses Teilprozesses
+  springt – so lässt sich ein grober Ablauf Schritt für Schritt weiter
+  aufschlüsseln.
+- **Verzweigungen & Parallelprozesse**: Die Schritt-Kette ist bewusst
+  linear (siehe oben) und bildet Verzweigungen (z.B. unterschiedliche
+  Fortsetzung nach einer Entscheidung) oder parallele Abläufe nicht
+  strukturell ab. Empfohlener Umgang: Bei einem Entscheidungsschritt in
+  der Notiz kurz beschreiben, wohin die jeweilige Antwort führt (z.B.
+  "Ja → weiter mit Schritt 4, Nein → Ende"); für einen eigenständigen
+  Parallelzweig oder eine komplexere Verzweigung lohnt sich oft ein
+  eigener Teilprozess, den man dann per Drill-down (siehe oben) direkt
+  am betreffenden Schritt verlinkt.
+- **Dokumente & Links hinterlegen**: Ganz am Ende der Prozessansicht –
+  eine einfache Liste aus Titel + URL (z.B. Link zu einer Datei in
   SharePoint/Teams/OneDrive oder einer Webseite). Es gibt keinen
   eigenen Datei-Upload/Storage, nur Links zu bereits woanders
   gespeicherten Dokumenten.
-- **Teilprozesse strukturieren**: Jeder Prozess kann optional einem
-  übergeordneten Gesamtprozess zugeordnet werden; die Detailansicht zeigt
-  alle Teilprozesse eines übergeordneten Prozesses.
 - **Use Cases zu Prozessen zuordnen**: Jede Idee kann optional einem Prozess
   zugeordnet werden; in der Prozess-Detailansicht seht ihr alle dazu bereits
-  erfassten Use Cases.
+  erfassten Use Cases (siehe "Teilprozesse & Use Cases im ersten Block" oben).
 - **Kostenstelle & Team pflichtig**: Sowohl bei Ideen als auch bei Prozessen
   müssen Kostenstelle und Team aus einem Dropdown gewählt werden (auch
   schon beim schnellen Erfassen). Beide kommen aus der Datenbank

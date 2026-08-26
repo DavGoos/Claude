@@ -146,7 +146,6 @@ const I18N = {
     lastSavedTitle: "Zuletzt gespeichert",
     tagsLabel: "Tags (Komma-getrennt)",
     tagsPlaceholder: "z.B. Vertrieb, Automatisierung",
-    descriptionLabel: "Beschreibung",
     descriptionPlaceholder: "Was ist das Problem, was soll die Lösung bringen?",
     problemLabel: "Problem",
     problemPlaceholder: "Welches Problem soll gelöst werden? Was ist aktuell schwierig/aufwendig?",
@@ -244,9 +243,6 @@ const I18N = {
     emptyProcesses: "Noch keine Prozesse erfasst. Trag oben den ersten Prozess deines Bereichs ein!",
     loadingProcesses: "Lade Prozesse...",
 
-    pstatus_open: "Offen",
-    pstatus_reviewed: "Geprüft",
-
     processNameLabel: "Prozessname",
     parentProcessLabel: "Übergeordneter Prozess",
     noneTopLevelOption: "— Keiner (Top-Level-Prozess) —",
@@ -254,7 +250,6 @@ const I18N = {
     aiPotentialLabel: "AI-Potenzial",
     notesLabel: "Notizen / Begründung",
     notesPlaceholder: "Warum viel/wenig Potenzial? Erste Ansätze?",
-    processDescPlaceholder: "Wie läuft der Prozess ab, wer ist beteiligt?",
     subProcessesTitle: "Teilprozesse",
     emptySubProcesses: "Noch keine Teilprozesse zugeordnet.",
     addSubProcessBtn: "+ Neuen Teilprozess anlegen",
@@ -285,6 +280,7 @@ const I18N = {
     stepSavedMsg: "Schritt gespeichert",
     stepDeletedMsg: "Schritt gelöscht",
     stepAiPotentialNotePlaceholder: "Kurze Notiz zum AI-Potenzial dieses Schritts",
+    stepNoLinkedProcessOption: "— Kein Detail-Prozess —",
 
     processResourcesTitle: "Dokumente & Links",
     processResourcesDesc:
@@ -468,7 +464,6 @@ const I18N = {
     lastSavedTitle: "Last saved",
     tagsLabel: "Tags (comma-separated)",
     tagsPlaceholder: "e.g. Sales, Automation",
-    descriptionLabel: "Description",
     descriptionPlaceholder: "What's the problem, what should the solution achieve?",
     problemLabel: "Problem",
     problemPlaceholder: "What problem should be solved? What's currently hard/slow/error-prone?",
@@ -566,9 +561,6 @@ const I18N = {
     emptyProcesses: "No processes yet. Add the first process of your area above!",
     loadingProcesses: "Loading processes...",
 
-    pstatus_open: "Open",
-    pstatus_reviewed: "Reviewed",
-
     processNameLabel: "Process name",
     parentProcessLabel: "Parent process",
     noneTopLevelOption: "— None (top-level process) —",
@@ -576,7 +568,6 @@ const I18N = {
     aiPotentialLabel: "AI potential",
     notesLabel: "Notes / rationale",
     notesPlaceholder: "Why much/little potential? Initial approaches?",
-    processDescPlaceholder: "How does the process run, who's involved?",
     subProcessesTitle: "Sub-processes",
     emptySubProcesses: "No sub-processes assigned yet.",
     addSubProcessBtn: "+ Add new sub-process",
@@ -606,6 +597,7 @@ const I18N = {
     stepSavedMsg: "Step saved",
     stepDeletedMsg: "Step deleted",
     stepAiPotentialNotePlaceholder: "Short note on this step's AI potential",
+    stepNoLinkedProcessOption: "— No detail process —",
 
     processResourcesTitle: "Documents & links",
     processResourcesDesc:
@@ -696,7 +688,6 @@ const I18N = {
 };
 
 const STATUS_ORDER = ["idea", "evaluating", "planned", "in_progress", "done", "discarded"];
-const PROCESS_STATUS_ORDER = ["open", "reviewed"];
 
 // Kostenstelle (das Pflichtfeld "department" bei ideas/processes) kommt
 // aus der Tabelle "kostenstellen", Team aus der Tabelle "teams" (siehe
@@ -724,7 +715,7 @@ const TRANSLATABLE_IDEA_FIELDS = [
   "qualitative_benefit",
   "comment",
 ];
-const TRANSLATABLE_PROCESS_FIELDS = ["name", "description", "notes"];
+const TRANSLATABLE_PROCESS_FIELDS = ["name", "notes"];
 
 let currentUser = null;
 let currentProfile = null;
@@ -2348,30 +2339,12 @@ async function renderDetail(id) {
 
 // ---------- Views: Processes ----------
 
-function processFilterChips(activeProcessFilter) {
-  const filters = [
-    { key: "all", label: t("filterAll") },
-    ...PROCESS_STATUS_ORDER.map((s) => ({ key: s, label: t(`pstatus_${s}`) })),
-  ];
-  return `
-    <div class="filters">
-      ${filters
-        .map(
-          (f) =>
-            `<button class="chip ${f.key === activeProcessFilter ? "active" : ""}" data-pfilter="${f.key}">${f.label}</button>`
-        )
-        .join("")}
-    </div>
-  `;
-}
-
 function processCard(proc) {
   const ai = aiPotentialInfo(proc.ai_potential);
   return `
     <div class="idea-item" data-id="${proc.id}">
       <div class="idea-title">${escapeHtml(trValue(proc, "name"))}</div>
       <div class="idea-meta">
-        <span class="badge status-${proc.status === "reviewed" ? "done" : "idea"}">${t(`pstatus_${proc.status}`)}</span>
         <span class="badge"><span class="priority-dot" style="background:${ai.color}"></span> ${ai.label}</span>
         ${proc.team_id ? `<span class="badge">${escapeHtml(teamName(proc.team_id))}</span>` : ""}
         ${proc.parent ? `<span class="badge">↳ ${escapeHtml(trValue(proc.parent, "name"))}</span>` : ""}
@@ -2380,7 +2353,6 @@ function processCard(proc) {
   `;
 }
 
-let activeProcessFilter = "all";
 let activeProcessDeptFilter = "";
 let activeProcessTeamFilter = "";
 
@@ -2408,7 +2380,6 @@ async function renderProcessList() {
           <button class="btn-primary" id="save-process">${t("saveProcessBtn")}</button>
         </div>
       </div>
-      ${processFilterChips(activeProcessFilter)}
       ${deptTeamFilterRow("processfilter", activeProcessDeptFilter, activeProcessTeamFilter)}
       <div class="idea-list" id="process-list">
         <div class="empty-state">${t("loadingProcesses")}</div>
@@ -2463,13 +2434,6 @@ async function renderProcessList() {
     }
   });
 
-  document.querySelectorAll("[data-pfilter]").forEach((chip) => {
-    chip.addEventListener("click", () => {
-      activeProcessFilter = chip.dataset.pfilter;
-      document.querySelectorAll("[data-pfilter]").forEach((c) => c.classList.toggle("active", c.dataset.pfilter === activeProcessFilter));
-      renderProcessListItems();
-    });
-  });
 
   processesCache = await loadProcesses();
   renderProcessListItems();
@@ -2505,7 +2469,6 @@ function renderProcessListItems() {
   if (!listEl) return;
   const filtered = processesCache.filter(
     (p) =>
-      (activeProcessFilter === "all" || p.status === activeProcessFilter) &&
       (!activeProcessDeptFilter || p.department === activeProcessDeptFilter) &&
       (!activeProcessTeamFilter || p.team_id === activeProcessTeamFilter)
   );
@@ -2530,9 +2493,6 @@ function renderProcessListItems() {
       });
     });
   }
-  document.querySelectorAll("[data-pfilter]").forEach((chip) => {
-    chip.classList.toggle("active", chip.dataset.pfilter === activeProcessFilter);
-  });
 }
 
 async function renderProcessDetail(id) {
@@ -2565,6 +2525,14 @@ async function renderProcessDetail(id) {
         const isLast = idx === processSteps.length - 1;
         const controls = canWrite
           ? `
+            <div class="row" style="margin-top:8px;">
+              <select class="field" data-step-linked-process="${step.id}" style="flex:1;">
+                <option value="">${t("stepNoLinkedProcessOption")}</option>
+                ${subProcesses
+                  .map((p) => `<option value="${p.id}" ${p.id === step.linked_process_id ? "selected" : ""}>${escapeHtml(p.name)}</option>`)
+                  .join("")}
+              </select>
+            </div>
             <div class="row" style="margin-top:8px; align-items:center; gap:6px;">
               <select class="field" data-step-type="${step.id}" style="flex:1;">
                 ${PROCESS_STEP_TYPES.map(
@@ -2578,9 +2546,12 @@ async function renderProcessDetail(id) {
             </div>`
           : "";
         const ai = aiPotentialInfo(step.ai_potential);
+        const titleHtml = step.linked_process_id
+          ? `<a href="#/process/${step.linked_process_id}">${escapeHtml(step.title)} ↗</a>`
+          : escapeHtml(step.title);
         return `
           <div class="process-step" style="border-left-color:${stepTypeColor(step.step_type)};">
-            <div>${stepTypeIcon(step.step_type)} <strong>${escapeHtml(step.title)}</strong></div>
+            <div>${stepTypeIcon(step.step_type)} <strong>${titleHtml}</strong></div>
             ${
               step.description
                 ? `<div style="font-size:12.5px; color:var(--text-dim); margin-top:4px; white-space:pre-wrap;">${escapeHtml(step.description)}</div>`
@@ -2604,6 +2575,18 @@ async function renderProcessDetail(id) {
   }
 
   function bindStepsListEvents() {
+    document.querySelectorAll("[data-step-linked-process]").forEach((sel) => {
+      sel.addEventListener("change", async () => {
+        sel.disabled = true;
+        const updated = await updateProcessStep(sel.dataset.stepLinkedProcess, { linked_process_id: sel.value || null });
+        sel.disabled = false;
+        if (updated) {
+          toast(t("stepSavedMsg"));
+          if (unsavedChangesReset) unsavedChangesReset();
+          await refreshSteps();
+        }
+      });
+    });
     document.querySelectorAll("[data-step-type]").forEach((sel) => {
       sel.addEventListener("change", async () => {
         sel.disabled = true;
@@ -2774,15 +2757,37 @@ async function renderProcessDetail(id) {
           ${parentProcessOptions(proc.id, proc.parent_process_id)}
         </select>
 
-        <label class="field-label">${t("statusLabel")}</label>
-        <select class="field" id="f-status">
-          ${PROCESS_STATUS_ORDER.map(
-            (s) => `<option value="${s}" ${s === proc.status ? "selected" : ""}>${t(`pstatus_${s}`)}</option>`
-          ).join("")}
-        </select>
+        <div class="section-title" style="margin:20px 0 10px;">${t("subProcessesTitle")}</div>
+        <div id="sub-processes">
+          ${
+            subProcesses.length
+              ? subProcesses.map((p) => `<a class="link-item" href="#/process/${p.id}">${escapeHtml(p.name)}</a>`).join("")
+              : `<div class="empty-state" style="padding:16px 4px;">${t("emptySubProcesses")}</div>`
+          }
+        </div>
+        <div class="row">
+          <button class="btn-secondary" id="add-subprocess-btn" style="width:100%;">${t("addSubProcessBtn")}</button>
+        </div>
 
-        <label class="field-label">${t("descriptionLabel")}</label>
-        <textarea class="field" id="f-description" placeholder="${t("processDescPlaceholder")}"${trReadonlyAttr(proc, "description")}>${escapeHtml(trValue(proc, "description"))}</textarea>
+        <div class="section-title" style="margin:20px 0 10px;">${t("linkedUseCasesTitle")}</div>
+        <div id="linked-ideas">
+          ${
+            linkedIdeas.length
+              ? linkedIdeas.map((i) => `<a class="link-item" href="#/idea/${i.id}">${escapeHtml(trValue(i, "quick_note"))}</a>`).join("")
+              : `<div class="empty-state" style="padding:16px 4px;">${t("emptyLinkedIdeas")}</div>`
+          }
+        </div>
+        <div class="row">
+          <button class="btn-secondary" id="add-idea-btn" style="width:100%;">${t("addIdeaBtn")}</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="section-title" style="margin:0 0 10px;">${t("aiPotentialTitle")}</div>
+        <div id="ai-potential-banner" class="priority-banner"></div>
+        ${sliderRow("ai_potential", t("aiPotentialLabel"), proc.ai_potential)}
+        <label class="field-label">${t("notesLabel")}</label>
+        <textarea class="field" id="f-notes" placeholder="${t("notesPlaceholder")}"${trReadonlyAttr(proc, "notes")}>${escapeHtml(trValue(proc, "notes"))}</textarea>
       </div>
 
       <div class="card">
@@ -2826,42 +2831,6 @@ async function renderProcessDetail(id) {
         `
             : ""
         }
-      </div>
-
-      <div class="card">
-        <div class="section-title" style="margin:0 0 10px;">${t("aiPotentialTitle")}</div>
-        <div id="ai-potential-banner" class="priority-banner"></div>
-        ${sliderRow("ai_potential", t("aiPotentialLabel"), proc.ai_potential)}
-        <label class="field-label">${t("notesLabel")}</label>
-        <textarea class="field" id="f-notes" placeholder="${t("notesPlaceholder")}"${trReadonlyAttr(proc, "notes")}>${escapeHtml(trValue(proc, "notes"))}</textarea>
-      </div>
-
-      <div class="card">
-        <div class="section-title" style="margin:0 0 10px;">${t("subProcessesTitle")}</div>
-        <div id="sub-processes">
-          ${
-            subProcesses.length
-              ? subProcesses.map((p) => `<a class="link-item" href="#/process/${p.id}">${escapeHtml(p.name)}</a>`).join("")
-              : `<div class="empty-state" style="padding:16px 4px;">${t("emptySubProcesses")}</div>`
-          }
-        </div>
-        <div class="row">
-          <button class="btn-secondary" id="add-subprocess-btn" style="width:100%;">${t("addSubProcessBtn")}</button>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="section-title" style="margin:0 0 10px;">${t("linkedUseCasesTitle")}</div>
-        <div id="linked-ideas">
-          ${
-            linkedIdeas.length
-              ? linkedIdeas.map((i) => `<a class="link-item" href="#/idea/${i.id}">${escapeHtml(trValue(i, "quick_note"))}</a>`).join("")
-              : `<div class="empty-state" style="padding:16px 4px;">${t("emptyLinkedIdeas")}</div>`
-          }
-        </div>
-        <div class="row">
-          <button class="btn-secondary" id="add-idea-btn" style="width:100%;">${t("addIdeaBtn")}</button>
-        </div>
       </div>
 
       <div class="row">
@@ -2982,13 +2951,12 @@ async function renderProcessDetail(id) {
       department,
       team_id: teamId,
       parent_process_id: document.getElementById("f-parent-process").value || null,
-      status: document.getElementById("f-status").value,
       ai_potential: Number(document.querySelector('[data-field="ai_potential"]').value),
     };
     // Felder, die aktuell die (vom Admin gepflegte) Übersetzung anzeigen,
     // werden nicht mitgespeichert - sonst würde die englische Anzeige das
     // deutsche Original überschreiben (siehe isTranslatedReadonly).
-    const processFieldInputIds = { name: "f-name", description: "f-description", notes: "f-notes" };
+    const processFieldInputIds = { name: "f-name", notes: "f-notes" };
     TRANSLATABLE_PROCESS_FIELDS.forEach((field) => {
       if (!isTranslatedReadonly(proc, field)) {
         patch[field] = document.getElementById(processFieldInputIds[field]).value.trim();
