@@ -1201,8 +1201,24 @@ async function logout() {
 
 // ---------- Data: Ideas ----------
 
-const IDEA_SELECT =
-  "*, processes(id, name, name_en), parent:parent_idea_id(id, quick_note, quick_note_en, catalog_id, status), extra_processes:idea_processes(process:process_id(id, name, name_en))";
+const IDEA_SELECT = "*, processes(id, name, name_en), parent:parent_idea_id(id, quick_note, quick_note_en, catalog_id, status)";
+
+// Weitere Prozesse (idea_processes, siehe schema.sql) bewusst NICHT Teil von
+// IDEA_SELECT: das ist eine separate, zusätzliche Verknüpfung obendrauf -
+// wäre sie Teil des embeds, würde ein noch nicht ausgeführtes Schema-Update
+// (Tabelle fehlt) die komplette Ideen-Abfrage scheitern lassen statt nur
+// diese eine Zusatzfunktion. Bei einem Fehler hier bleibt "extra_processes"
+// einfach leer, der Rest der App funktioniert unverändert weiter.
+async function loadIdeaExtraProcessesMap() {
+  const { data, error } = await sb.from("idea_processes").select("idea_id, process:process_id(id, name, name_en)");
+  if (error) return {};
+  const map = {};
+  (data || []).forEach((row) => {
+    if (!row.process) return;
+    (map[row.idea_id] ??= []).push({ process: row.process });
+  });
+  return map;
+}
 
 async function loadIdeas() {
   const { data, error } = await sb
@@ -1213,7 +1229,12 @@ async function loadIdeas() {
     toast(t("loadErrorPrefix") + error.message);
     return [];
   }
-  return data || [];
+  const ideas = data || [];
+  const extraMap = await loadIdeaExtraProcessesMap();
+  ideas.forEach((idea) => {
+    idea.extra_processes = extraMap[idea.id] || [];
+  });
+  return ideas;
 }
 
 async function createIdea(quickNote, department, teamId, processId, parentIdeaId) {
@@ -1225,6 +1246,7 @@ async function createIdea(quickNote, department, teamId, processId, parentIdeaId
     toast(t("saveErrorPrefix") + error.message);
     return null;
   }
+  data.extra_processes = [];
   return data;
 }
 
@@ -2509,6 +2531,7 @@ async function renderDetail(id) {
     btn.disabled = false;
     btn.textContent = t("saveBtn");
     if (updated) {
+      updated.extra_processes = idea.extra_processes || [];
       const idx = ideasCache.findIndex((i) => i.id === idea.id);
       if (idx >= 0) ideasCache[idx] = updated;
       toast(t("savedMsg"));

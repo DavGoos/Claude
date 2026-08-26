@@ -1102,7 +1102,10 @@ header.topbar.hero::before {
   gap: 10px;
   margin: -30px 16px 4px;
   position: relative;
-  z-index: 3;
+  /* header.topbar ist "position: sticky" mit z-index:10 (siehe oben) - ohne
+     einen höheren Wert hier würde der Header die Kacheln beim Überlappen
+     einfach zudecken. */
+  z-index: 11;
 }
 
 /* Ab Tablet/Desktop-Breite wird der Inhalt in <main> zentriert und auf
