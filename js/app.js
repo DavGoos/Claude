@@ -131,6 +131,13 @@ const I18N = {
     statusLabel: "Status",
     relatedProcessLabel: "Zugehöriger Prozess",
     noneOption: "— Keiner —",
+    additionalProcessesLabel: "Weitere Prozesse",
+    additionalProcessesDesc:
+      "Zusätzlich zum oben zugeordneten Prozess (der die Stufenkette bestimmt) lässt sich dieser Use Case auch bei anderen Prozessen als verknüpft anzeigen.",
+    emptyAdditionalProcesses: "Noch keine weiteren Prozesse verknüpft.",
+    addProcessBtn: "+ Hinzufügen",
+    processLinkedMsg: "Prozess verknüpft",
+    processUnlinkedMsg: "Verknüpfung entfernt",
     stageChainTitle: "Stufenkette",
     stageChainDesc:
       "Ist dieser Use Case der erste Schritt oder eine Weiterentwicklung eines anderen (z.B. GC12 → GC13 → GC14)? Hier verknüpfen, dann ist überall erkennbar, welche Stufe woran gerade gearbeitet wird.",
@@ -451,6 +458,13 @@ const I18N = {
     statusLabel: "Status",
     relatedProcessLabel: "Related process",
     noneOption: "— None —",
+    additionalProcessesLabel: "Additional processes",
+    additionalProcessesDesc:
+      "On top of the process assigned above (which drives the stage chain), this use case can also show up as linked to other processes.",
+    emptyAdditionalProcesses: "No additional processes linked yet.",
+    addProcessBtn: "+ Add",
+    processLinkedMsg: "Process linked",
+    processUnlinkedMsg: "Link removed",
     stageChainTitle: "Stage chain",
     stageChainDesc:
       "Is this use case the first step, or a follow-up on another one (e.g. GC12 → GC13 → GC14)? Link it here so everyone can see which stage is currently being worked on.",
@@ -1154,7 +1168,8 @@ async function logout() {
 
 // ---------- Data: Ideas ----------
 
-const IDEA_SELECT = "*, processes(id, name, name_en), parent:parent_idea_id(id, quick_note, quick_note_en, catalog_id, status)";
+const IDEA_SELECT =
+  "*, processes(id, name, name_en), parent:parent_idea_id(id, quick_note, quick_note_en, catalog_id, status), extra_processes:idea_processes(process:process_id(id, name, name_en))";
 
 async function loadIdeas() {
   const { data, error } = await sb
@@ -1196,6 +1211,26 @@ async function updateIdea(id, patch) {
 
 async function deleteIdea(id) {
   const { error } = await sb.from("ideas").delete().eq("id", id);
+  if (error) {
+    toast(t("deleteErrorPrefix") + error.message);
+    return false;
+  }
+  return true;
+}
+
+// Weitere Prozesse (n:m, zusätzlich zum Stufenketten-Prozess "process_id",
+// siehe schema.sql).
+async function addIdeaProcess(ideaId, processId) {
+  const { error } = await sb.from("idea_processes").insert({ idea_id: ideaId, process_id: processId });
+  if (error) {
+    toast(t("saveErrorPrefix") + error.message);
+    return false;
+  }
+  return true;
+}
+
+async function removeIdeaProcess(ideaId, processId) {
+  const { error } = await sb.from("idea_processes").delete().eq("idea_id", ideaId).eq("process_id", processId);
   if (error) {
     toast(t("deleteErrorPrefix") + error.message);
     return false;
@@ -1291,6 +1326,15 @@ async function updateProcess(id, patch) {
     return null;
   }
   return data;
+}
+
+async function deleteProcess(id) {
+  const { error } = await sb.from("processes").delete().eq("id", id);
+  if (error) {
+    toast(t("deleteErrorPrefix") + error.message);
+    return false;
+  }
+  return true;
 }
 
 // Prozessschritte: geordnete Kette statt freiem Diagramm (siehe Diskussion
@@ -1772,6 +1816,13 @@ function ideaFollowUpStages(idea) {
   return ideasCache.filter((i) => i.parent_idea_id === idea.id);
 }
 
+// Ein Use Case gilt als mit einem Prozess verknüpft, wenn er entweder dessen
+// Stufenketten-Prozess ist (process_id) oder zusätzlich verknüpft wurde
+// (extra_processes, siehe idea_processes in schema.sql).
+function ideaLinksProcess(idea, processId) {
+  return idea.process_id === processId || (idea.extra_processes || []).some((ep) => ep.process && ep.process.id === processId);
+}
+
 function ideaDescendantIds(idea) {
   const result = new Set();
   let frontier = [idea.id];
@@ -2064,6 +2115,57 @@ async function renderDetail(id) {
   }
   const canWrite = canWriteCombo(idea.department, idea.team_id);
 
+  let extraProcesses = (idea.extra_processes || []).map((ep) => ep.process).filter(Boolean);
+
+  function extraProcessOptions() {
+    const excludeIds = new Set([idea.process_id, ...extraProcesses.map((p) => p.id)].filter(Boolean));
+    const options = processesCache.filter((p) => !excludeIds.has(p.id));
+    if (!options.length) return `<option value="">${t("noneOption")}</option>`;
+    return options.map((p) => `<option value="${p.id}">${escapeHtml(trValue(p, "name"))}</option>`).join("");
+  }
+
+  function renderExtraProcessesListHtml() {
+    if (!extraProcesses.length) {
+      return `<div class="empty-state" style="padding:16px 4px;">${t("emptyAdditionalProcesses")}</div>`;
+    }
+    return extraProcesses
+      .map((p) => {
+        const del = canWrite
+          ? `<button class="icon-btn" data-extra-process-remove="${p.id}" title="${t("deleteStepBtn")}">🗑</button>`
+          : "";
+        return `
+          <div class="resource-item">
+            <a href="#/process/${p.id}">⚙ ${escapeHtml(trValue(p, "name"))}</a>
+            ${del}
+          </div>
+        `;
+      })
+      .join("");
+  }
+
+  function bindExtraProcessesListEvents() {
+    document.querySelectorAll("[data-extra-process-remove]").forEach((btn) => {
+      btn.addEventListener("click", () => removeExtraProcess(btn.dataset.extraProcessRemove));
+    });
+  }
+
+  function refreshExtraProcessesUi() {
+    document.getElementById("extra-processes-list").innerHTML = renderExtraProcessesListHtml();
+    bindExtraProcessesListEvents();
+    const select = document.getElementById("new-extra-process");
+    if (select) select.innerHTML = extraProcessOptions();
+  }
+
+  async function removeExtraProcess(processId) {
+    const ok = await removeIdeaProcess(idea.id, processId);
+    if (ok) {
+      extraProcesses = extraProcesses.filter((p) => p.id !== processId);
+      idea.extra_processes = extraProcesses.map((p) => ({ process: p }));
+      toast(t("processUnlinkedMsg"));
+      refreshExtraProcessesUi();
+    }
+  }
+
   $app.innerHTML = `
     <header class="topbar">
       <div class="back-row">
@@ -2221,6 +2323,24 @@ async function renderDetail(id) {
         </div>
       </div>
 
+      <div class="card">
+        <div class="section-title" style="margin:0 0 10px;">${t("additionalProcessesLabel")}</div>
+        <p style="font-size:13px; color:var(--text-dim); margin:0 0 12px; line-height:1.5;">${t("additionalProcessesDesc")}</p>
+        <div id="extra-processes-list">${renderExtraProcessesListHtml()}</div>
+        ${
+          canWrite
+            ? `
+          <div class="row" style="margin-top:12px;">
+            <select class="field" id="new-extra-process" style="flex:2;">
+              ${extraProcessOptions()}
+            </select>
+            <button class="btn-secondary" id="add-extra-process-btn" style="flex:1;">${t("addProcessBtn")}</button>
+          </div>
+        `
+            : ""
+        }
+      </div>
+
       <div class="row">
         <button class="btn-primary" id="save-detail-btn">${t("saveBtn")}</button>
       </div>
@@ -2228,6 +2348,7 @@ async function renderDetail(id) {
   `;
 
   bindDepartmentTeamFields("detail");
+  bindExtraProcessesListEvents();
 
   if (!canWrite) {
     document.querySelectorAll("main input, main textarea, main select, main button").forEach((el) => {
@@ -2235,6 +2356,20 @@ async function renderDetail(id) {
     });
   } else {
     watchUnsavedChanges(document.querySelector("main"));
+
+    document.getElementById("add-extra-process-btn").addEventListener("click", async () => {
+      const select = document.getElementById("new-extra-process");
+      const processId = select.value;
+      if (!processId) return;
+      const ok = await addIdeaProcess(idea.id, processId);
+      if (ok) {
+        const proc = processesCache.find((p) => p.id === processId);
+        if (proc) extraProcesses.push(proc);
+        idea.extra_processes = extraProcesses.map((p) => ({ process: p }));
+        toast(t("processLinkedMsg"));
+        refreshExtraProcessesUi();
+      }
+    });
   }
 
   function updatePriorityBanner() {
@@ -2543,9 +2678,9 @@ async function renderProcessDetail(id) {
     return;
   }
 
-  const linkedIdeas = ideasCache.length
-    ? ideasCache.filter((i) => i.process_id === proc.id)
-    : (ideasCache = await loadIdeas()).filter((i) => i.process_id === proc.id);
+  const linkedIdeas = (ideasCache.length ? ideasCache : (ideasCache = await loadIdeas())).filter((i) =>
+    ideaLinksProcess(i, proc.id)
+  );
 
   const subProcesses = processesCache.filter((p) => p.parent_process_id === proc.id);
   const canWrite = canWriteCombo(proc.department, proc.team_id);
@@ -3998,7 +4133,7 @@ function dashIdeaLeafHtml(idea) {
 
 function dashProcessNodeHtml(proc, teamProcesses, ideas) {
   const children = teamProcesses.filter((p) => p.parent_process_id === proc.id);
-  const linkedIdeas = ideas.filter((i) => i.process_id === proc.id);
+  const linkedIdeas = ideas.filter((i) => ideaLinksProcess(i, proc.id));
   const hasChildren = children.length > 0 || linkedIdeas.length > 0;
   const key = `p-${proc.id}`;
   const isExpanded = dashExpandedTreeIds.has(key);

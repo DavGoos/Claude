@@ -742,3 +742,44 @@ create policy "Process resources: delete with kostenstelle access"
   using (is_approved_user() and exists (
     select 1 from processes pr where pr.id = process_id and can_write_kostenstelle(pr.department, pr.team_id)
   ));
+
+-- ============================================================
+-- Weitere Prozesse pro Use Case: "ideas.process_id" bleibt der eine
+-- Prozess, der die Stufenkette (Vorgänger-/Nachfolger-Stufen, siehe oben)
+-- bestimmt. Zusätzlich soll sich derselbe Use Case aber auch bei anderen
+-- Prozessen als verknüpft zeigen lassen (n:m), ohne die Stufenkette
+-- anzufassen - deshalb eine reine Zusatz-Verknüpfungstabelle statt eines
+-- Umbaus von process_id. Zugriff hängt (wie bei "ideas" selbst) an der
+-- Kostenstelle/Team der Idee, nicht des zusätzlichen Prozesses.
+-- ============================================================
+create table if not exists idea_processes (
+  idea_id uuid not null references ideas (id) on delete cascade,
+  process_id uuid not null references processes (id) on delete cascade,
+  created_at timestamptz not null default now(),
+  primary key (idea_id, process_id)
+);
+
+create index if not exists idea_processes_process_id_idx on idea_processes (process_id);
+
+alter table idea_processes enable row level security;
+
+drop policy if exists "Idea processes: select with kostenstelle access" on idea_processes;
+create policy "Idea processes: select with kostenstelle access"
+  on idea_processes for select
+  using (is_approved_user() and exists (
+    select 1 from ideas i where i.id = idea_id and can_read_kostenstelle(i.department, i.team_id)
+  ));
+
+drop policy if exists "Idea processes: insert with kostenstelle access" on idea_processes;
+create policy "Idea processes: insert with kostenstelle access"
+  on idea_processes for insert
+  with check (is_approved_user() and exists (
+    select 1 from ideas i where i.id = idea_id and can_write_kostenstelle(i.department, i.team_id)
+  ));
+
+drop policy if exists "Idea processes: delete with kostenstelle access" on idea_processes;
+create policy "Idea processes: delete with kostenstelle access"
+  on idea_processes for delete
+  using (is_approved_user() and exists (
+    select 1 from ideas i where i.id = idea_id and can_write_kostenstelle(i.department, i.team_id)
+  ));

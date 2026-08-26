@@ -312,8 +312,12 @@ Gedächtnisstütze, die mit der Idee gespeichert wird.
   eigenen Datei-Upload/Storage, nur Links zu bereits woanders
   gespeicherten Dokumenten.
 - **Use Cases zu Prozessen zuordnen**: Jede Idee kann optional einem Prozess
-  zugeordnet werden; in der Prozess-Detailansicht seht ihr alle dazu bereits
-  erfassten Use Cases (siehe "Teilprozesse & Use Cases im ersten Block" oben).
+  zugeordnet werden (dieser bestimmt auch die Stufenkette, siehe unten); in
+  der Prozess-Detailansicht seht ihr alle dazu bereits erfassten Use Cases
+  (siehe "Teilprozesse & Use Cases im ersten Block" oben). Zusätzlich lässt
+  sich in der Use-Case-Detailansicht derselbe Use Case über "Weitere
+  Prozesse" auch bei beliebig vielen anderen Prozessen als verknüpft
+  anzeigen – er taucht dann in allen diesen Prozess-Detailansichten auf.
 - **Kostenstelle & Team pflichtig**: Sowohl bei Ideen als auch bei Prozessen
   müssen Kostenstelle und Team aus einem Dropdown gewählt werden (auch
   schon beim schnellen Erfassen). Beide kommen aus der Datenbank
