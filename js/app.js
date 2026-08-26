@@ -64,7 +64,6 @@ const I18N = {
       "Aus Sicherheitsgründen gibt es keine offene Registrierung mehr. Schick mir kurz deinen Namen, die gewünschte E-Mail-Adresse sowie die Kostenstelle(n) und das/die Team(s), für die du Zugriff brauchst – ich lege dir dann ein Konto an und schicke dir ein Start-Passwort.",
     requestAccessMailBtn: "📧 Mail an den Admin öffnen",
     requestAccessTeamsNote: "Geht auch ganz einfach per Nachricht in Teams.",
-    onboardingBannerText: "📋 Anleitung",
     errorPrefix: "Fehler: ",
     forgotPasswordContactMsg: "Bitte melde dich bei d.goos@house-of-communication.com – dein Passwort wird manuell zurückgesetzt.",
     setNewPasswordTitle: "Neues Passwort setzen",
@@ -85,15 +84,33 @@ const I18N = {
     profileErrorDesc:
       "Es gab ein Problem beim Laden deines Konto-Profils. Bitte kurz neu laden oder bei d.goos@house-of-communication.com melden.",
 
+    startTab: "Start",
     ideasTab: "Ideen",
     processesTab: "Prozesse",
     dashboardTab: "Auswertungen",
     dashboardHeaderTitle: "Auswertungen",
-    adminNav: "🛡 Freigaben",
-    exportNav: "🔄 Export",
     logoutBtn: "Logout",
     ideasHeaderTitle: "Ideen",
     processesHeaderTitle: "Prozesse",
+
+    greetingMorning: "Guten Morgen",
+    greetingAfternoon: "Guten Tag",
+    greetingEvening: "Guten Abend",
+    aiPotentialAvgLabel: "Ø KI-Potenzial im Bereich",
+    statOpenIdeasLabel: "Offene Ideen",
+    statInProgressLabel: "In Umsetzung",
+    statProcessesLabel: "Prozesse dokumentiert",
+    quickAccessTitle: "Schnellzugriff",
+    manageMoreTitle: "Verwaltung & mehr",
+    recentlyEditedTitle: "Zuletzt bearbeitet",
+    emptyRecentlyEdited: "Noch nichts bearbeitet.",
+    utilGuideLabel: "Anleitung",
+    utilTeamsLabel: "Teams",
+    utilExportLabel: "Export",
+    utilPermissionsLabel: "Freigaben",
+    utilSettingsLabel: "Einstellungen",
+    adminOnlyTag: "Admin",
+    brandFooterCaption: "Ein Tool von",
 
     newIdeaLabel: "Neue Idee erfassen",
     ideaPlaceholder: "z.B. Automatische Zusammenfassung von Kundenmails per KI...",
@@ -330,7 +347,6 @@ const I18N = {
     allTeamsScope: "Alle Teams (ganze Kostenstelle)",
     translatedReadonlyTitle: "Übersetzte Ansicht – zum Bearbeiten auf Deutsch (DE) umschalten.",
     themeToggleTitle: "Hell-/Dunkelmodus umschalten",
-    teamsNav: "🧩 Teams",
     teamsManagementTitle: "Teams verwalten",
     emptyTeamsForKostenstelle: "Noch keine Teams für diese Kostenstelle angelegt.",
     renameTeamBtn: "Umbenennen",
@@ -391,7 +407,6 @@ const I18N = {
       "For security reasons there's no open self-registration anymore. Just send me your name, the email address you'd like to use, and the cost center(s) and team(s) you need access to - I'll set up an account and send you a starting password.",
     requestAccessMailBtn: "📧 Open email to admin",
     requestAccessTeamsNote: "A quick Teams message works just as well.",
-    onboardingBannerText: "📋 Guide",
     errorPrefix: "Error: ",
     forgotPasswordContactMsg: "Please contact d.goos@house-of-communication.com - your password will be reset manually.",
     setNewPasswordTitle: "Set a new password",
@@ -412,15 +427,33 @@ const I18N = {
     profileErrorDesc:
       "There was a problem loading your account profile. Please reload, or reach out to d.goos@house-of-communication.com.",
 
+    startTab: "Start",
     ideasTab: "Ideas",
     processesTab: "Processes",
     dashboardTab: "Analytics",
     dashboardHeaderTitle: "Analytics",
-    adminNav: "🛡 Approvals",
-    exportNav: "🔄 Export",
     logoutBtn: "Log out",
     ideasHeaderTitle: "Ideas",
     processesHeaderTitle: "Processes",
+
+    greetingMorning: "Good morning",
+    greetingAfternoon: "Good afternoon",
+    greetingEvening: "Good evening",
+    aiPotentialAvgLabel: "Avg. AI potential in your area",
+    statOpenIdeasLabel: "Open ideas",
+    statInProgressLabel: "In progress",
+    statProcessesLabel: "Processes documented",
+    quickAccessTitle: "Quick access",
+    manageMoreTitle: "Manage & more",
+    recentlyEditedTitle: "Recently edited",
+    emptyRecentlyEdited: "Nothing edited yet.",
+    utilGuideLabel: "Guide",
+    utilTeamsLabel: "Teams",
+    utilExportLabel: "Export",
+    utilPermissionsLabel: "Access",
+    utilSettingsLabel: "Settings",
+    adminOnlyTag: "Admin",
+    brandFooterCaption: "A tool by",
 
     newIdeaLabel: "Capture a new idea",
     ideaPlaceholder: "e.g. Automatic summary of customer emails via AI...",
@@ -656,7 +689,6 @@ const I18N = {
     allTeamsScope: "All teams (whole cost center)",
     translatedReadonlyTitle: "Translated view – switch to German (DE) to edit.",
     themeToggleTitle: "Toggle light/dark mode",
-    teamsNav: "🧩 Teams",
     teamsManagementTitle: "Manage teams",
     emptyTeamsForKostenstelle: "No teams set up for this cost center yet.",
     renameTeamBtn: "Rename",
@@ -915,13 +947,14 @@ function currentRoute() {
   if (m) return { view: "idea-detail", id: m[1] };
   m = hash.match(/^#\/process\/([^/]+)$/);
   if (m) return { view: "process-detail", id: m[1] };
+  if (hash === "#/ideas") return { view: "idea-list" };
   if (hash === "#/processes") return { view: "process-list" };
   if (hash === "#/dashboard") return { view: "dashboard" };
   if (hash === "#/settings") return { view: "settings" };
   if (hash === "#/admin") return { view: "admin" };
   if (hash === "#/export") return { view: "export" };
   if (hash === "#/teams") return { view: "teams" };
-  return { view: "idea-list" };
+  return { view: "start" };
 }
 
 let lastRenderedHash = window.location.hash;
@@ -1479,6 +1512,7 @@ async function deleteProcessResource(id) {
 function tabBar(active) {
   return `
     <div class="tabbar">
+      <button data-tab="start" class="${active === "start" ? "active" : ""}">${t("startTab")}</button>
       <button data-tab="processes" class="${active === "processes" ? "active" : ""}">${t("processesTab")}</button>
       <button data-tab="ideas" class="${active === "ideas" ? "active" : ""}">${t("ideasTab")}</button>
       <button data-tab="dashboard" class="${active === "dashboard" ? "active" : ""}">${t("dashboardTab")}</button>
@@ -1486,7 +1520,7 @@ function tabBar(active) {
   `;
 }
 
-const TAB_HASHES = { ideas: "", processes: "#/processes", dashboard: "#/dashboard" };
+const TAB_HASHES = { start: "", processes: "#/processes", ideas: "#/ideas", dashboard: "#/dashboard" };
 
 function bindTabBar() {
   document.querySelectorAll(".tabbar button").forEach((btn) => {
@@ -1914,11 +1948,6 @@ async function renderList() {
       <h1>${t("ideasHeaderTitle")}</h1>
       <div class="actions">
         ${langToggleButton()}${themeToggleButton()}
-        ${exportNavButton()}
-        ${teamsNavButton()}
-        ${onboardingNavButton()}
-        ${adminNavButton()}
-        <button class="icon-btn" id="settings-btn">⚙</button>
         <button class="icon-btn" id="logout-btn">${t("logoutBtn")}</button>
       </div>
     </header>
@@ -1941,9 +1970,6 @@ async function renderList() {
   `;
 
   bindTabBar();
-  bindAdminNavButton();
-  bindExportNavButton();
-  bindTeamsNavButton();
   bindLangToggle();
   bindThemeToggle();
   bindDepartmentTeamFields("capture");
@@ -1965,9 +1991,6 @@ async function renderList() {
     renderIdeaList();
   });
   document.getElementById("logout-btn").addEventListener("click", guardedLogout);
-  document.getElementById("settings-btn").addEventListener("click", () => {
-    window.location.hash = "#/settings";
-  });
 
   document.getElementById("save-capture").addEventListener("click", async () => {
     const ta = document.getElementById("quick-note");
@@ -2107,7 +2130,7 @@ async function renderDetail(id) {
     idea = ideasCache.find((i) => i.id === id);
   }
   if (!idea) {
-    window.location.hash = "";
+    window.location.hash = "#/ideas";
     return;
   }
   if (processesCache.length === 0) {
@@ -2391,7 +2414,7 @@ async function renderDetail(id) {
   updatePriorityBanner();
 
   document.getElementById("back-btn").addEventListener("click", () => {
-    window.location.hash = "";
+    window.location.hash = "#/ideas";
   });
 
   document.getElementById("delete-btn").addEventListener("click", async () => {
@@ -2400,7 +2423,7 @@ async function renderDetail(id) {
     if (ok) {
       toast(t("ideaDeletedMsg"));
       clearUnsavedChanges();
-      window.location.hash = "";
+      window.location.hash = "#/ideas";
     }
   });
 
@@ -2534,11 +2557,6 @@ async function renderProcessList() {
       <h1>${t("processesHeaderTitle")}</h1>
       <div class="actions">
         ${langToggleButton()}${themeToggleButton()}
-        ${exportNavButton()}
-        ${teamsNavButton()}
-        ${onboardingNavButton()}
-        ${adminNavButton()}
-        <button class="icon-btn" id="settings-btn">⚙</button>
         <button class="icon-btn" id="logout-btn">${t("logoutBtn")}</button>
       </div>
     </header>
@@ -2560,9 +2578,6 @@ async function renderProcessList() {
   `;
 
   bindTabBar();
-  bindAdminNavButton();
-  bindExportNavButton();
-  bindTeamsNavButton();
   bindLangToggle();
   bindThemeToggle();
   bindDepartmentTeamFields("pcapture");
@@ -2580,9 +2595,6 @@ async function renderProcessList() {
     renderProcessListItems();
   });
   document.getElementById("logout-btn").addEventListener("click", guardedLogout);
-  document.getElementById("settings-btn").addEventListener("click", () => {
-    window.location.hash = "#/settings";
-  });
 
   document.getElementById("save-process").addEventListener("click", async () => {
     const ta = document.getElementById("process-name");
@@ -3272,51 +3284,6 @@ function renderProfileError() {
     </div>
   `;
   document.getElementById("error-logout-btn").addEventListener("click", guardedLogout);
-}
-
-function adminNavButton() {
-  return currentProfile && currentProfile.is_admin
-    ? `<button class="icon-btn" id="admin-btn">${t("adminNav")}</button>`
-    : "";
-}
-
-function bindAdminNavButton() {
-  const btn = document.getElementById("admin-btn");
-  if (btn) {
-    btn.addEventListener("click", () => {
-      window.location.hash = "#/admin";
-    });
-  }
-}
-
-function exportNavButton() {
-  return `<button class="icon-btn" id="export-btn">${t("exportNav")}</button>`;
-}
-
-function teamsNavButton() {
-  return `<button class="icon-btn" id="teams-btn">${t("teamsNav")}</button>`;
-}
-
-function bindTeamsNavButton() {
-  const btn = document.getElementById("teams-btn");
-  if (btn) {
-    btn.addEventListener("click", () => {
-      window.location.hash = "#/teams";
-    });
-  }
-}
-
-function onboardingNavButton() {
-  return `<a class="icon-btn" href="https://claude.ai/code/artifact/a5713396-1a29-499d-9edb-4b642a6f1ace" target="_blank" rel="noopener">${t("onboardingBannerText")}</a>`;
-}
-
-function bindExportNavButton() {
-  const btn = document.getElementById("export-btn");
-  if (btn) {
-    btn.addEventListener("click", () => {
-      window.location.hash = "#/export";
-    });
-  }
 }
 
 // ---------- View: Export (App -> Excel-Katalog Sync) ----------
@@ -4412,11 +4379,6 @@ async function renderDashboard() {
       <h1>${t("dashboardHeaderTitle")}</h1>
       <div class="actions">
         ${langToggleButton()}${themeToggleButton()}
-        ${exportNavButton()}
-        ${teamsNavButton()}
-        ${onboardingNavButton()}
-        ${adminNavButton()}
-        <button class="icon-btn" id="settings-btn">⚙</button>
         <button class="icon-btn" id="logout-btn">${t("logoutBtn")}</button>
       </div>
     </header>
@@ -4429,19 +4391,194 @@ async function renderDashboard() {
   `;
 
   bindTabBar();
-  bindAdminNavButton();
-  bindExportNavButton();
-  bindTeamsNavButton();
   bindLangToggle();
   bindThemeToggle();
   document.getElementById("logout-btn").addEventListener("click", guardedLogout);
-  document.getElementById("settings-btn").addEventListener("click", () => {
-    window.location.hash = "#/settings";
-  });
 
   ideasCache = await loadIdeas();
   processesCache = await loadProcesses();
   renderDashboardBody();
+}
+
+// ---------- Start (Startseite/Cockpit) ----------
+
+function greetingText() {
+  const h = new Date().getHours();
+  if (h < 12) return t("greetingMorning");
+  if (h < 18) return t("greetingAfternoon");
+  return t("greetingEvening");
+}
+
+function longDateText() {
+  return new Date().toLocaleDateString(currentLang === "en" ? "en-GB" : "de-DE", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+  });
+}
+
+function aiPotentialAverage() {
+  if (!processesCache.length) return 0;
+  return processesCache.reduce((sum, p) => sum + (p.ai_potential || 3), 0) / processesCache.length;
+}
+
+// Chevron-Logo + Funken aus icons/icon.svg als Inline-SVG, damit die drei
+// Segmente einzeln animiert werden können (siehe .logo-mark in style.css).
+function appLogoMark(animated) {
+  return `
+    <svg class="logo-mark${animated ? " animated" : ""}" width="22" height="22" viewBox="0 0 512 512">
+      <g fill="none" stroke="#ffffff" stroke-width="30" stroke-linecap="round" stroke-linejoin="round">
+        <path class="chev chev1" d="M120,166 L176,166 L212,256 L176,346 L120,346"/>
+        <path class="chev chev2" d="M212,166 L268,166 L304,256 L268,346 L212,346" opacity="0.75"/>
+        <path class="chev chev3" d="M304,166 L360,166 L392,256 L360,346 L304,346" opacity="0.5"/>
+      </g>
+      <path class="spark" fill="#ffd166" d="M388,96 L400,132 L436,144 L400,156 L388,192 L376,156 L340,144 L376,132 Z"/>
+    </svg>
+  `;
+}
+
+function startRingSvg(pct) {
+  const r = 26;
+  const c = 2 * Math.PI * r;
+  const target = c * (1 - Math.min(1, Math.max(0, pct)));
+  return `
+    <svg width="64" height="64" viewBox="0 0 64 64" style="--ring-target:${target.toFixed(1)}">
+      <circle class="ring-track" cx="32" cy="32" r="${r}" style="stroke-dasharray:${c.toFixed(1)}"></circle>
+      <circle class="ring-fill" cx="32" cy="32" r="${r}" style="stroke-dasharray:${c.toFixed(1)}"></circle>
+    </svg>
+  `;
+}
+
+function startStatTile(count, label, delay) {
+  return `
+    <div class="stat-tile fade-up" style="animation-delay:${delay}s">
+      <div class="num" data-count="${count}">0</div>
+      <div class="lbl">${label}</div>
+    </div>
+  `;
+}
+
+function animateStartCounts() {
+  const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  document.querySelectorAll("#app [data-count]").forEach((el) => {
+    const target = Number(el.dataset.count);
+    if (reduce) {
+      el.textContent = target;
+      return;
+    }
+    const start = performance.now();
+    const dur = 700;
+    function tick(now) {
+      const p = Math.min(1, (now - start) / dur);
+      el.textContent = Math.round(target * (1 - Math.pow(1 - p, 3)));
+      if (p < 1) requestAnimationFrame(tick);
+    }
+    setTimeout(() => requestAnimationFrame(tick), 480);
+  });
+}
+
+async function renderStart() {
+  if (ideasCache.length === 0) ideasCache = await loadIdeas();
+  if (processesCache.length === 0) processesCache = await loadProcesses();
+
+  const openIdeas = ideasCache.filter((i) => i.status !== "done" && i.status !== "discarded").length;
+  const inProgress = ideasCache.filter((i) => i.status === "in_progress").length;
+  const recent = [...ideasCache].sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at)).slice(0, 3);
+  const avgAi = aiPotentialAverage();
+  const isAdmin = currentProfile && currentProfile.is_admin;
+
+  $app.innerHTML = `
+    <header class="topbar hero">
+      <div class="hero-top">
+        <div class="brand-lockup">
+          <div class="hoc-chip"><img src="icons/hoc-mark.png" alt="House of Communication" /></div>
+          <div class="brand-div"></div>
+          ${appLogoMark(true)}
+          <span class="app-name">${escapeHtml(t("appName"))}</span>
+        </div>
+        <div class="hero-actions">
+          ${langToggleButton()}${themeToggleButton()}
+          <button class="icon-btn" id="logout-btn">${t("logoutBtn")}</button>
+        </div>
+      </div>
+
+      <div class="greet-row">
+        <div class="greet">${greetingText()}<span class="wave">👋</span></div>
+        <div class="sub">${longDateText()}</div>
+      </div>
+
+      <div class="ring-wrap">
+        ${startRingSvg(avgAi / 5)}
+        <div>
+          <div class="ring-value">${avgAi.toFixed(1).replace(".", currentLang === "en" ? "." : ",")} / 5</div>
+          <div class="ring-label">${t("aiPotentialAvgLabel")}</div>
+        </div>
+      </div>
+    </header>
+
+    <div class="stat-row">
+      ${startStatTile(openIdeas, t("statOpenIdeasLabel"), 0.05)}
+      ${startStatTile(inProgress, t("statInProgressLabel"), 0.12)}
+      ${startStatTile(processesCache.length, t("statProcessesLabel"), 0.19)}
+    </div>
+
+    <main>
+      ${tabBar("start")}
+
+      <div class="section-title">${t("quickAccessTitle")}</div>
+      <div class="tile-grid action-row">
+        <div class="tile fade-up" data-hash="#/processes" style="animation-delay:.26s"><span class="ic">⚙️</span><span class="lbl">${t("processesTab")}</span></div>
+        <div class="tile fade-up" data-hash="#/ideas" style="animation-delay:.32s"><span class="ic">💡</span><span class="lbl">${t("ideasTab")}</span></div>
+        <div class="tile fade-up" data-hash="#/dashboard" style="animation-delay:.38s"><span class="ic">📊</span><span class="lbl">${t("dashboardTab")}</span></div>
+      </div>
+
+      <div class="section-title" style="margin-top:20px;">${t("manageMoreTitle")}</div>
+      <div class="tile-grid util-row">
+        <div class="tile fade-up" data-href="https://claude.ai/code/artifact/a5713396-1a29-499d-9edb-4b642a6f1ace" style="animation-delay:.46s"><span class="ic">📋</span><span class="lbl">${t("utilGuideLabel")}</span></div>
+        <div class="tile fade-up" data-hash="#/teams" style="animation-delay:.5s"><span class="ic">🧩</span><span class="lbl">${t("utilTeamsLabel")}</span></div>
+        <div class="tile fade-up" data-hash="#/export" style="animation-delay:.54s"><span class="ic">🔄</span><span class="lbl">${t("utilExportLabel")}</span></div>
+        ${
+          isAdmin
+            ? `<div class="tile fade-up" data-hash="#/admin" style="animation-delay:.58s"><span class="admin-tag">${t("adminOnlyTag")}</span><span class="ic">🛡️</span><span class="lbl">${t("utilPermissionsLabel")}</span></div>`
+            : ""
+        }
+        <div class="tile fade-up" data-hash="#/settings" style="animation-delay:.62s"><span class="ic">⚙️</span><span class="lbl">${t("utilSettingsLabel")}</span></div>
+      </div>
+
+      <div class="section-title" style="margin-top:20px;">${t("recentlyEditedTitle")}</div>
+      <div id="start-recent">
+        ${recent.length ? recent.map((idea) => ideaCard(idea)).join("") : `<div class="empty-state">${t("emptyRecentlyEdited")}</div>`}
+      </div>
+
+      <div class="brand-footer">
+        <div class="caption">${t("brandFooterCaption")}</div>
+        <div class="plate"><img src="icons/hoc-logo.png" alt="Serviceplan Group – House of Communication" /></div>
+      </div>
+    </main>
+  `;
+
+  bindTabBar();
+  bindLangToggle();
+  bindThemeToggle();
+  document.getElementById("logout-btn").addEventListener("click", guardedLogout);
+
+  document.querySelectorAll("[data-hash]").forEach((el) => {
+    el.addEventListener("click", () => {
+      window.location.hash = el.dataset.hash;
+    });
+  });
+  document.querySelectorAll("[data-href]").forEach((el) => {
+    el.addEventListener("click", () => {
+      window.open(el.dataset.href, "_blank", "noopener");
+    });
+  });
+  document.querySelectorAll("#start-recent .idea-item").forEach((el) => {
+    el.addEventListener("click", () => {
+      window.location.hash = `#/idea/${el.dataset.id}`;
+    });
+  });
+
+  animateStartCounts();
 }
 
 async function render() {
@@ -4487,8 +4624,10 @@ async function render() {
     await renderExportSync();
   } else if (route.view === "teams") {
     await renderTeamsManagement();
-  } else {
+  } else if (route.view === "idea-list") {
     await renderList();
+  } else {
+    await renderStart();
   }
 }
 

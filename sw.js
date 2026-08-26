@@ -1,4 +1,4 @@
-const CACHE_NAME = "ai-ideen-v25";
+const CACHE_NAME = "ai-ideen-v26";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -10,6 +10,8 @@ const APP_SHELL = [
   "./icons/icon-192.png",
   "./icons/icon-512.png",
   "./icons/icon-light-192.png",
+  "./icons/hoc-mark.png",
+  "./icons/hoc-logo.png",
 ];
 
 self.addEventListener("install", (event) => {

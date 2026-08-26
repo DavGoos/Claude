@@ -239,6 +239,13 @@ Gedächtnisstütze, die mit der Idee gespeichert wird.
 
 ## Was die App kann
 
+- **Start als Cockpit**: Beim Öffnen der App landet ihr im Tab "Start" –
+  Begrüßung, Ø KI-Potenzial über alle Prozesse als Ring, Kennzahlen (offene
+  Ideen, in Umsetzung, dokumentierte Prozesse), Schnellzugriff auf
+  Prozesse/Ideen/Auswertungen, eine Kachel-Reihe "Verwaltung & mehr"
+  (Anleitung, Teams, Export, für Admins zusätzlich Freigaben, Einstellungen –
+  bündelt, was früher als einzelne Icons in jedem Tab-Header stand) sowie die
+  zuletzt bearbeiteten Ideen. Zeigt außerdem das Logo des Bereichs.
 - **Schnell erfassen**: Kurznotiz eintippen, speichern – fertig.
 - **Später ausarbeiten**: Beschreibung, Tags, Status pro Idee ergänzen.
 - **Bewerten**: Nutzen / Machbarkeit / Aufwand / Risiko einschätzen, die App

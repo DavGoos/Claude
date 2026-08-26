@@ -930,3 +930,395 @@ textarea.field { min-height: 70px; resize: vertical; }
   width: 100%;
   height: 150px;
 }
+
+/* ============================================================
+   Startseite (Cockpit) - Begrüßung, KI-Potenzial-Ring, Kennzahlen und
+   Kachel-Kurzwahl. Nutzt bewusst dieselben Tokens (--accent, --surface,
+   --radius, ...) wie der Rest der App, damit sie sich nicht wie ein
+   Fremdkörper anfühlt - siehe README/Auswertungen für den Präzedenzfall
+   "eigene Ansicht, gleiche Bausteine".
+   ============================================================ */
+header.topbar.hero {
+  display: block;
+  padding: calc(env(safe-area-inset-top) + 16px) 16px 0;
+  overflow: hidden;
+  position: relative;
+}
+
+header.topbar.hero::before {
+  content: "";
+  position: absolute;
+  inset: -40% -20%;
+  background: linear-gradient(75deg, transparent 40%, rgba(255, 255, 255, 0.14) 48%, rgba(255, 255, 255, 0.14) 52%, transparent 60%);
+  animation: hero-sheen 7s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.hero-top {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.brand-lockup {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.hoc-chip {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  overflow: hidden;
+  flex-shrink: 0;
+  background: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 0 1.5px rgba(255, 255, 255, 0.5);
+}
+
+.hoc-chip img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.brand-div {
+  width: 1px;
+  height: 15px;
+  background: rgba(255, 255, 255, 0.4);
+  flex-shrink: 0;
+}
+
+.app-name {
+  font-size: 11.5px;
+  font-weight: 700;
+  opacity: 0.92;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+.hero-actions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.greet-row {
+  position: relative;
+  z-index: 2;
+  margin-top: 14px;
+  opacity: 0;
+  animation: hero-fade-slide 0.6s ease 0.05s forwards;
+}
+
+.greet {
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.greet .wave {
+  display: inline-block;
+  animation: hero-wave 2.4s ease-in-out 0.7s 2;
+  transform-origin: 70% 70%;
+}
+
+.hero .sub {
+  font-size: 12.5px;
+  opacity: 0.85;
+  margin-top: 3px;
+}
+
+.ring-wrap {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 16px 0 26px;
+  opacity: 0;
+  animation: hero-fade-slide 0.6s ease 0.2s forwards;
+}
+
+.ring-wrap svg {
+  flex-shrink: 0;
+  animation: hero-ring-glow 2.6s ease-in-out 1.4s infinite;
+}
+
+.ring-value {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.ring-label {
+  font-size: 12px;
+  opacity: 0.85;
+}
+
+.ring-track {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.28);
+  stroke-width: 6;
+}
+
+.ring-fill {
+  fill: none;
+  stroke: #fff;
+  stroke-width: 6;
+  stroke-linecap: round;
+  transform: rotate(-90deg);
+  transform-origin: 50% 50%;
+  stroke-dashoffset: 176;
+  animation: hero-ring-fill 1.3s cubic-bezier(0.2, 0.7, 0.3, 1) 0.4s forwards;
+}
+
+.logo-mark .chev {
+  transform-origin: center;
+}
+
+.logo-mark.animated .chev1 { animation: hero-chev-pulse 2.6s ease-in-out infinite; }
+.logo-mark.animated .chev2 { animation: hero-chev-pulse 2.6s ease-in-out 0.22s infinite; }
+.logo-mark.animated .chev3 { animation: hero-chev-pulse 2.6s ease-in-out 0.44s infinite; }
+.logo-mark.animated .spark { animation: hero-spark-twinkle 2.6s ease-in-out infinite; }
+
+.stat-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin: -30px 16px 4px;
+  position: relative;
+  z-index: 3;
+}
+
+/* Ab Tablet/Desktop-Breite wird der Inhalt in <main> zentriert und auf
+   680px begrenzt (siehe Breite-Regel oben) - Kennzahlen-Reihe liegt aber
+   außerhalb von <main> (wegen des Überlapp-Effekts in den Header hinein)
+   und braucht deshalb dieselbe Begrenzung extra. */
+@media (min-width: 860px) {
+  .stat-row {
+    max-width: 680px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
+
+.stat-tile {
+  position: relative;
+  overflow: hidden;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px 10px;
+  text-align: center;
+  box-shadow: 0 10px 24px -14px rgba(0, 0, 0, 0.5);
+}
+
+.stat-tile::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -60%;
+  width: 40%;
+  height: 100%;
+  background: linear-gradient(100deg, transparent, color-mix(in srgb, var(--accent-2) 35%, transparent), transparent);
+  animation: hero-shine 1.1s ease 1.4s forwards;
+}
+
+.stat-tile .num {
+  font-size: 21px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.stat-tile .lbl {
+  font-size: 10.5px;
+  color: var(--text-dim);
+  margin-top: 2px;
+  line-height: 1.3;
+}
+
+.tile-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin: 4px 0 4px;
+}
+
+.tile {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+  cursor: pointer;
+  position: relative;
+}
+
+.tile:hover {
+  transform: translateY(-3px);
+  border-color: var(--accent);
+  box-shadow: 0 10px 20px -12px color-mix(in srgb, var(--accent) 60%, transparent);
+}
+
+.tile:active { transform: translateY(-1px) scale(0.97); }
+
+.tile .ic { transition: transform 0.2s ease; }
+.tile:hover .ic { transform: scale(1.15) rotate(-4deg); }
+
+.action-row .tile { padding: 14px 8px; }
+.action-row .ic { font-size: 20px; }
+.action-row .lbl { font-size: 11.5px; font-weight: 600; }
+
+.util-row .tile { padding: 11px 6px; }
+.util-row .ic { font-size: 16px; }
+.util-row .lbl { font-size: 10.5px; font-weight: 600; color: var(--text-dim); }
+
+.admin-tag {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent);
+  border-radius: 999px;
+  padding: 1px 5px;
+}
+
+.brand-footer {
+  margin: 22px 4px 6px;
+  text-align: center;
+}
+
+.brand-footer .caption {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-dim);
+  margin-bottom: 8px;
+}
+
+.brand-footer .plate {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 10px 16px;
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.04), 0 8px 20px -14px rgba(0, 0, 0, 0.3);
+}
+
+.brand-footer .plate img {
+  display: block;
+  height: 20px;
+  width: auto;
+}
+
+.fade-up {
+  opacity: 0;
+  transform: translateY(10px);
+  animation: hero-fade-up 0.45s ease forwards;
+}
+
+#start-recent .idea-item {
+  opacity: 0;
+  transform: translateX(-14px);
+  animation: hero-slide-in 0.5s cubic-bezier(0.2, 0.9, 0.3, 1.2) forwards;
+}
+
+#start-recent .idea-item:nth-child(1) { animation-delay: 0.78s; }
+#start-recent .idea-item:nth-child(2) { animation-delay: 0.86s; }
+#start-recent .idea-item:nth-child(3) { animation-delay: 0.94s; }
+
+@keyframes hero-sheen {
+  0% { transform: translateX(-30%); }
+  50% { transform: translateX(15%); }
+  100% { transform: translateX(-30%); }
+}
+
+@keyframes hero-fade-slide {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes hero-fade-up {
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes hero-wave {
+  0%, 100% { transform: rotate(0deg); }
+  15% { transform: rotate(16deg); }
+  30% { transform: rotate(-8deg); }
+  45% { transform: rotate(14deg); }
+  60% { transform: rotate(0deg); }
+}
+
+@keyframes hero-ring-fill {
+  to { stroke-dashoffset: var(--ring-target, 46); }
+}
+
+@keyframes hero-ring-glow {
+  0%, 100% { filter: drop-shadow(0 0 0px rgba(255, 255, 255, 0)); }
+  50% { filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.55)); }
+}
+
+@keyframes hero-chev-pulse {
+  0%, 60%, 100% { opacity: 0.55; }
+  20% { opacity: 1; }
+}
+
+@keyframes hero-spark-twinkle {
+  0%, 100% { opacity: 0.5; transform: scale(0.85) rotate(0deg); }
+  50% { opacity: 1; transform: scale(1.05) rotate(8deg); }
+}
+
+@keyframes hero-shine {
+  to { left: 130%; }
+}
+
+@keyframes hero-slide-in {
+  to { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  header.topbar.hero::before,
+  .greet-row,
+  .ring-wrap,
+  .ring-wrap svg,
+  .ring-fill,
+  .logo-mark.animated .chev1,
+  .logo-mark.animated .chev2,
+  .logo-mark.animated .chev3,
+  .logo-mark.animated .spark,
+  .stat-tile::after,
+  .greet .wave,
+  .fade-up,
+  #start-recent .idea-item {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+
+  .ring-fill { stroke-dashoffset: var(--ring-target, 46) !important; }
+}
