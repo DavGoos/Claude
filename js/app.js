@@ -1201,7 +1201,13 @@ async function logout() {
 
 // ---------- Data: Ideas ----------
 
-const IDEA_SELECT = "*, processes(id, name, name_en), parent:parent_idea_id(id, quick_note, quick_note_en, catalog_id, status)";
+// "processes!process_id" statt nur "processes": seit es mit idea_processes
+// (siehe schema.sql) einen zweiten (n:m-)Pfad von ideas zu processes gibt,
+// meldet PostgREST bei einem unqualifizierten Embed einen Ambiguitätsfehler
+// ("more than one relationship was found") - der Spaltenname legt die
+// bestehende process_id-Beziehung eindeutig fest.
+const IDEA_SELECT =
+  "*, processes!process_id(id, name, name_en), parent:parent_idea_id(id, quick_note, quick_note_en, catalog_id, status)";
 
 // Weitere Prozesse (idea_processes, siehe schema.sql) bewusst NICHT Teil von
 // IDEA_SELECT: das ist eine separate, zusätzliche Verknüpfung obendrauf -
