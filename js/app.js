@@ -332,8 +332,8 @@ const I18N = {
     createUserErrorPrefix: "Fehler beim Anlegen: ",
     prepareRegistrationMailBtn: "✉️ Info-Mail vorbereiten",
     registrationMailValidationMsg: "Bitte zuerst E-Mail und Passwort ausfüllen.",
-    registrationMailSubject: "Zugang zur AI Use Case App",
-    registrationMailBody: "Hallo,\n\ndein Zugang zur AI Use Case App wurde eingerichtet.\n\nE-Mail: {email}\nStart-Passwort: {password}\n(Bitte gleich nach der ersten Anmeldung ändern.)\n\n[Kurzbeschreibung der App]\n\nApp: {appUrl}\nAnleitung: {guideUrl}\n\nBei Fragen meld dich gern.\n\nViele Grüße",
+    registrationMailSubject: "Zugang zur App „Process- and AI-Usecases Management“",
+    registrationMailBody: "Hallo,\n\nDir wurde ein Zugang zu der App „Process- and AI-Usecases Management“ eingerichtet.\n\nMit folgenden Credentials kannst du dich einloggen:\n\nE-Mail: {email}\nStart-Passwort: {password}\n(Bitte gleich nach der ersten Anmeldung ändern.)\n\nDie Grundidee dieser App ist es, eure Ideen rund um das Thema AI und Prozessverbesserung auf eine sehr einfache Art und Weise aufzunehmen. Im Bereich \"Prozesse\" könnt ihr die grundlegenden, wiederkehrenden Abläufe eurer täglichen Arbeit beschreiben (die Verwendung dieser Funktion ist optional und kann sich hilfreich beim Identifizieren von Optimierungspotenzial auswirken). Der eigentliche Kernbereich ist der Tab \"Ideen\". Hier könnt ihr auf eine sehr einfache und schnelle Art und Weise alle Ideen, die euch zu welchen KI-Einsatzmöglichkeiten auch immer gerade durch den Kopf schießen, aufnehmen und später in Ruhe weiter ausfeilen. Falls ihr eure Prozesse dokumentiert habt, könnt ihr hier AI-Cases an den jeweiligen Steps verlinken, so dass sich im Ergebnis eine Art AI-/Prozess-Landkarte ergibt.\n\nHier gelangt ihr zur App: {appUrl}\n\nEine detaillierte Anleitung findet ihr hier: {guideUrl}\n\nÜbrigens: Die Nutzung der App ist optional, nicht verpflichtend und ersetzt nicht die Meldung der AI-Cases im Rahmen der AI-Ambassador Organisation (die App kann euch aber auch hierbei unterstützen, indem sie euch z.B. den Input für eure usecases-Liste auf einen Klick copy-paste-ready liefert).\n\nBitte beachtet, dass sich die App gerade noch im Aufbau befindet. Etwaige Bugs bitte gern berichten. Außerdem kann sich Funktionalität hier und da noch verändern.\n\nAnsonsten viel Spaß damit und melde dich gern bei Fragen.\n\nViele Grüße,\nDavid",
     impersonateBtn: "🔑 Testen",
     impersonatePopupBlockedMsg: "Popup-Blocker verhindert den Test-Tab – bitte für diese Seite erlauben.",
     impersonateErrorPrefix: "Fehler beim Test-Login: ",
@@ -697,8 +697,8 @@ const I18N = {
     createUserErrorPrefix: "Error creating account: ",
     prepareRegistrationMailBtn: "✉️ Prepare info email",
     registrationMailValidationMsg: "Please fill in email and password first.",
-    registrationMailSubject: "Access to the AI Use Case App",
-    registrationMailBody: "Hi,\n\nyour access to the AI Use Case App has been set up.\n\nEmail: {email}\nStarting password: {password}\n(Please change it right after your first login.)\n\n[Short description of the app]\n\nApp: {appUrl}\nGuide: {guideUrl}\n\nLet me know if you have any questions.\n\nBest regards",
+    registrationMailSubject: "Access to the \"Process- and AI-Usecases Management\" app",
+    registrationMailBody: "Hi,\n\nYou've been given access to the \"Process- and AI-Usecases Management\" app.\n\nYou can log in with these credentials:\n\nEmail: {email}\nStarting password: {password}\n(Please change it right after your first login.)\n\nThe basic idea behind this app is to capture your ideas around AI and process improvement in a very simple way. In the \"Processes\" tab you can describe the basic, recurring workflows of your daily work (using this feature is optional and can help identify potential for improvement). The actual core area is the \"Ideas\" tab. Here you can quickly and easily capture any idea for a possible AI use case that comes to mind, and refine it later at your own pace. If you've documented your processes, you can link AI cases to the relevant steps there, so you end up with a kind of AI/process map.\n\nHere's the app: {appUrl}\n\nA detailed guide is available here: {guideUrl}\n\nBy the way: using the app is optional, not mandatory, and doesn't replace reporting AI cases as part of the AI Ambassador organization (the app can actually support you there too, e.g. by giving you the input for your use case list ready to copy-paste with one click).\n\nPlease note that the app is still under construction. Feel free to report any bugs. Some functionality may also still change here and there.\n\nOtherwise, have fun with it and feel free to reach out with any questions.\n\nBest regards,\nDavid",
     impersonateBtn: "🔑 Test login",
     impersonatePopupBlockedMsg: "A popup blocker prevented the test tab - please allow popups for this site.",
     impersonateErrorPrefix: "Error starting test login: ",
@@ -3781,7 +3781,7 @@ function accessLevelOptions(selected) {
 }
 
 function registrationMailto(email, password) {
-  const appUrl = window.location.origin + window.location.pathname;
+  const appUrl = "https://davgoos.github.io/Claude/index.html";
   const guideUrl = "https://claude.ai/code/artifact/a5713396-1a29-499d-9edb-4b642a6f1ace";
   const body = t("registrationMailBody")
     .replaceAll("{email}", email)
