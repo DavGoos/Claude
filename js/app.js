@@ -123,11 +123,9 @@ const I18N = {
     emptyIdeas: "Noch keine Ideen hier. Trag oben deine erste Idee ein!",
     loadingIdeas: "Lade Ideen...",
 
-    status_idea: "Idee",
-    status_evaluating: "In Bewertung",
-    status_planned: "Geplant",
+    status_planned: "Geplant / PoC",
     status_in_progress: "In Umsetzung",
-    status_done: "Fertig",
+    status_done: "Integrated",
     status_discarded: "Verworfen",
 
     priority_quickWin: "Quick Win",
@@ -466,11 +464,9 @@ const I18N = {
     emptyIdeas: "No ideas yet. Add your first one above!",
     loadingIdeas: "Loading ideas...",
 
-    status_idea: "Idea",
-    status_evaluating: "Evaluating",
-    status_planned: "Planned",
+    status_planned: "Planned / PoC",
     status_in_progress: "In progress",
-    status_done: "Done",
+    status_done: "Integrated",
     status_discarded: "Discarded",
 
     priority_quickWin: "Quick win",
@@ -737,7 +733,7 @@ const I18N = {
   },
 };
 
-const STATUS_ORDER = ["idea", "evaluating", "planned", "in_progress", "done", "discarded"];
+const STATUS_ORDER = ["planned", "in_progress", "done", "discarded"];
 
 // Kostenstelle (das Pflichtfeld "department" bei ideas/processes) kommt
 // aus der Tabelle "kostenstellen", Team aus der Tabelle "teams" (siehe
@@ -752,7 +748,13 @@ const STATUS_ORDER = ["idea", "evaluating", "planned", "in_progress", "done", "d
 // exakt passt.
 const AI_ROLE_OPTIONS = ["Automatisieren", "Ergänzen", "Ersetzen", "Intelligenter Assistenzpartner"];
 const KPI_KIND_OPTIONS = ["Quantity", "Quality", "Hybrid"];
-const LIST_PRIORITY_OPTIONS = ["in using", "ungültig", "High", "Medium", "Low"];
+// Bei den Status "done" (Integrated) und "discarded" (Verworfen) wird
+// list_priority automatisch gesetzt und ist nicht frei wählbar (siehe
+// listPriorityOptionsHtml/schema.sql-Check-Constraint). Bei allen anderen
+// Status ist nur High/Medium/Low wählbar, Default "Low".
+const LIST_PRIORITY_FORCED_BY_STATUS = { done: "in using", discarded: "ungültig" };
+const LIST_PRIORITY_FREE_OPTIONS = ["High", "Medium", "Low"];
+const LIST_PRIORITY_DEFAULT = "Low";
 
 // Freitext-Felder mit optionaler "_en"-Übersetzungsspalte (vom Admin auf
 // Zuruf im Chat gepflegt, siehe README "Zweisprachige Inhalte").
@@ -1566,6 +1568,20 @@ function selectOptionsFrom(values, selectedValue) {
   return options.join("");
 }
 
+// Priorität (Liste) hängt vom Status ab (siehe LIST_PRIORITY_FORCED_BY_STATUS):
+// bei "done"/"discarded" gibt es nur den erzwungenen Wert, sonst nur
+// High/Medium/Low mit "Low" als Default.
+function listPriorityOptionsHtml(status, currentValue) {
+  const forced = LIST_PRIORITY_FORCED_BY_STATUS[status];
+  if (forced) {
+    return `<option value="${forced}" selected>${forced}</option>`;
+  }
+  const value = LIST_PRIORITY_FREE_OPTIONS.includes(currentValue) ? currentValue : LIST_PRIORITY_DEFAULT;
+  return LIST_PRIORITY_FREE_OPTIONS.map(
+    (v) => `<option value="${v}" ${v === value ? "selected" : ""}>${v}</option>`
+  ).join("");
+}
+
 function teamName(teamId) {
   const tm = teamsCache.find((x) => x.id === teamId);
   return tm ? tm.name : "";
@@ -2312,8 +2328,8 @@ async function renderDetail(id) {
         </select>
 
         <label class="field-label">${t("listPriorityLabel")}</label>
-        <select class="field list-field" id="f-list-priority">
-          ${selectOptionsFrom(LIST_PRIORITY_OPTIONS, idea.list_priority)}
+        <select class="field list-field" id="f-list-priority" ${LIST_PRIORITY_FORCED_BY_STATUS[idea.status] ? "disabled" : ""}>
+          ${listPriorityOptionsHtml(idea.status, idea.list_priority)}
         </select>
 
         <label class="field-label">${t("commentLabel")}</label>
@@ -2400,6 +2416,12 @@ async function renderDetail(id) {
 
   bindDepartmentTeamFields("detail");
   bindExtraProcessesListEvents();
+
+  document.getElementById("f-status").addEventListener("change", (e) => {
+    const listPrioritySelect = document.getElementById("f-list-priority");
+    listPrioritySelect.innerHTML = listPriorityOptionsHtml(e.target.value, listPrioritySelect.value);
+    listPrioritySelect.disabled = Boolean(LIST_PRIORITY_FORCED_BY_STATUS[e.target.value]);
+  });
 
   if (!canWrite) {
     document.querySelectorAll("main input, main textarea, main select, main button").forEach((el) => {

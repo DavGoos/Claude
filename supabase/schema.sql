@@ -414,8 +414,8 @@ create table if not exists ideas (
   quick_note text not null,
   description text not null default '',
   tags text not null default '',
-  status text not null default 'idea'
-    check (status in ('idea', 'evaluating', 'planned', 'in_progress', 'done', 'discarded')),
+  status text not null default 'planned'
+    check (status in ('planned', 'in_progress', 'done', 'discarded')),
   impact smallint not null default 3 check (impact between 1 and 5),
   feasibility smallint not null default 3 check (feasibility between 1 and 5),
   effort smallint not null default 3 check (effort between 1 and 5),
@@ -429,6 +429,16 @@ create table if not exists ideas (
 -- Für Projekte, die die ideas-Tabelle schon vor der Prozess-Verknüpfung
 -- angelegt hatten: Spalte nachträglich ergänzen.
 alter table ideas add column if not exists process_id uuid references processes (id) on delete set null;
+
+-- Migration: Status "idea" ("Idee") und "evaluating" ("In Bewertung")
+-- entfallen (siehe js/app.js STATUS_ORDER) - bestehende Zeilen in diesen
+-- Status werden nach "planned" ("Geplant / PoC") verschoben, bevor der
+-- neue Check-Constraint angezogen wird.
+update ideas set status = 'planned' where status in ('idea', 'evaluating');
+alter table ideas drop constraint if exists ideas_status_check;
+alter table ideas add constraint ideas_status_check
+  check (status in ('planned', 'in_progress', 'done', 'discarded'));
+alter table ideas alter column status set default 'planned';
 
 -- Abteilung (= Kostenstelle) / Team sind Pflichtfelder (Dropdown in der
 -- App, siehe Hinweis bei der processes-Tabelle oben).
@@ -462,7 +472,24 @@ alter table ideas add column if not exists kpi_kind text not null default '';
 alter table ideas add column if not exists quantified_benefit text not null default '';
 alter table ideas add column if not exists qualitative_benefit text not null default '';
 alter table ideas add column if not exists comment text not null default '';
-alter table ideas add column if not exists list_priority text not null default '';
+alter table ideas add column if not exists list_priority text not null default 'Low';
+
+-- Migration: list_priority folgt jetzt zwingend dem Status (siehe
+-- js/app.js LIST_PRIORITY_FORCED_BY_STATUS): "done" ("Integrated") ->
+-- "in using", "discarded" ("Verworfen") -> "ungültig", alle anderen Status
+-- nur High/Medium/Low (Default "Low"). Bestehende Zeilen werden vor dem
+-- Check-Constraint entsprechend nachgezogen.
+update ideas set list_priority = 'in using' where status = 'done' and list_priority <> 'in using';
+update ideas set list_priority = 'ungültig' where status = 'discarded' and list_priority <> 'ungültig';
+update ideas set list_priority = 'Low' where status not in ('done', 'discarded') and list_priority not in ('High', 'Medium', 'Low');
+alter table ideas alter column list_priority set default 'Low';
+alter table ideas drop constraint if exists ideas_list_priority_status_check;
+alter table ideas add constraint ideas_list_priority_status_check
+  check (
+    (status = 'done' and list_priority = 'in using')
+    or (status = 'discarded' and list_priority = 'ungültig')
+    or (status not in ('done', 'discarded') and list_priority in ('High', 'Medium', 'Low'))
+  );
 
 -- Spalte "Systeme" des Excel-Katalogs (zwischen "KI Lösung" und "Input" -
 -- eigene Spalte, kein Teil von "tools"). "skill_level" entspricht der

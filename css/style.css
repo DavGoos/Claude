@@ -16,8 +16,6 @@
      damit Status und Kostenstellen-Akzent nie kollidieren. Für Auswertungen
      zusätzlich als CSS-Variablen verfügbar, damit Diagramme dieselben Farben
      wie die Badges verwenden. */
-  --status-idea: #3987e5;
-  --status-evaluating: #d95926;
   --status-planned: #199e70;
   --status-in_progress: #c98500;
   --status-done: #008300;
@@ -37,8 +35,6 @@
   --danger: #dc2626;
   --success: #16a34a;
 
-  --status-idea: #2a78d6;
-  --status-evaluating: #eb6834;
   --status-planned: #1baf7a;
   --status-in_progress: #eda100;
   --status-done: #008300;
@@ -366,8 +362,6 @@ button {
   border: 1px solid var(--border);
 }
 
-.badge.status-idea { color: var(--status-idea); border-color: color-mix(in srgb, var(--status-idea) 45%, var(--border)); background: color-mix(in srgb, var(--status-idea) 16%, var(--surface-2)); }
-.badge.status-evaluating { color: var(--status-evaluating); border-color: color-mix(in srgb, var(--status-evaluating) 45%, var(--border)); background: color-mix(in srgb, var(--status-evaluating) 16%, var(--surface-2)); }
 .badge.status-planned { color: var(--status-planned); border-color: color-mix(in srgb, var(--status-planned) 45%, var(--border)); background: color-mix(in srgb, var(--status-planned) 16%, var(--surface-2)); }
 .badge.status-in_progress { color: var(--status-in_progress); border-color: color-mix(in srgb, var(--status-in_progress) 45%, var(--border)); background: color-mix(in srgb, var(--status-in_progress) 16%, var(--surface-2)); }
 .badge.status-done { color: var(--status-done); border-color: color-mix(in srgb, var(--status-done) 45%, var(--border)); background: color-mix(in srgb, var(--status-done) 16%, var(--surface-2)); }
