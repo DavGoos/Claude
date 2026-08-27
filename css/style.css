@@ -1100,7 +1100,7 @@ header.topbar.hero::before {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 10px;
-  margin: -30px 16px 4px;
+  margin: -16px 16px 4px;
   position: relative;
   /* header.topbar ist "position: sticky" mit z-index:10 (siehe oben) - ohne
      einen höheren Wert hier würde der Header die Kacheln beim Überlappen
