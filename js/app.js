@@ -332,6 +332,13 @@ const I18N = {
     createUserErrorPrefix: "Fehler beim Anlegen: ",
     prepareRegistrationMailBtn: "✉️ Info-Mail vorbereiten",
     registrationMailValidationMsg: "Bitte zuerst E-Mail und Passwort ausfüllen.",
+    resetPasswordBtn: "🔑 Passwort zurücksetzen",
+    resetPasswordConfirmPrefix: "Neues Passwort für ",
+    resetPasswordConfirmSuffix: " setzen? Die Person kann sich damit ab sofort nicht mehr mit dem alten Passwort einloggen.",
+    passwordResetMsgPrefix: "Neues Passwort gesetzt für ",
+    resetPasswordErrorPrefix: "Fehler beim Zurücksetzen: ",
+    passwordResetMailSubject: "Neues Passwort für die App „Process- and AI-Usecases Management“",
+    passwordResetMailBody: "Hallo,\n\ndein Passwort wurde zurückgesetzt.\n\nE-Mail: {email}\nNeues Passwort: {password}\n(Bitte gleich nach der Anmeldung unter „Einstellungen“ ein eigenes Passwort setzen.)\n\nViele Grüße",
     registrationMailSubject: "Zugang zur App „Process- and AI-Usecases Management“",
     registrationMailBody: "Hallo,\n\nDir wurde ein Zugang zu der App „Process- and AI-Usecases Management“ eingerichtet.\n\nMit folgenden Credentials kannst du dich einloggen:\n\nE-Mail: {email}\nStart-Passwort: {password}\n(Bitte gleich nach der ersten Anmeldung ändern.)\n\nDie Grundidee dieser App ist es, eure Ideen rund um das Thema AI und Prozessverbesserung auf eine sehr einfache Art und Weise aufzunehmen. Im Bereich \"Prozesse\" könnt ihr die grundlegenden, wiederkehrenden Abläufe eurer täglichen Arbeit beschreiben (die Verwendung dieser Funktion ist optional und kann sich hilfreich beim Identifizieren von Optimierungspotenzial auswirken). Der eigentliche Kernbereich ist der Tab \"Ideen\". Hier könnt ihr auf eine sehr einfache und schnelle Art und Weise alle Ideen, die euch zu welchen KI-Einsatzmöglichkeiten auch immer gerade durch den Kopf schießen, aufnehmen und später in Ruhe weiter ausfeilen. Falls ihr eure Prozesse dokumentiert habt, könnt ihr hier AI-Cases an den jeweiligen Steps verlinken, so dass sich im Ergebnis eine Art AI-/Prozess-Landkarte ergibt.\n\nHier gelangt ihr zur App: {appUrl}\n\nEine detaillierte Anleitung findet ihr hier: {guideUrl}\n\nÜbrigens: Die Nutzung der App ist optional, nicht verpflichtend und ersetzt nicht die Meldung der AI-Cases im Rahmen der AI-Ambassador Organisation (die App kann euch aber auch hierbei unterstützen, indem sie euch z.B. den Input für eure usecases-Liste auf einen Klick copy-paste-ready liefert).\n\nBitte beachtet, dass sich die App gerade noch im Aufbau befindet. Etwaige Bugs bitte gern berichten. Außerdem kann sich Funktionalität hier und da noch verändern.\n\nAnsonsten viel Spaß damit und melde dich gern bei Fragen.\n\nViele Grüße,\nDavid",
     impersonateBtn: "🔑 Testen",
@@ -697,6 +704,13 @@ const I18N = {
     createUserErrorPrefix: "Error creating account: ",
     prepareRegistrationMailBtn: "✉️ Prepare info email",
     registrationMailValidationMsg: "Please fill in email and password first.",
+    resetPasswordBtn: "🔑 Reset password",
+    resetPasswordConfirmPrefix: "Set a new password for ",
+    resetPasswordConfirmSuffix: "? They won't be able to log in with the old password anymore after this.",
+    passwordResetMsgPrefix: "New password set for ",
+    resetPasswordErrorPrefix: "Error resetting password: ",
+    passwordResetMailSubject: "New password for the \"Process- and AI-Usecases Management\" app",
+    passwordResetMailBody: "Hi,\n\nyour password has been reset.\n\nEmail: {email}\nNew password: {password}\n(Please set your own password under \"Settings\" right after logging in.)\n\nBest regards",
     registrationMailSubject: "Access to the \"Process- and AI-Usecases Management\" app",
     registrationMailBody: "Hi,\n\nYou've been given access to the \"Process- and AI-Usecases Management\" app.\n\nYou can log in with these credentials:\n\nEmail: {email}\nStarting password: {password}\n(Please change it right after your first login.)\n\nThe basic idea behind this app is to capture your ideas around AI and process improvement in a very simple way. In the \"Processes\" tab you can describe the basic, recurring workflows of your daily work (using this feature is optional and can help identify potential for improvement). The actual core area is the \"Ideas\" tab. Here you can quickly and easily capture any idea for a possible AI use case that comes to mind, and refine it later at your own pace. If you've documented your processes, you can link AI cases to the relevant steps there, so you end up with a kind of AI/process map.\n\nHere's the app: {appUrl}\n\nA detailed guide is available here: {guideUrl}\n\nBy the way: using the app is optional, not mandatory, and doesn't replace reporting AI cases as part of the AI Ambassador organization (the app can actually support you there too, e.g. by giving you the input for your use case list ready to copy-paste with one click).\n\nPlease note that the app is still under construction. Feel free to report any bugs. Some functionality may also still change here and there.\n\nOtherwise, have fun with it and feel free to reach out with any questions.\n\nBest regards,\nDavid",
     impersonateBtn: "🔑 Test login",
@@ -1112,6 +1126,19 @@ async function createUserViaAdmin(email, password) {
   if (error) return { ok: false, message: error.message };
   if (data?.error) return { ok: false, message: data.error };
   return { ok: true, id: data.id };
+}
+
+// Setzt das Passwort einer bestehenden Person direkt über die Edge Function
+// neu (service_role-only, siehe createUserViaAdmin) - für den Fall, dass
+// jemand sein Passwort vergessen hat und es aktuell keinen
+// Self-Service-Reset gibt (siehe requestAccessDesc/forgotPasswordContactMsg).
+async function resetUserPasswordViaAdmin(userId, password) {
+  const { data, error } = await sb.functions.invoke("admin-users", {
+    body: { action: "reset_password", userId, password },
+  });
+  if (error) return { ok: false, message: error.message };
+  if (data?.error) return { ok: false, message: data.error };
+  return { ok: true };
 }
 
 // "Als User anmelden": öffnet einen neuen Tab, der sich per Magic-Link-OTP
@@ -3791,6 +3818,11 @@ function registrationMailto(email, password) {
   return "mailto:" + encodeURIComponent(email) + "?subject=" + encodeURIComponent(t("registrationMailSubject")) + "&body=" + encodeURIComponent(body);
 }
 
+function passwordResetMailto(email, password) {
+  const body = t("passwordResetMailBody").replaceAll("{email}", email).replaceAll("{password}", password);
+  return "mailto:" + encodeURIComponent(email) + "?subject=" + encodeURIComponent(t("passwordResetMailSubject")) + "&body=" + encodeURIComponent(body);
+}
+
 // Zeigt für eine Kostenstelle/Scope-Kombination ("Alle Teams" oder ein
 // einzelnes Team) nur die Personen an, die dort tatsächlich einen Grant
 // haben, statt - wie zuvor - jede freigegebene Person aufzulisten (das
@@ -3925,6 +3957,7 @@ async function renderAdmin() {
               <div class="idea-meta">
                 ${p.is_admin ? `<span class="badge">${t("adminBadge")}</span>` : ""}
                 <button class="btn-secondary" data-impersonate="${escapeHtml(p.email)}" style="padding:8px 14px; font-size:13px;">${t("impersonateBtn")}</button>
+                <button class="btn-secondary" data-reset-password="${p.id}" data-reset-email="${escapeHtml(p.email)}" style="padding:8px 14px; font-size:13px;">${t("resetPasswordBtn")}</button>
               </div>
             </div>
           `
@@ -4029,6 +4062,24 @@ async function renderAdmin() {
 
   document.querySelectorAll("[data-impersonate]").forEach((btn) => {
     btn.addEventListener("click", () => impersonateUser(btn.dataset.impersonate));
+  });
+
+  document.querySelectorAll("[data-reset-password]").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const userId = btn.dataset.resetPassword;
+      const email = btn.dataset.resetEmail;
+      if (!window.confirm(t("resetPasswordConfirmPrefix") + email + t("resetPasswordConfirmSuffix"))) return;
+      const password = generatePassword();
+      btn.disabled = true;
+      const result = await resetUserPasswordViaAdmin(userId, password);
+      btn.disabled = false;
+      if (result.ok) {
+        toast(t("passwordResetMsgPrefix") + email);
+        window.location.href = passwordResetMailto(email, password);
+      } else {
+        toast(t("resetPasswordErrorPrefix") + result.message);
+      }
+    });
   });
 
   document.querySelectorAll("[data-approve]").forEach((btn) => {

@@ -73,6 +73,17 @@ Deno.serve(async (req) => {
       return json({ id: data.user.id, email: data.user.email });
     }
 
+    if (body.action === "reset_password") {
+      const userId = String(body.userId || "");
+      const password = String(body.password || "");
+      if (!userId || password.length < 6) {
+        return json({ error: "User-ID und Passwort (mind. 6 Zeichen) erforderlich." });
+      }
+      const { data, error } = await adminClient.auth.admin.updateUserById(userId, { password });
+      if (error) return json({ error: error.message });
+      return json({ id: data.user.id, email: data.user.email });
+    }
+
     if (body.action === "impersonate") {
       const email = String(body.email || "").trim().toLowerCase();
       if (!email) return json({ error: "E-Mail erforderlich." });
