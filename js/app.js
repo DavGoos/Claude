@@ -330,6 +330,10 @@ const I18N = {
     createUserValidationMsg: "Bitte E-Mail und ein Passwort mit mind. 6 Zeichen angeben.",
     userCreatedMsgPrefix: "Konto angelegt: ",
     createUserErrorPrefix: "Fehler beim Anlegen: ",
+    prepareRegistrationMailBtn: "✉️ Info-Mail vorbereiten",
+    registrationMailValidationMsg: "Bitte zuerst E-Mail und Passwort ausfüllen.",
+    registrationMailSubject: "Zugang zur AI Use Case App",
+    registrationMailBody: "Hallo,\n\ndein Zugang zur AI Use Case App wurde eingerichtet.\n\nE-Mail: {email}\nStart-Passwort: {password}\n(Bitte gleich nach der ersten Anmeldung ändern.)\n\n[Kurzbeschreibung der App]\n\nApp: {appUrl}\nAnleitung: {guideUrl}\n\nBei Fragen meld dich gern.\n\nViele Grüße",
     impersonateBtn: "🔑 Testen",
     impersonatePopupBlockedMsg: "Popup-Blocker verhindert den Test-Tab – bitte für diese Seite erlauben.",
     impersonateErrorPrefix: "Fehler beim Test-Login: ",
@@ -359,6 +363,11 @@ const I18N = {
     emptyKostenstellen: "Noch keine Kostenstellen angelegt.",
     noApprovedForAccessMsg: "Noch keine freigegebenen Kolleg:innen zum Zuweisen.",
     allTeamsScope: "Alle Teams (ganze Kostenstelle)",
+    accessFilterPlaceholder: "Nach E-Mail filtern…",
+    addUserSelectPlaceholder: "Person auswählen…",
+    addUserToScopeBtn: "+ Hinzufügen",
+    noGrantsForScopeMsg: "Noch niemand mit Zugriff.",
+    coveredByAllTeamsMsg: "{n} Person(en) haben hier automatisch Zugriff über „Alle Teams“.",
     translatedReadonlyTitle: "Übersetzte Ansicht – zum Bearbeiten auf Deutsch (DE) umschalten.",
     themeToggleTitle: "Hell-/Dunkelmodus umschalten",
     teamsManagementTitle: "Teams verwalten",
@@ -686,6 +695,10 @@ const I18N = {
     createUserValidationMsg: "Please enter an email and a password with at least 6 characters.",
     userCreatedMsgPrefix: "Account created: ",
     createUserErrorPrefix: "Error creating account: ",
+    prepareRegistrationMailBtn: "✉️ Prepare info email",
+    registrationMailValidationMsg: "Please fill in email and password first.",
+    registrationMailSubject: "Access to the AI Use Case App",
+    registrationMailBody: "Hi,\n\nyour access to the AI Use Case App has been set up.\n\nEmail: {email}\nStarting password: {password}\n(Please change it right after your first login.)\n\n[Short description of the app]\n\nApp: {appUrl}\nGuide: {guideUrl}\n\nLet me know if you have any questions.\n\nBest regards",
     impersonateBtn: "🔑 Test login",
     impersonatePopupBlockedMsg: "A popup blocker prevented the test tab - please allow popups for this site.",
     impersonateErrorPrefix: "Error starting test login: ",
@@ -715,6 +728,11 @@ const I18N = {
     emptyKostenstellen: "No cost centers set up yet.",
     noApprovedForAccessMsg: "No approved colleagues to assign yet.",
     allTeamsScope: "All teams (whole cost center)",
+    accessFilterPlaceholder: "Filter by email…",
+    addUserSelectPlaceholder: "Select person…",
+    addUserToScopeBtn: "+ Add",
+    noGrantsForScopeMsg: "No one has access here yet.",
+    coveredByAllTeamsMsg: "{n} people already have access here via \"All teams\".",
     translatedReadonlyTitle: "Translated view – switch to German (DE) to edit.",
     themeToggleTitle: "Toggle light/dark mode",
     teamsManagementTitle: "Manage teams",
@@ -1275,6 +1293,24 @@ async function setKostenstelleAccess(userId, code, teamId, level) {
     return false;
   }
   if (!level) return true;
+  // Grants wirken additiv (siehe canWriteCombo/readableTeamsForCode): eine
+  // Einzel-Team-Regel kann einen bestehenden Vollzugriff nie einschränken,
+  // sondern höchstens verdecken. Wird hier ein Vollzugriff (team_id null)
+  // gesetzt, werden deshalb vorhandene Einzel-Team-Regeln derselben Person
+  // an dieser Kostenstelle mit entfernt statt als wirkungslose Karteileichen
+  // stehen zu bleiben.
+  if (!teamId) {
+    const { error: cascadeError } = await sb
+      .from("kostenstelle_access")
+      .delete()
+      .eq("user_id", userId)
+      .eq("kostenstelle_code", code)
+      .not("team_id", "is", null);
+    if (cascadeError) {
+      toast(t("saveErrorPrefix") + cascadeError.message);
+      return false;
+    }
+  }
   const { error } = await sb
     .from("kostenstelle_access")
     .insert({ user_id: userId, kostenstelle_code: code, team_id: teamId || null, access_level: level });
@@ -1283,6 +1319,24 @@ async function setKostenstelleAccess(userId, code, teamId, level) {
     return false;
   }
   return true;
+}
+
+// Räumt Einzel-Team-Regeln auf, die schon vor der obigen Cascade-Logik
+// entstanden sind (z.B. weil zuerst ein einzelnes Team freigeschaltet und
+// erst danach Vollzugriff vergeben wurde) - sie waren immer schon wirkungslos
+// (siehe canWriteCombo/readableTeamsForCode), standen aber unangetastet in
+// der DB und sahen in der Verwaltung wie ein aktiver, abweichender Wert aus.
+// Wird bei jedem Öffnen der Admin-Seite einmal ausgeführt.
+async function cleanupRedundantTeamGrants() {
+  const blanketKeys = new Set(
+    accessCache.filter((a) => a.team_id === null).map((a) => `${a.user_id}|${a.kostenstelle_code}`)
+  );
+  const staleIds = accessCache
+    .filter((a) => a.team_id !== null && blanketKeys.has(`${a.user_id}|${a.kostenstelle_code}`))
+    .map((a) => a.id);
+  if (!staleIds.length) return;
+  const { error } = await sb.from("kostenstelle_access").delete().in("id", staleIds);
+  if (!error) accessCache = accessCache.filter((a) => !staleIds.includes(a.id));
 }
 
 // Zweite Hälfte des "Als User anmelden"-Flows (siehe impersonateUser): der
@@ -3726,6 +3780,83 @@ function accessLevelOptions(selected) {
     .join("");
 }
 
+function registrationMailto(email, password) {
+  const appUrl = window.location.origin + window.location.pathname;
+  const guideUrl = "https://claude.ai/code/artifact/a5713396-1a29-499d-9edb-4b642a6f1ace";
+  const body = t("registrationMailBody")
+    .replaceAll("{email}", email)
+    .replaceAll("{password}", password)
+    .replaceAll("{appUrl}", appUrl)
+    .replaceAll("{guideUrl}", guideUrl);
+  return "mailto:" + encodeURIComponent(email) + "?subject=" + encodeURIComponent(t("registrationMailSubject")) + "&body=" + encodeURIComponent(body);
+}
+
+// Zeigt für eine Kostenstelle/Scope-Kombination ("Alle Teams" oder ein
+// einzelnes Team) nur die Personen an, die dort tatsächlich einen Grant
+// haben, statt - wie zuvor - jede freigegebene Person aufzulisten (das
+// wurde bei vielen Usern x Kostenstellen x Teams schnell unübersichtlich).
+// Neue Personen kommen über das "+ Hinzufügen"-Dropdown dazu, das nur noch
+// die für diesen Scope relevanten (noch nicht zugewiesenen) Personen zeigt.
+// Bei Team-Scopes werden Personen mit Vollzugriff ("Alle Teams") gar nicht
+// erst gelistet - ihr Zugriff kommt automatisch von dort (siehe
+// setKostenstelleAccess), eine eigene Zeile hier wäre nur verwirrend.
+function renderAccessScope(k, scope, nonAdminApproved, blanketUserIds) {
+  const isBlanket = scope.id === "";
+  const grants = accessCache.filter(
+    (a) => a.kostenstelle_code === k.code && (isBlanket ? a.team_id === null : a.team_id === scope.id)
+  );
+  const rows = isBlanket ? grants : grants.filter((g) => !blanketUserIds.has(g.user_id));
+  const alreadyIds = new Set(rows.map((g) => g.user_id));
+  const addable = nonAdminApproved.filter((u) => !alreadyIds.has(u.id) && !(!isBlanket && blanketUserIds.has(u.id)));
+  const coveredCount = isBlanket ? 0 : nonAdminApproved.filter((u) => blanketUserIds.has(u.id)).length;
+
+  return `
+    <div style="margin-bottom:14px;">
+      <div style="font-size:12px; color:var(--text-dim); margin-bottom:6px;">${escapeHtml(scope.label)}</div>
+      ${
+        rows.length
+          ? rows
+              .map((g) => {
+                const u = nonAdminApproved.find((x) => x.id === g.user_id);
+                if (!u) return "";
+                return `
+              <div class="row" data-access-row-email="${escapeHtml(u.email.toLowerCase())}" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                <span style="font-size:13.5px;">${escapeHtml(u.email)}</span>
+                <select class="field" data-access-user="${u.id}" data-access-ks="${escapeHtml(k.code)}" data-access-team="${escapeHtml(scope.id)}" style="max-width:220px; flex:none;">
+                  ${accessLevelOptions(g.access_level)}
+                </select>
+              </div>
+            `;
+              })
+              .join("")
+          : `<div class="empty-state" style="padding:8px 4px; font-size:12.5px;">${t("noGrantsForScopeMsg")}</div>`
+      }
+      ${
+        coveredCount
+          ? `<div style="font-size:11.5px; color:var(--text-dim); margin:2px 0 8px;">${t("coveredByAllTeamsMsg").replace("{n}", coveredCount)}</div>`
+          : ""
+      }
+      ${
+        addable.length
+          ? `
+        <div class="row" data-add-ks="${escapeHtml(k.code)}" data-add-team="${escapeHtml(scope.id)}" style="display:flex; gap:6px; margin-top:4px;">
+          <select class="field" data-add-user-select style="flex:1;">
+            <option value="">${t("addUserSelectPlaceholder")}</option>
+            ${addable.map((u) => `<option value="${u.id}">${escapeHtml(u.email)}</option>`).join("")}
+          </select>
+          <select class="field" data-add-level-select style="max-width:150px; flex:none;">
+            <option value="read">${t("accessReadOption")}</option>
+            <option value="write">${t("accessWriteOption")}</option>
+          </select>
+          <button class="btn-secondary" data-add-access-btn style="flex:none;">${t("addUserToScopeBtn")}</button>
+        </div>
+      `
+          : ""
+      }
+    </div>
+  `;
+}
+
 async function renderAdmin() {
   profilesCache = await loadAllProfiles();
   const pending = profilesCache.filter((p) => !p.is_approved && !p.is_rejected);
@@ -3734,6 +3865,7 @@ async function renderAdmin() {
   if (kostenstellenCache.length === 0) kostenstellenCache = await loadKostenstellen();
   teamsCache = await loadTeams();
   accessCache = await loadAllAccess();
+  await cleanupRedundantTeamGrants();
 
   $app.innerHTML = `
     <header class="topbar">
@@ -3755,8 +3887,9 @@ async function renderAdmin() {
           <button class="btn-secondary" id="gen-password-btn" style="flex:none;">${t("generatePasswordBtn")}</button>
         </div>
 
-        <div class="row" style="margin-top:12px;">
-          <button class="btn-primary" id="create-user-btn" style="width:100%;">${t("createUserBtn")}</button>
+        <div class="row" style="display:flex; gap:8px; margin-top:12px;">
+          <button class="btn-primary" id="create-user-btn" style="flex:1;">${t("createUserBtn")}</button>
+          <button class="btn-secondary" id="prepare-mail-btn" style="flex:none;">${t("prepareRegistrationMailBtn")}</button>
         </div>
       </div>
 
@@ -3812,46 +3945,31 @@ async function renderAdmin() {
       </div>
 
       ${
+        nonAdminApproved.length && kostenstellenCache.length
+          ? `<div class="row" style="margin:16px 4px 4px;"><input class="field" id="access-user-filter" placeholder="${t("accessFilterPlaceholder")}" autocomplete="off" /></div>`
+          : ""
+      }
+
+      ${
         kostenstellenCache.length
           ? kostenstellenCache
-              .map(
-                (k) => `
+              .map((k) => {
+                const blanketUserIds = new Set(
+                  accessCache.filter((a) => a.kostenstelle_code === k.code && a.team_id === null).map((a) => a.user_id)
+                );
+                return `
             <div class="card">
               <div class="section-title" style="margin:0 0 10px;">${escapeHtml(k.code)}${k.name ? ` – ${escapeHtml(k.name)}` : ""}</div>
               ${
                 nonAdminApproved.length
                   ? [{ id: "", label: t("allTeamsScope") }, ...teamsCache.filter((tm) => tm.kostenstelle_code === k.code).map((tm) => ({ id: tm.id, label: tm.name }))]
-                      .map(
-                        (scope) => `
-                      <div style="margin-bottom:14px;">
-                        <div style="font-size:12px; color:var(--text-dim); margin-bottom:6px;">${escapeHtml(scope.label)}</div>
-                        ${nonAdminApproved
-                          .map((u) => {
-                            const grant = accessCache.find(
-                              (a) =>
-                                a.user_id === u.id &&
-                                a.kostenstelle_code === k.code &&
-                                (scope.id ? a.team_id === scope.id : a.team_id === null)
-                            );
-                            return `
-                          <div class="row" style="justify-content:space-between; align-items:center; margin-bottom:8px;">
-                            <span style="font-size:13.5px;">${escapeHtml(u.email)}</span>
-                            <select class="field" data-access-user="${u.id}" data-access-ks="${escapeHtml(k.code)}" data-access-team="${escapeHtml(scope.id)}" style="max-width:220px; flex:none;">
-                              ${accessLevelOptions(grant ? grant.access_level : "")}
-                            </select>
-                          </div>
-                        `;
-                          })
-                          .join("")}
-                      </div>
-                    `
-                      )
+                      .map((scope) => renderAccessScope(k, scope, nonAdminApproved, blanketUserIds))
                       .join("")
                   : `<div class="empty-state" style="padding:12px 4px;">${t("noApprovedForAccessMsg")}</div>`
               }
             </div>
-          `
-              )
+          `;
+              })
               .join("")
           : `<div class="empty-state">${t("emptyKostenstellen")}</div>`
       }
@@ -3885,9 +4003,28 @@ async function renderAdmin() {
     if (result.ok) {
       toast(t("userCreatedMsgPrefix") + email);
       await renderAdmin();
+      // Felder nach dem Neu-Rendern wieder befüllen, statt sie leer zu
+      // lassen - so bleiben E-Mail und Start-Passwort für den
+      // "Info-Mail vorbereiten"-Button (und zum Kopieren) verfügbar.
+      const emailInputAfter = document.getElementById("new-user-email");
+      const passwordInputAfter = document.getElementById("new-user-password");
+      if (emailInputAfter && passwordInputAfter) {
+        emailInputAfter.value = email;
+        passwordInputAfter.value = password;
+      }
     } else {
       toast(t("createUserErrorPrefix") + result.message);
     }
+  });
+
+  document.getElementById("prepare-mail-btn").addEventListener("click", () => {
+    const email = document.getElementById("new-user-email").value.trim().toLowerCase();
+    const password = document.getElementById("new-user-password").value;
+    if (!email || !password) {
+      toast(t("registrationMailValidationMsg"));
+      return;
+    }
+    window.location.href = registrationMailto(email, password);
   });
 
   document.querySelectorAll("[data-impersonate]").forEach((btn) => {
@@ -3938,6 +4075,21 @@ async function renderAdmin() {
     }
   });
 
+  // Jede Zugriffsänderung kann Zeilen zwischen "hat Zugriff" und "im
+  // Hinzufügen-Dropdown" verschieben (siehe renderAccessScope) - deshalb
+  // hier ein vollständiges Re-Render statt nur den Cache neu zu laden. Der
+  // Filterwert wird dabei mitgenommen, damit er nicht bei jeder Änderung
+  // verloren geht.
+  async function refreshAdminAccess() {
+    const filterVal = document.getElementById("access-user-filter")?.value || "";
+    await renderAdmin();
+    const filterInputAfter = document.getElementById("access-user-filter");
+    if (filterInputAfter && filterVal) {
+      filterInputAfter.value = filterVal;
+      filterInputAfter.dispatchEvent(new Event("input"));
+    }
+  }
+
   document.querySelectorAll("[data-access-user]").forEach((sel) => {
     sel.addEventListener("change", async () => {
       const userId = sel.dataset.accessUser;
@@ -3946,13 +4098,44 @@ async function renderAdmin() {
       const level = sel.value || null;
       sel.disabled = true;
       const ok = await setKostenstelleAccess(userId, code, teamId, level);
-      sel.disabled = false;
       if (ok) {
         toast(t("accessSavedMsg"));
-        accessCache = await loadAllAccess();
+        await refreshAdminAccess();
+      } else {
+        sel.disabled = false;
       }
     });
   });
+
+  document.querySelectorAll("[data-add-access-btn]").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const wrap = btn.closest("[data-add-ks]");
+      const code = wrap.dataset.addKs;
+      const teamId = wrap.dataset.addTeam || null;
+      const userSelect = wrap.querySelector("[data-add-user-select]");
+      const levelSelect = wrap.querySelector("[data-add-level-select]");
+      const userId = userSelect.value;
+      if (!userId) return;
+      btn.disabled = true;
+      const ok = await setKostenstelleAccess(userId, code, teamId, levelSelect.value);
+      if (ok) {
+        toast(t("accessSavedMsg"));
+        await refreshAdminAccess();
+      } else {
+        btn.disabled = false;
+      }
+    });
+  });
+
+  const accessFilterInput = document.getElementById("access-user-filter");
+  if (accessFilterInput) {
+    accessFilterInput.addEventListener("input", () => {
+      const q = accessFilterInput.value.trim().toLowerCase();
+      document.querySelectorAll("[data-access-row-email]").forEach((row) => {
+        row.style.display = row.dataset.accessRowEmail.includes(q) ? "flex" : "none";
+      });
+    });
+  }
 }
 
 // ---------- View: Teams verwalten ----------
