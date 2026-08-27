@@ -111,7 +111,58 @@ Ab jetzt läuft die Aufnahme neuer Kolleg:innen in drei Schritten:
    handelt – z.B. sie im Teams-/Outlook-Firmenverzeichnis nach Namen
    suchen und die dort hinterlegte Adresse mit der angefragten
    vergleichen, statt die selbst eingetippte Adresse blind zu übernehmen.
-3. **Konto anlegen** über die Supabase-Admin-API, ganz ohne Mailversand:
+3. **Konto anlegen** im 🛡 Admin-Bereich der App (Karte "Neuen User
+   anlegen") – dafür einmalig die zugehörige Edge Function deployen, siehe
+   "Einmalige Einrichtung" gleich unten. Danach:
+   1. E-Mail-Adresse eintragen, mit **"🎲 Generieren"** ein Start-Passwort
+      erzeugen (oder selbst eins eintippen) und auf **"Konto anlegen"**
+      tippen. Läuft komplett ohne Mailversand und ohne dass du irgendeinen
+      Key selbst anfassen musst – die App ruft dafür die Edge Function auf,
+      die den geheimen `service_role`-Key serverseitig verwendet.
+   2. Das Start-Passwort über den gleichen (verifizierten) Kanal an die
+      Person weitergeben. Sie kann es nach dem Einloggen unter
+      ⚙ Einstellungen selbst durch ein eigenes ersetzen.
+   3. Mit **"🔑 Testen"** neben dem neuen Eintrag lässt sich das Konto in
+      einem eigenen Tab direkt ausprobieren (z.B. um zu prüfen, dass Freigabe
+      und Kostenstellen-Zugriff wie gewünscht wirken) – ohne das Passwort zu
+      kennen und ohne dich selbst auszuloggen. Der Tab ist deutlich als
+      Test-Login markiert; einfach schließen, um ihn zu beenden. Am
+      zuverlässigsten in einem normalen Desktop-Browser (nicht in der aufs
+      Handy installierten App-Version) – manche mobilen Browser blockieren
+      das automatische Öffnen eines neuen Tabs.
+   4. Im gleichen 🛡 Admin-Bereich wartet danach automatisch ein neuer
+      Eintrag (der `handle_new_user`-Trigger legt bei jedem neuen Konto ein
+      Profil an) – dort noch auf **"Freigeben"** tippen. Das ist bewusst
+      ein zweiter, unabhängiger Schritt (Konto anlegen + Freigeben), auch
+      wenn du die Person schon geprüft hast – doppelte Absicherung, falls
+      die Registrierung versehentlich doch mal wieder offen sein sollte.
+   5. Direkt im selben Bereich außerdem die in der Anfrage genannte(n)
+      Kostenstelle(n)/Team(s) mit dem passenden Zugriffslevel zuweisen
+      (siehe "Kostenstellen- & Team-Zugriff" weiter unten) – ohne das
+      sieht die Person trotz Freigabe erstmal eine leere Liste.
+
+   **Einmalige Einrichtung der Edge Function** (nur beim ersten Mal nötig):
+   1. [Supabase CLI installieren](https://supabase.com/docs/guides/cli),
+      dann auf deinem eigenen Rechner im Terminal (nicht in der App):
+      ```
+      supabase login
+      supabase link --project-ref <project-ref>
+      supabase functions deploy admin-users
+      ```
+      (`<project-ref>` steht in der Supabase-Projekt-URL,
+      `https://<project-ref>.supabase.co`.) `SUPABASE_URL`,
+      `SUPABASE_ANON_KEY` und `SUPABASE_SERVICE_ROLE_KEY` stehen der Function
+      danach automatisch zur Verfügung – dafür ist nichts weiter
+      einzurichten, und der `service_role`-Key landet dabei zu keinem
+      Zeitpunkt im Browser.
+   2. Fertig – ab jetzt reicht "Konto anlegen" in der App, ohne dass du
+      diesen Schritt je wiederholen müsstest (nur nach einer Änderung an
+      `supabase/functions/admin-users/index.ts` erneut deployen).
+
+   **Alternative ganz ohne Edge Function** (z.B. für das allererste, eigene
+   Admin-Konto bei einer Neuinstallation, oder falls du die Function nicht
+   deployen willst): weiterhin direkt über die Supabase-Admin-API, wie
+   bisher:
    1. Unter **Project Settings -> API** deinen **service_role**-Key
       kopieren (geheim halten, nirgends veröffentlichen, niemals mit
       Claude teilen).
@@ -123,19 +174,8 @@ Ab jetzt läuft die Aufnahme neuer Kolleg:innen in drei Schritten:
         -H 'Content-Type: application/json' \
         -d '{"email": "kollege@house-of-communication.com", "password": "EinStartPasswort123", "email_confirm": true}'
       ```
-   3. Das Start-Passwort über den gleichen (verifizierten) Kanal an die
-      Person weitergeben. Sie kann es nach dem Einloggen unter
-      ⚙ Einstellungen selbst durch ein eigenes ersetzen.
-   4. Im 🛡 Freigaben-Bereich wartet danach automatisch ein neuer Eintrag
-      (der `handle_new_user`-Trigger legt bei jedem neuen Konto ein
-      Profil an) – dort noch auf **"Freigeben"** tippen. Das ist bewusst
-      ein zweiter, unabhängiger Schritt (Konto anlegen + Freigeben), auch
-      wenn du die Person schon geprüft hast – doppelte Absicherung, falls
-      die Registrierung versehentlich doch mal wieder offen sein sollte.
-   5. Direkt im selben Bereich außerdem die in der Anfrage genannte(n)
-      Kostenstelle(n)/Team(s) mit dem passenden Zugriffslevel zuweisen
-      (siehe "Kostenstellen- & Team-Zugriff" weiter unten) – ohne das
-      sieht die Person trotz Freigabe erstmal eine leere Liste.
+   3. Weiter wie oben ab Schritt 3.2 (Passwort weitergeben, Freigeben,
+      Kostenstellen/Team zuweisen).
 
 **Passwort vergessen** läuft nach demselben Prinzip komplett ohne
 E-Mail-Versand durch Supabase: Der "Passwort vergessen?"-Button in der
@@ -178,12 +218,13 @@ würde.
 - Erstanmeldung: Es gibt keine offene Registrierung mehr (siehe Schritt 5).
   Kolleg:innen tippen auf **"Zugang anfragen"** – das öffnet eine
   vorausgefüllte Mail an dich (oder sie schreiben dir direkt in Teams).
-  Du prüfst die Identität, legst das Konto über die Admin-API an und
+  Du prüfst die Identität, legst das Konto im 🛡 Admin-Bereich an und
   gibst das Start-Passwort weiter (siehe Schritt 5) – die Person meldet
   sich damit an und kann es unter ⚙ Einstellungen selbst ändern.
 - **Zugriff ist auf drei Arten geschützt:**
   1. **Kein offenes Self-Signup**: Registrierungen entstehen ausschließlich
-     durch dich als Admin über die Supabase-Admin-API, nachdem du die
+     durch dich als Admin – über den 🛡 Admin-Bereich (bzw. dessen Edge
+     Function) oder direkt über die Supabase-Admin-API – nachdem du die
      Person identifiziert hast – das schließt die frühere Lücke, dass sich
      theoretisch jede:r mit einer erfundenen
      `@house-of-communication.com`-Adresse hätte anmelden können.

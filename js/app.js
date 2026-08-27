@@ -56,6 +56,7 @@ const I18N = {
       "Dokumentiere eure Prozesse, prüft sie auf AI-Potenzial und erfasst AI-Use-Cases in Sekunden – inklusive Bewertung und KI-gestützter Ausarbeitung.",
     login: "Anmelden",
     requestAccessTab: "Zugang anfragen",
+    emailLabel: "E-Mail-Adresse",
     emailPlaceholder: "deine@email.de",
     passwordPlaceholder: "Passwort",
     loggingIn: "Melde an...",
@@ -320,6 +321,21 @@ const I18N = {
     resourceSavedMsg: "Eintrag gespeichert",
     resourceDeletedMsg: "Eintrag gelöscht",
 
+    createUserTitle: "Neuen User anlegen",
+    createUserDesc: "Legt das Konto direkt an (kein Mailversand nötig). Freigabe und Kostenstellen-Zugriff bleiben danach bewusst ein separater Schritt weiter unten.",
+    newUserPasswordLabel: "Start-Passwort",
+    newUserPasswordPlaceholder: "Mind. 6 Zeichen",
+    generatePasswordBtn: "🎲 Generieren",
+    createUserBtn: "Konto anlegen",
+    createUserValidationMsg: "Bitte E-Mail und ein Passwort mit mind. 6 Zeichen angeben.",
+    userCreatedMsgPrefix: "Konto angelegt: ",
+    createUserErrorPrefix: "Fehler beim Anlegen: ",
+    impersonateBtn: "🔑 Testen",
+    impersonatePopupBlockedMsg: "Popup-Blocker verhindert den Test-Tab – bitte für diese Seite erlauben.",
+    impersonateErrorPrefix: "Fehler beim Test-Login: ",
+    impersonationBannerPrefix: "🧪 Test-Login als ",
+    impersonationBannerCloseBtn: "Tab schließen",
+
     pendingApprovalTitlePrefix: "Wartet auf Freigabe (",
     noPendingMsg: "Aktuell wartet niemand auf Freigabe.",
     approveBtn: "Freigeben",
@@ -397,6 +413,7 @@ const I18N = {
       "Document your team's processes, screen them for AI potential, and capture AI use cases in seconds - including scoring and AI-assisted elaboration.",
     login: "Log in",
     requestAccessTab: "Request access",
+    emailLabel: "Email address",
     emailPlaceholder: "you@email.com",
     passwordPlaceholder: "Password",
     loggingIn: "Logging in...",
@@ -660,6 +677,21 @@ const I18N = {
     resourceSavedMsg: "Entry saved",
     resourceDeletedMsg: "Entry deleted",
 
+    createUserTitle: "Create new user",
+    createUserDesc: "Creates the account directly (no email needed). Approval and cost center access stay a deliberately separate step further down.",
+    newUserPasswordLabel: "Starting password",
+    newUserPasswordPlaceholder: "At least 6 characters",
+    generatePasswordBtn: "🎲 Generate",
+    createUserBtn: "Create account",
+    createUserValidationMsg: "Please enter an email and a password with at least 6 characters.",
+    userCreatedMsgPrefix: "Account created: ",
+    createUserErrorPrefix: "Error creating account: ",
+    impersonateBtn: "🔑 Test login",
+    impersonatePopupBlockedMsg: "A popup blocker prevented the test tab - please allow popups for this site.",
+    impersonateErrorPrefix: "Error starting test login: ",
+    impersonationBannerPrefix: "🧪 Testing as ",
+    impersonationBannerCloseBtn: "Close tab",
+
     pendingApprovalTitlePrefix: "Waiting for approval (",
     noPendingMsg: "No one is currently waiting for approval.",
     approveBtn: "Approve",
@@ -837,6 +869,29 @@ function toast(msg) {
   el.classList.add("show");
   clearTimeout(el._t);
   el._t = setTimeout(() => el.classList.remove("show"), 2200);
+}
+
+// Dauerhafter Hinweis-Balken für Test-Tabs aus "Als User anmelden" (siehe
+// impersonateUser/js/supabaseClient.js) - läuft bei jedem render() erneut,
+// weil dieser Tab sonst leicht mit einer normalen Session verwechselt werden
+// könnte.
+function updateImpersonationBanner() {
+  let el = document.getElementById("impersonation-banner");
+  if (!window.isImpersonationTab || !currentUser) {
+    if (el) el.remove();
+    return;
+  }
+  if (!el) {
+    el = document.createElement("div");
+    el.id = "impersonation-banner";
+    document.body.prepend(el);
+  }
+  el.innerHTML = `
+    <span>${t("impersonationBannerPrefix")}${escapeHtml(currentUser.email)}</span>
+    <button id="impersonation-close-btn" type="button">${t("impersonationBannerCloseBtn")}</button>
+  `;
+  const closeBtn = document.getElementById("impersonation-close-btn");
+  closeBtn.addEventListener("click", () => window.close());
 }
 
 function priorityInfo(idea) {
@@ -1017,6 +1072,57 @@ async function rejectUser(id) {
   return true;
 }
 
+// Sieht die Domain-Sperre in restrict_signup_domain() (schema.sql) und ohne
+// verwechselbare Zeichen (I/l/1/O/0), damit ein Start-Passwort auch beim
+// Vorlesen/Abtippen über den verifizierten Kanal (siehe README) keine Fehler
+// provoziert.
+function generatePassword() {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!?#%";
+  const bytes = new Uint32Array(16);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes, (b) => chars[b % chars.length]).join("");
+}
+
+// Kontoanlage läuft über eine Edge Function (supabase/functions/admin-users),
+// weil dafür der service_role-Key nötig ist - der darf niemals im Browser
+// landen. Die Function prüft selbst erneut, dass die aufrufende Person Admin
+// ist (siehe dortige Kommentare), bevor sie etwas anlegt.
+async function createUserViaAdmin(email, password) {
+  const { data, error } = await sb.functions.invoke("admin-users", {
+    body: { action: "create", email, password },
+  });
+  if (error) return { ok: false, message: error.message };
+  if (data?.error) return { ok: false, message: data.error };
+  return { ok: true, id: data.id };
+}
+
+// "Als User anmelden": öffnet einen neuen Tab, der sich per Magic-Link-OTP
+// (aus derselben Edge Function, ebenfalls service_role-only) als die
+// angegebene Person einloggt - ohne ihr Passwort zu kennen oder zu ändern.
+// Der neue Tab läuft dauerhaft über einen eigenen, sessionStorage-basierten
+// Supabase-Client (siehe js/supabaseClient.js), damit diese Test-Session nie
+// mit der eigenen Admin-Session in anderen Tabs kollidiert.
+async function impersonateUser(email) {
+  const win = window.open("", "_blank");
+  if (!win) {
+    toast(t("impersonatePopupBlockedMsg"));
+    return;
+  }
+  const { data, error } = await sb.functions.invoke("admin-users", {
+    body: { action: "impersonate", email },
+  });
+  if (error || data?.error) {
+    win.close();
+    toast(t("impersonateErrorPrefix") + (data?.error || error?.message || ""));
+    return;
+  }
+  const url = new URL(window.location.origin + window.location.pathname);
+  url.searchParams.set("impersonate", "1");
+  url.searchParams.set("email", data.email);
+  url.searchParams.set("otp", data.otp);
+  win.location.href = url.toString();
+}
+
 // ---------- Data: Kostenstellen & Zugriffsrechte ----------
 
 async function loadKostenstellen() {
@@ -1179,7 +1285,29 @@ async function setKostenstelleAccess(userId, code, teamId, level) {
   return true;
 }
 
+// Zweite Hälfte des "Als User anmelden"-Flows (siehe impersonateUser): der
+// neue Tab landet hier mit email/otp in der URL, tauscht sie einmalig gegen
+// eine Session für diese Person ein und entfernt sie sofort wieder aus der
+// Adresszeile/History. Läuft in diesem Tab über den sessionStorage-Client
+// aus js/supabaseClient.js, betrifft also nie die Admin-Session in anderen
+// Tabs.
+async function consumeImpersonationLink() {
+  const params = new URLSearchParams(window.location.search);
+  const otp = params.get("otp");
+  const email = params.get("email");
+  if (!otp || !email) return;
+  history.replaceState(null, "", window.location.pathname + window.location.hash);
+  // "magiclink" ist der historische Typ für per admin.generateLink erzeugte
+  // OTPs, manche supabase-js-Versionen erwarten stattdessen "email" - beide
+  // versuchen, statt sich auf eine bestimmte Version festzulegen.
+  let { error } = await sb.auth.verifyOtp({ email, token: otp, type: "magiclink" });
+  if (error) {
+    ({ error } = await sb.auth.verifyOtp({ email, token: otp, type: "email" }));
+  }
+}
+
 async function init() {
+  await consumeImpersonationLink();
   const { data } = await sb.auth.getSession();
   currentUser = data.session ? data.session.user : null;
   sb.auth.onAuthStateChange((event, session) => {
@@ -3615,6 +3743,23 @@ async function renderAdmin() {
       ${langToggleButton()}${themeToggleButton()}
     </header>
     <main>
+      <div class="section-title" style="margin:0 4px 8px;">${t("createUserTitle")}</div>
+      <div class="card" style="margin-bottom:20px;">
+        <p style="font-size:13px; color:var(--text-dim); margin:0 0 12px; line-height:1.5;">${t("createUserDesc")}</p>
+        <label class="field-label" style="margin-top:0;">${t("emailLabel")}</label>
+        <input class="field" id="new-user-email" type="email" placeholder="${t("emailPlaceholder")}" autocomplete="off" />
+
+        <label class="field-label">${t("newUserPasswordLabel")}</label>
+        <div class="row">
+          <input class="field" id="new-user-password" type="text" placeholder="${t("newUserPasswordPlaceholder")}" autocomplete="off" style="flex:1;" />
+          <button class="btn-secondary" id="gen-password-btn" style="flex:none;">${t("generatePasswordBtn")}</button>
+        </div>
+
+        <div class="row" style="margin-top:12px;">
+          <button class="btn-primary" id="create-user-btn" style="width:100%;">${t("createUserBtn")}</button>
+        </div>
+      </div>
+
       <div class="section-title" style="margin:0 4px 8px;">${t("pendingApprovalTitlePrefix")}${pending.length})</div>
       <div class="idea-list" style="margin-bottom:20px;">
         ${
@@ -3625,6 +3770,7 @@ async function renderAdmin() {
               <div class="idea-item">
                 <div class="idea-title">${escapeHtml(p.email)}</div>
                 <div class="idea-meta">
+                  <button class="btn-secondary" data-impersonate="${escapeHtml(p.email)}" style="padding:8px 14px; font-size:13px;">${t("impersonateBtn")}</button>
                   <button class="btn-primary" data-approve="${p.id}" style="padding:8px 14px; font-size:13px;">${t("approveBtn")}</button>
                   <button class="btn-danger" data-reject="${p.id}" style="padding:8px 14px; font-size:13px;">${t("rejectBtn")}</button>
                 </div>
@@ -3645,6 +3791,7 @@ async function renderAdmin() {
               <div class="idea-title">${escapeHtml(p.email)}</div>
               <div class="idea-meta">
                 ${p.is_admin ? `<span class="badge">${t("adminBadge")}</span>` : ""}
+                <button class="btn-secondary" data-impersonate="${escapeHtml(p.email)}" style="padding:8px 14px; font-size:13px;">${t("impersonateBtn")}</button>
               </div>
             </div>
           `
@@ -3717,6 +3864,35 @@ async function renderAdmin() {
 
   bindLangToggle();
   bindThemeToggle();
+
+  document.getElementById("gen-password-btn").addEventListener("click", () => {
+    document.getElementById("new-user-password").value = generatePassword();
+  });
+
+  document.getElementById("create-user-btn").addEventListener("click", async () => {
+    const emailInput = document.getElementById("new-user-email");
+    const passwordInput = document.getElementById("new-user-password");
+    const email = emailInput.value.trim().toLowerCase();
+    const password = passwordInput.value;
+    if (!email || password.length < 6) {
+      toast(t("createUserValidationMsg"));
+      return;
+    }
+    const btn = document.getElementById("create-user-btn");
+    btn.disabled = true;
+    const result = await createUserViaAdmin(email, password);
+    btn.disabled = false;
+    if (result.ok) {
+      toast(t("userCreatedMsgPrefix") + email);
+      await renderAdmin();
+    } else {
+      toast(t("createUserErrorPrefix") + result.message);
+    }
+  });
+
+  document.querySelectorAll("[data-impersonate]").forEach((btn) => {
+    btn.addEventListener("click", () => impersonateUser(btn.dataset.impersonate));
+  });
 
   document.querySelectorAll("[data-approve]").forEach((btn) => {
     btn.addEventListener("click", async () => {
@@ -4634,6 +4810,7 @@ async function renderStart() {
 
 async function render() {
   lastRenderedHash = window.location.hash;
+  updateImpersonationBanner();
   if (passwordRecoveryMode) {
     renderSetNewPassword();
     return;

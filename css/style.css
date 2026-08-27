@@ -505,6 +505,37 @@ textarea.field { min-height: 70px; resize: vertical; }
 
 .toast.show { opacity: 1; }
 
+/* "Als User anmelden" - Test-Tab, siehe impersonateUser in js/app.js. Bewusst
+   feste (nicht Theme-abhängige) Warnfarbe, damit dieser Tab nie mit einer
+   normalen Session verwechselt wird, unabhängig vom Hell-/Dunkelmodus. */
+#impersonation-banner {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  background: #7c2d12;
+  color: #fff7ed;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 8px 14px;
+  padding-top: calc(8px + env(safe-area-inset-top));
+  text-align: center;
+}
+
+#impersonation-banner button {
+  background: rgba(255, 255, 255, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  color: inherit;
+  border-radius: 999px;
+  padding: 4px 12px;
+  font-size: 12.5px;
+  cursor: pointer;
+}
+
 .tabbar {
   display: flex;
   gap: 8px;
