@@ -820,3 +820,31 @@ create policy "Idea processes: delete with kostenstelle access"
   using (is_approved_user() and exists (
     select 1 from ideas i where i.id = idea_id and can_write_kostenstelle(i.department, i.team_id)
   ));
+
+-- ============================================================
+-- Login-Tracking: pro tatsächlichem Login (Supabase-Event "SIGNED_IN",
+-- nicht bei jedem Seiten-Reload mit bestehender Session) ein Datensatz -
+-- Grundlage für die Nutzerstatistik im Admin-Bereich (letzter Login,
+-- Anzahl Logins pro Person über die Zeit). Jede freigegebene Person darf
+-- nur ihre eigene Zeile anlegen; lesen dürfen nur Admins, da die
+-- Auswertung eine reine Admin-Funktion ist.
+-- ============================================================
+create table if not exists login_events (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users (id) on delete cascade,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists login_events_user_id_idx on login_events (user_id, created_at);
+
+alter table login_events enable row level security;
+
+drop policy if exists "Login events: insert own" on login_events;
+create policy "Login events: insert own"
+  on login_events for insert
+  with check (is_approved_user() and user_id = auth.uid());
+
+drop policy if exists "Login events: admin select all" on login_events;
+create policy "Login events: admin select all"
+  on login_events for select
+  using (is_admin_user());

@@ -533,6 +533,11 @@ const I18N = {
     adminBadge: "Admin",
     approvedMsg: "Freigegeben",
 
+    userStatsTitle: "Nutzerstatistiken",
+    userStatsLastLoginPrefix: "Letzter Login: ",
+    userStatsLoginCountPrefix: "Logins: ",
+    userStatsNeverLoggedIn: "Noch nie eingeloggt",
+
     kostenstellenTitle: "Kostenstellen & Zugriffsrechte",
     newKostenstelleLabel: "Neue Kostenstelle anlegen",
     kostenstelleCodePlaceholder: "Code, z.B. 050010 CO",
@@ -1077,6 +1082,11 @@ const I18N = {
     approvedMembersTitlePrefix: "Approved members (",
     adminBadge: "Admin",
     approvedMsg: "Approved",
+
+    userStatsTitle: "User statistics",
+    userStatsLastLoginPrefix: "Last login: ",
+    userStatsLoginCountPrefix: "Logins: ",
+    userStatsNeverLoggedIn: "Never logged in",
 
     kostenstellenTitle: "Cost centers & access",
     newKostenstelleLabel: "Add a new cost center",
@@ -1778,9 +1788,24 @@ async function init() {
     if (event === "PASSWORD_RECOVERY") passwordRecoveryMode = true;
     currentUser = session ? session.user : null;
     currentProfile = null;
+    // Nur bei einem echten Login-Event zählen, nicht bei "INITIAL_SESSION"
+    // (Seiten-Reload mit bestehender Session) oder Token-Refreshs - sonst
+    // würde jedes Öffnen der App als neuer Login gezählt.
+    if (event === "SIGNED_IN") recordLoginEvent();
     render();
   });
   render();
+}
+
+async function recordLoginEvent() {
+  if (!currentUser) return;
+  await sb.from("login_events").insert({ user_id: currentUser.id });
+}
+
+async function loadLoginEvents() {
+  const { data, error } = await sb.from("login_events").select("user_id, created_at");
+  if (error) return [];
+  return data || [];
 }
 
 async function signInWithPassword(email, password) {
@@ -4543,6 +4568,20 @@ async function renderAdmin() {
   accessCache = await loadAllAccess();
   await cleanupRedundantTeamGrants();
 
+  // Nutzerstatistik: pro Person Login-Anzahl + letzter Login aus den
+  // rohen login_events zusammenfassen, statt das serverseitig zu
+  // aggregieren - bei dieser Datenmenge (kleines Team) unproblematisch.
+  const loginEvents = await loadLoginEvents();
+  const loginStatsByUser = {};
+  loginEvents.forEach((e) => {
+    const stats = (loginStatsByUser[e.user_id] ??= { count: 0, last: null });
+    stats.count++;
+    if (!stats.last || new Date(e.created_at) > new Date(stats.last)) stats.last = e.created_at;
+  });
+  const userStatsRows = approved
+    .slice()
+    .sort((a, b) => new Date((loginStatsByUser[b.id] || {}).last || 0) - new Date((loginStatsByUser[a.id] || {}).last || 0));
+
   $app.innerHTML = `
     <header class="topbar">
       <div class="back-row">
@@ -4607,6 +4646,32 @@ async function renderAdmin() {
           `
           )
           .join("")}
+      </div>
+
+      <div class="section-title" style="margin:24px 4px 8px;">${t("userStatsTitle")}</div>
+      <div class="idea-list" style="margin-bottom:20px;">
+        ${
+          userStatsRows.length
+            ? userStatsRows
+                .map((p) => {
+                  const stats = loginStatsByUser[p.id];
+                  return `
+              <div class="idea-item">
+                <div class="idea-title">${escapeHtml(p.email)}</div>
+                <div class="idea-meta">
+                  ${
+                    stats
+                      ? `<span class="badge">${t("userStatsLastLoginPrefix")}${formatDateTime(stats.last)}</span>
+                         <span class="badge">${t("userStatsLoginCountPrefix")}${stats.count}</span>`
+                      : `<span class="badge">${t("userStatsNeverLoggedIn")}</span>`
+                  }
+                </div>
+              </div>
+            `;
+                })
+                .join("")
+            : `<div class="empty-state">${t("noApprovedForAccessMsg")}</div>`
+        }
       </div>
 
       <div class="section-title" style="margin:24px 4px 8px;">${t("kostenstellenTitle")}</div>

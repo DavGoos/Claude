@@ -401,6 +401,13 @@ Gedächtnisstütze, die mit der Idee gespeichert wird.
   und kann nichts anlegen. Zugriffs-Änderungen wirken bei bereits
   eingeloggten Personen erst nach einem Neuladen der Seite bzw. erneuten
   Login.
+- **Nutzerstatistiken (🛡 Freigaben)**: Unterhalb der freigegebenen
+  Mitglieder zeigt der Admin-Bereich pro Person den letzten Login-
+  Zeitpunkt sowie die Gesamtzahl bisheriger Logins, sortiert nach
+  zuletzt aktiv. Grundlage ist eine eigene `login_events`-Tabelle, in
+  die die App bei jedem tatsächlichen Login (nicht bei jedem bloßen
+  Neuladen der Seite mit bestehender Session) einen Datensatz schreibt.
+  Lesbar sind diese Rohdaten ausschließlich für Admins.
 - **Teams verwalten ("🧩 Teams")**: Anders als Kostenstellen (nur der
   Admin legt sie an) dürfen Teams auch von Personen mit **Vollzugriff**
   (Lesen & Schreiben, "Alle Teams") auf eine Kostenstelle angelegt,
