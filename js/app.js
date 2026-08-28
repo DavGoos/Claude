@@ -469,6 +469,7 @@ const I18N = {
     stepType_decision: "Entscheidung",
     stepType_end: "Ende",
     newStepPlaceholder: "Neuer Schritt, z.B. Rechnung prüfen",
+    newStepDescPlaceholder: "Notiz zum Schritt (optional)",
     addStepBtn: "+ Schritt hinzufügen",
     editStepBtn: "Bearbeiten",
     deleteStepBtn: "Löschen",
@@ -1019,6 +1020,7 @@ const I18N = {
     stepType_decision: "Decision",
     stepType_end: "End",
     newStepPlaceholder: "New step, e.g. Review invoice",
+    newStepDescPlaceholder: "Note for this step (optional)",
     addStepBtn: "+ Add step",
     editStepBtn: "Edit",
     deleteStepBtn: "Delete",
@@ -2060,10 +2062,10 @@ async function loadProcessSteps(processId) {
   return data || [];
 }
 
-async function createProcessStep(processId, position, stepType, title) {
+async function createProcessStep(processId, position, stepType, title, description) {
   const { data, error } = await sb
     .from("process_steps")
-    .insert({ process_id: processId, position, step_type: stepType, title })
+    .insert({ process_id: processId, position, step_type: stepType, title, description: description || null })
     .select("*")
     .single();
   if (error) {
@@ -3469,7 +3471,7 @@ async function renderProcessDetail(id) {
               <span class="val" data-step-realized-potential-val="${step.id}">${step.realized_potential || 0}%</span>
             </div>
             <div data-step-potential-bar="${step.id}">${potentialBarHtml(step.ai_potential, step.realized_potential)}</div>
-            <input class="field" data-step-ai-note="${step.id}" value="${escapeHtml(step.ai_potential_note || "")}" placeholder="${t("stepAiPotentialNotePlaceholder")}" />
+            <textarea class="field" data-step-ai-note="${step.id}" placeholder="${t("stepAiPotentialNotePlaceholder")}" style="font-size:12.5px; min-height:44px; padding:8px 10px;">${escapeHtml(step.ai_potential_note || "")}</textarea>
             ${ideaFlagsHtml}
             ${controls}
           </div>
@@ -3762,6 +3764,7 @@ async function renderProcessDetail(id) {
               ${PROCESS_STEP_TYPES.map((ty) => `<option value="${ty}" ${ty === "step" ? "selected" : ""}>${t(`stepType_${ty}`)}</option>`).join("")}
             </select>
           </div>
+          <input class="field" id="new-step-desc" placeholder="${t("newStepDescPlaceholder")}" style="margin-top:8px;" />
           <div class="row">
             <button class="btn-secondary" id="add-step-btn" style="width:100%;">${t("addStepBtn")}</button>
           </div>
@@ -3814,10 +3817,13 @@ async function renderProcessDetail(id) {
       const title = input.value.trim();
       if (!title) return;
       const type = document.getElementById("new-step-type").value;
+      const descInput = document.getElementById("new-step-desc");
+      const description = descInput.value.trim();
       const nextPosition = processSteps.length ? Math.max(...processSteps.map((s) => s.position)) + 1 : 0;
-      const created = await createProcessStep(proc.id, nextPosition, type, title);
+      const created = await createProcessStep(proc.id, nextPosition, type, title, description);
       if (created) {
         input.value = "";
+        descInput.value = "";
         toast(t("stepSavedMsg"));
         if (unsavedChangesReset) unsavedChangesReset();
         await refreshSteps();
