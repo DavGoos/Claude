@@ -156,20 +156,20 @@ header.topbar .icon-btn {
 
 .theme-switch-track {
   position: relative;
-  width: 56px;
-  height: 26px;
+  width: 76px;
+  height: 36px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 4px;
+  padding: 0 5px;
 }
 
 .theme-switch-thumb {
   position: absolute;
-  top: 2px;
-  left: 2px;
-  width: 22px;
-  height: 22px;
+  top: 3px;
+  left: 3px;
+  width: 30px;
+  height: 30px;
   border-radius: 50%;
   background: var(--accent);
   opacity: 0.22;
@@ -178,13 +178,13 @@ header.topbar .icon-btn {
 }
 
 .theme-switch--light .theme-switch-thumb { transform: translateX(0); }
-.theme-switch--dark .theme-switch-thumb { transform: translateX(30px); }
+.theme-switch--dark .theme-switch-thumb { transform: translateX(40px); }
 
 .theme-switch-icon {
   position: relative;
   z-index: 1;
-  width: 15px;
-  height: 17px;
+  width: 20px;
+  height: 23px;
   flex-shrink: 0;
   display: block;
 }
