@@ -1101,8 +1101,9 @@ header.topbar.hero::before {
 
 .ring-row {
   display: flex;
-  flex-wrap: wrap;
-  gap: 28px;
+  align-items: center;
+  gap: 18px;
+  margin: 16px 0 26px;
 }
 
 .ring-wrap {
@@ -1111,9 +1112,19 @@ header.topbar.hero::before {
   display: flex;
   align-items: center;
   gap: 14px;
-  margin: 16px 0 26px;
   opacity: 0;
   animation: hero-fade-slide 0.6s ease 0.2s forwards;
+}
+
+.ring-row .ring-wrap {
+  flex: 1 1 0;
+  min-width: 0;
+  gap: 10px;
+}
+
+.ring-row .ring-wrap svg {
+  width: 48px;
+  height: 48px;
 }
 
 .ring-wrap svg {
@@ -1129,6 +1140,15 @@ header.topbar.hero::before {
 .ring-label {
   font-size: 12px;
   opacity: 0.85;
+}
+
+.ring-row .ring-value {
+  font-size: 13.5px;
+}
+
+.ring-row .ring-label {
+  font-size: 10.5px;
+  line-height: 1.25;
 }
 
 .ring-track {
