@@ -114,6 +114,179 @@ const I18N = {
     adminOnlyTag: "Admin",
     brandFooterCaption: "Ein Tool von",
 
+    guideIntroEyebrow: "Kurzanleitung",
+    guideIntroLede:
+      "Dokumentiere eure Prozesse, prüft sie auf AI-Potenzial und erfasst AI-Use-Cases in Sekunden – inklusive Bewertung und KI-gestützter Ausarbeitung.",
+    guideAccessEyebrow: "Zugang",
+    guideAccessH2: "So bekommst du Zugriff",
+    guideAccessDesc: "Dein Zugang wird dir persönlich eingerichtet. Einmaliger Aufwand, etwa eine Minute.",
+    guideStep1Title: "Zugang anfragen",
+    guideStep1Desc:
+      "Kurze Nachricht an den Admin: Name, gewünschte Firmen-E-Mail-Adresse, Kostenstelle(n) und Team(s). Am schnellsten über den Tab „Zugang anfragen“ auf dem Login-Bildschirm der App – der öffnet direkt eine vorausgefüllte Mail. Eine kurze Teams-Nachricht tut es genauso. Kontakt:",
+    guideStep2Title: "Zugangsdaten bekommen",
+    guideStep2Desc: "Der Admin legt dein Konto an und schickt dir E-Mail-Adresse und ein Start-Passwort direkt zu.",
+    guideStep3Title: "Einloggen & loslegen",
+    guideStep3Desc:
+      "App öffnen, mit E-Mail und Start-Passwort einloggen. Unter „Einstellungen“ gleich ein eigenes Passwort setzen.",
+    guidePendingTitle: "Steht dort „Warten auf Freigabe“?",
+    guidePendingDesc:
+      "Dann ist dein Konto zwar angelegt, aber Freigabe und Kostenstellen-Zugriff sind beim Admin noch nicht ganz abgeschlossen. Kurz nachfragen, das geht meist sofort.",
+    guideForgotTitle: "Passwort vergessen?",
+    guideForgotDesc: "Meld dich beim Admin (siehe Kontakt unten) oder per Teams – er setzt dir ein neues Passwort.",
+
+    guideTourEyebrow: "Rundgang",
+    guideTourH2: "Was in welchem Tab passiert",
+    guideTourDesc: "Die App hat vier Haupt-Tabs, unten in der App genauso benannt und angeordnet wie hier.",
+    guideStartF1Name: "KI-Potenzial-Ring & Kennzahlen",
+    guideStartF1Desc:
+      "Durchschnittliches AI-Potenzial eurer dokumentierten Prozesse, plus offene Ideen, Ideen in Umsetzung und Anzahl dokumentierter Prozesse – auf einen Blick.",
+    guideStartF2Name: "Schnellzugriff",
+    guideStartF2Desc:
+      "Direkt-Kacheln zu Prozessen, Ideen und Auswertungen, plus „Verwaltung & mehr“ mit Anleitung, Teams, Export und Einstellungen.",
+    guideStartF3Name: "Zuletzt bearbeitet",
+    guideStartF3Desc: "Deine drei zuletzt bearbeiteten Ideen, damit du direkt dort weitermachen kannst, wo du aufgehört hast.",
+    guideProcF1Name: "Prozesse dokumentieren",
+    guideProcF1Desc:
+      "Wiederkehrende Abläufe eures Bereichs erfassen – z.B. Angebote erstellen, Rechnungsprüfung, Kundenonboarding. Optional, aber hilfreich, um Optimierungspotenzial zu erkennen.",
+    guideProcF2Name: "AI-Potenzial & Teilprozesse",
+    guideProcF2Desc: "Jeden Prozess auf AI-Potenzial einschätzen und begründen, größere Abläufe in Teilprozesse gliedern.",
+    guideProcF3Name: "Prozessschritte als Flowchart",
+    guideProcF3Desc:
+      "Den Ablauf als Kette aus Start / Schritt / Entscheidung / Ende aufbauen und pro Schritt markieren, wo KI unterstützen könnte.",
+    guideProcF4Name: "Dokumente, Links & Use Cases",
+    guideProcF4Desc:
+      "SharePoint-/Teams-/OneDrive-Links hinterlegen (nur URLs, kein Upload) und Ideen mit dem Prozess verknüpfen – so entsteht Schritt für Schritt eine AI-/Prozess-Landkarte.",
+    guideIdeaF1Name: "In Sekunden erfassen",
+    guideIdeaF1Desc:
+      "Kurznotiz eintippen, sobald dir etwas einfällt – auf dem Weg zum Meeting oder direkt am Schreibtisch. Filterbar nach Kostenstelle, Team und Usecase-Geber.",
+    guideIdeaF2Name: "Bewerten statt raten",
+    guideIdeaF2Desc:
+      "Nutzen, Machbarkeit, Aufwand und Risiko einschätzen – die App ordnet automatisch ein: Quick Win, großes Projekt, Nice to have, eher verschieben, prüfen, kaum machbar oder hohes Risiko.",
+    guideIdeaF3Name: "Mit KI ausarbeiten",
+    guideIdeaF3Desc:
+      "Aus Problem, Ziel und Business Benefit einen Start-Prompt erzeugen, in ein beliebiges KI-Tool einfügen (Copilot, ChatGPT, Claude, Gemini …) und die Antwort optional zur Doku zurückkopieren – kein eigener API-Key nötig.",
+    guideIdeaF4Name: "Stufenketten",
+    guideIdeaF4Desc:
+      "Baut eine Idee auf einer anderen auf (z.B. GC12 → GC13 → GC14)? Hier verknüpfen, dann ist überall sichtbar, an welcher Stufe gerade gearbeitet wird.",
+    guideIdeaF5Name: "Katalog-Felder & Export",
+    guideIdeaF5Desc:
+      "Sobald eine Idee reif ist: die zusätzlichen „Für die Ambassador-Liste“-Felder ausfüllen und über den Export-Tab copy-paste-fertig in die zentrale AI Ambassadors Usecase-Collection übernehmen.",
+    guideDashF1Name: "Nutzen × Aufwand-Matrix",
+    guideDashF1Desc: "Alle bewerteten Ideen auf einen Blick positioniert – Quick Wins oben links.",
+    guideDashF2Name: "Einheiten, Prozesse & Use Cases",
+    guideDashF2Desc: "Baumansicht: welche Prozesse und Ideen zu welcher Kostenstelle/welchem Team gehören.",
+    guideDashF3Name: "Status je Team & AI-Potenzial-Heatmap",
+    guideDashF3Desc: "Wie weit Teams mit ihren Ideen sind, und wo bei den Prozessen das meiste AI-Potenzial steckt.",
+    guideDashF4Name: "Top Quick-Wins & Verlauf",
+    guideDashF4Desc:
+      "Ranking der aussichtsreichsten offenen Ideen, dazu der Erfassungsverlauf über die Zeit – alles filterbar nach Kostenstelle und Team.",
+
+    guideFirstEyebrow: "Für den Einstieg",
+    guideFirstH2: "Schritt für Schritt, Feld für Feld",
+    guideFirstDesc:
+      "Nicht sicher, wo du anfangen sollst oder was ein Feld bedeutet? Hier ist wirklich jeder Schritt und jedes Feld, in genau der Reihenfolge, wie sie in der App auftauchen.",
+
+    guideFirstProcTitle: "Einen Prozess dokumentieren",
+    guideFirstProc1: "Tab „Prozesse“ öffnen.",
+    guideFirstProc2: "Oben bei „Neuen Prozess dokumentieren“ den Namen eintippen – z.B. „Rechnungsprüfung“ oder „Angebote erstellen“.",
+    guideFirstProc3: "Kostenstelle und Team auswählen – beide sind Pflicht, ohne sie lässt sich nicht speichern.",
+    guideFirstProc4:
+      "„Prozess speichern“ tippen – der Prozess erscheint sofort in der Liste darunter. Antippen, um ihn zu öffnen – ab hier geht es in vier Kacheln weiter.",
+    guideFirstProc5:
+      "Erste Kachel: „Prozessname“ lässt sich hier jederzeit korrigieren. „Übergeordneter Prozess“ ist nur nötig, wenn dieser Prozess eigentlich ein Teilschritt eines größeren Ablaufs ist – sonst auf „Keiner (Top-Level-Prozess)“ lassen. Darunter „Teilprozesse“: über „+ Neuen Teilprozess anlegen“ (fragt nach einem Namen) legst du untergeordnete Prozesse an, die automatisch hierhin zurückverweisen. Ganz unten „Zugehörige Use Cases“: über „+ Neue Idee für diesen Prozess“ (fragt nach einer Kurznotiz) eine neue, direkt verknüpfte Idee anlegen – bestehende Ideen verknüpfst du stattdessen später bei der Idee selbst über „Zugehöriger Prozess“.",
+    guideFirstProc6:
+      "Zweite Kachel „AI-Potenzial“: Regler von 1 (gering) bis 5 (hoch) einstellen – die App zeigt darüber sofort eine automatische Einordnung an. Darunter „Notizen/Begründung“: warum viel oder wenig Potenzial, erste Ansätze.",
+    guideFirstProc7:
+      "Dritte Kachel „Prozessschritte“: den Ablauf als Kette aufbauen. Unten Titel eintippen (z.B. „Rechnung prüfen“), Typ wählen (Start / Schritt / Entscheidung / Ende), „+ Schritt hinzufügen“. Jeder Schritt lässt sich danach einzeln bearbeiten: eine Nummer geben (z.B. „2.1“), mit einem Teilprozess verknüpfen (für einen Detail-Ablauf hinter diesem Schritt), per ▲/▼ verschieben, mit ✏️ Titel und Notiz bearbeiten, mit 🗑 löschen. Pro Schritt gibt es außerdem einen eigenen AI-Potenzial-Regler plus Notizfeld, und – sobald Use Cases mit dem Prozess verknüpft sind – Checkboxen unter „AI Support durch:“, um genau zu markieren, welche Idee an diesem Schritt ansetzt.",
+    guideFirstProc8:
+      "Vierte Kachel „Dokumente & Links“: Titel eintippen, Art wählen (Link oder Dokument), URL eintragen, „+ Hinzufügen“ – nur Adressen, kein Datei-Upload. Gedacht für Links auf SharePoint, Teams oder OneDrive.",
+
+    guideFirstIdeaTitle: "Eine Idee / einen Use Case erfassen",
+    guideFirstIdea1: "Tab „Ideen“ öffnen.",
+    guideFirstIdea2: "Oben bei „Neue Idee erfassen“ reicht ein Satz – z.B. „Automatische Zusammenfassung von Kundenmails per KI“.",
+    guideFirstIdea3: "Kostenstelle und Team auswählen – auch hier Pflicht.",
+    guideFirstIdea4:
+      "„Idee speichern“ tippen – fertig, sie steht sofort in der Liste. Antippen, um sie zu öffnen – der Rest ist komplett optional und lässt sich jederzeit später nachtragen.",
+    guideFirstIdea5:
+      "Erste Kachel: „Kurznotiz“ ist der Titel, den du oben eingetippt hast – hier korrigierbar. „Katalog-ID“ bitte leer lassen, bis der Case offiziell in der zentralen Liste eine GC-Nummer bekommen hat (siehe Export weiter unten). „Usecase-Geber/Ansprechpartner“ ist der Name der verantwortlichen Person, falls das nicht du selbst bist. „Status“ (Geplant/PoC, In Umsetzung, Integrated, Verworfen) und „Kostenstelle/Team“ lassen sich hier jederzeit ändern. „Tags“ sind frei, Komma-getrennt, z.B. „Vertrieb, Automatisierung“.",
+    guideFirstIdea6:
+      "Zweite Kachel (Beschreibung): „Problem“ – was ist aktuell schwierig/aufwendig; „Ziel“ – was soll die Lösung konkret erreichen; „Business Benefit“ – welcher Nutzen entsteht (Zeit, Qualität, Kosten, Risiko); „Quantifizierter Nutzen“ als Zahl, z.B. „20 Std./Jahr Ersparnis“; „Qualitativer Nutzen“, z.B. „bessere Entscheidungsgrundlage“.",
+    guideFirstIdea7:
+      "Dritte Kachel „Bewertung“: vier Regler von 1–5 – Nutzen, Machbarkeit, Aufwand, Risiko. Der Banner darüber zeigt live die daraus abgeleitete Einordnung: Quick Win, großes Projekt, Nice to have, eher verschieben, prüfen, kaum machbar oder hohes Risiko.",
+    guideFirstIdea8:
+      "Vierte Kachel „Lösungsansatz“: „KI-Rolle“ (Dropdown, z.B. welche Art von KI-Einsatz); „Tools & Umsetzungsoptionen“ – konkrete Tools/Frameworks; „Systeme“ – beteiligte Plattformen, bewusst getrennt von den Tools; „Input (Datenquelle)“ – woher kommen die Daten; „Output (Datenausgabe)“ – was liefert der Use Case; „Wichtige Gedanken vorab“ – z.B. Datenschutz, Kosten, Risiken.",
+    guideFirstIdea9:
+      "Fünfte Kachel „Für die Ambassador-Liste“: „Kind of KPI“, „Priorität (Liste)“ (bei manchen Status automatisch vorgegeben und gesperrt), „Kommentar“, „Skill Level“ (z.B. „Skill 2 - Ambassador“). Diese Felder werden für die tägliche Nutzung nicht gebraucht, aber für einen vollständigen Eintrag in der zentralen Liste.",
+    guideFirstIdea10:
+      "Ausklappbereich „KI-Unterstützung“: „Start-Prompt erzeugen“ braucht vorher ausgefülltes Problem, Ziel und Business Benefit. Den erzeugten Text in ein beliebiges KI-Tool einfügen (Copilot, ChatGPT, Claude, Gemini …) und die Antwort optional unter „KI-Antwort (Notiz)“ zurückkopieren – ausgewertet wird sie nicht automatisch.",
+    guideFirstIdea11:
+      "Kachel „Stufenkette“: „Zugehöriger Prozess“ verknüpft die Idee mit einem Prozess. „Vorherige Stufe“ setzt du, wenn diese Idee die Weiterentwicklung einer anderen ist (z.B. GC12 → GC13). Über „+ Neue Folgestufe anlegen“ entsteht direkt die nächste Stufe, mit Kostenstelle, Team und Prozess automatisch übernommen.",
+    guideFirstIdea12:
+      "Kachel „Weitere Prozesse“: zusätzliche Prozesse verknüpfen, falls die Idee über den oben gesetzten „Zugehörigen Prozess“ hinaus noch an anderer Stelle relevant ist. Ganz unten nicht „Speichern“ vergessen – Freitextfelder werden erst dabei übernommen.",
+
+    guideFirstExportNewTitle: "Einen neuen Case in die Ambassador-Liste exportieren",
+    guideFirstExportNew1:
+      "Zur Kachel „Export“ (unter „Verwaltung & mehr“). Oben stehen alle Ideen ohne Katalog-ID – also alle, die noch nicht in der zentralen Liste sind.",
+    guideFirstExportNew2:
+      "Vor dem Kopieren bei der Idee kurz die Felder aus „Lösungsansatz“ und „Für die Ambassador-Liste“ prüfen (KI-Rolle, Systeme, Input, Output, Kind of KPI, Nutzen, Kommentar, Priorität, Skill Level) – für die tägliche Nutzung optional, für einen vollständigen Case in der Liste aber relevant.",
+    guideFirstExportNew3:
+      "Bei der Idee „📋 Tab-getrennt (Excel-Zeile)“ antippen – oder „📋 Kopieren“ für eine lesbare Textfassung, z.B. um sie stattdessen in einen Chat mit Claude zu posten, wenn du beim Einordnen Unterstützung möchtest.",
+    guideFirstExportNew4:
+      "In der Ambassador-Excel-Liste eine neue Zeile anhängen und dort einfügen (Strg+V). „ID Nr“ bleibt leer – dort selbst die nächste freie GC-Nummer eintragen. Brand/Agency sind schon mit „Shared Service“/„Group Controlling“ vorbelegt. Die Übersetzungs-Formelspalten („#CONNECT!“) danach aus der Zeile darüber nach unten ziehen.",
+    guideFirstExportNew5:
+      "Die dort vergebene Katalog-ID (z.B. „GC30“) zurück in der App bei dieser Idee unter „Katalog-ID“ eintragen und speichern. Die Idee verschwindet dadurch aus dieser Liste und taucht ab sofort unten bei den Aktualisierungen auf.",
+
+    guideFirstExportUpdateTitle: "Einen bereits exportierten Case aktualisieren",
+    guideFirstExportUpdate1:
+      "Sobald eine Idee eine Katalog-ID hat, steht sie automatisch im unteren Bereich „Bereits synchronisierte Cases aktualisieren“ (sortiert nach Katalog-ID) – kein zusätzlicher Schritt nötig.",
+    guideFirstExportUpdate2:
+      "Sinnvoll, sobald du eine solche Idee in der App weiter bearbeitet hast (z.B. Bewertung geändert, Texte ergänzt) und der Stand in der zentralen Liste das nachziehen soll – die App synchronisiert nichts von selbst.",
+    guideFirstExportUpdate3:
+      "Bei der Idee „📋 Update-Zeile (Excel)“ antippen (oder „📋 Alle Update-Zeilen“, um mehrere Cases auf einmal zu kopieren).",
+    guideFirstExportUpdate4:
+      "Diese Zeile enthält – anders als beim Neu-Export – die Katalog-ID an erster Stelle, damit klar ist, welche Zeile betroffen ist, plus vier automatisch befüllte Spalten ganz rechts: Änderungsstatus („geändert“), Geändert von (deine E-Mail), Änderungsdatum (heute). „Was wurde geändert“ bleibt leer, optional von dir selbst auszufüllen.",
+    guideFirstExportUpdate5:
+      "Wichtig: diese Zeile nicht als neue Zeile einfügen, sondern direkt auf der bestehenden Zeile mit der passenden ID Nr in der Liste einfügen (die Zeile markieren, Strg+V) – dadurch wird die alte Zeile komplett mit dem aktuellen Stand aus der App überschrieben.",
+
+    guideMoreEyebrow: "Verwaltung & mehr",
+    guideMoreH2: "Der Rest des Schnellzugriffs",
+    guideMoreDesc: "Über die Kachel „Verwaltung & mehr“ auf der Startseite erreichbar.",
+    guideMgmtExportD: "Brücke zur zentralen AI Ambassadors Usecase-Collection – reines Copy & Paste, nichts läuft automatisch oder synchronisiert.",
+    guideMgmtTeamsD: "Mit vollem Schreibrecht auf eine Kostenstelle könnt ihr hier die Teams darin anlegen, umbenennen oder löschen.",
+    guideMgmtSettingsD: "Eigenes Passwort setzen. Sprache (DE/EN) und Hell-/Dunkelmodus lassen sich oben rechts auf jedem Bildschirm umschalten.",
+    guideMgmtAccessD: "Nur für Admins sichtbar: neue Konten anlegen, freigeben und Kostenstellen-/Team-Zugriff je Person verwalten.",
+
+    guideGoodEyebrow: "Gut zu wissen",
+    guideGoodH2: "Drei Dinge vorab",
+    guideGood1Title: "Rechte sind gestaffelt",
+    guideGood1Desc:
+      "Zugriff wird pro Kostenstelle und Team vergeben (Nur Lesen oder Lesen & Schreiben) – je nach Freigabe siehst oder bearbeitest du unterschiedlich viel.",
+    guideGood2Title: "Freiwillig, kein Ersatz",
+    guideGood2Desc:
+      "Die Nutzung ist freiwillig und ersetzt nicht die offizielle Meldung im Rahmen der AI-Ambassador-Organisation – der Export liefert euch dafür aber den Input copy-paste-fertig.",
+    guideGood3Title: "Noch im Aufbau",
+    guideGood3Desc: "Funktionen können sich noch ändern. Bugs und Ideen für die App selbst gerne direkt an den Admin.",
+
+    guideDeviceEyebrow: "Extra-Tipp",
+    guideDeviceH2: "Auf dem eigenen Gerät einrichten",
+    guideDeviceDesc: "Kein App Store, keine IT-Anfrage nötig – danach startet die App wie jede andere, mit eigenem Icon.",
+    guideDevice1Name: "Laptop · Chrome / Edge",
+    guideDevice1Li1: "Adressleiste rechts: Installieren-Symbol anklicken",
+    guideDevice1Li2: "oder Menü ⋮ → „App installieren“",
+    guideDevice2Name: "Laptop · Safari (Mac)",
+    guideDevice2Li1: "Menü „Ablage“ → „Zum Dock hinzufügen“",
+    guideDevice2Li2: "ab macOS Sonoma – sonst als Lesezeichen speichern",
+    guideDevice3Name: "iPhone · Safari",
+    guideDevice3Li1: "Teilen-Symbol (Quadrat mit Pfeil) tippen",
+    guideDevice3Li2: "„Zum Home-Bildschirm“ wählen",
+    guideDevice4Name: "Android · Chrome",
+    guideDevice4Li1: "Menü ⋮ öffnen",
+    guideDevice4Li2: "„App installieren“ wählen",
+
+    guideFooter1: "Fragen oder Zugang? Schreib kurz an den Admin (derzeit",
+    guideFooter1Suffix: ") oder per Teams.",
+    guideFooter2: "Alle Daten bleiben innerhalb des Teams – sichtbar nur für freigegebene Kolleg:innen mit Firmen-Mail-Adresse.",
+
     newIdeaLabel: "Neue Idee erfassen",
     ideaPlaceholder: "z.B. Automatische Zusammenfassung von Kundenmails per KI...",
     saveIdea: "Idee speichern",
@@ -489,6 +662,176 @@ const I18N = {
     utilSettingsLabel: "Settings",
     adminOnlyTag: "Admin",
     brandFooterCaption: "A tool by",
+
+    guideIntroEyebrow: "Quick guide",
+    guideIntroLede:
+      "Document your processes, check them for AI potential, and capture AI use cases in seconds — including scoring and AI-assisted elaboration.",
+    guideAccessEyebrow: "Access",
+    guideAccessH2: "How to get access",
+    guideAccessDesc: "Your access is set up for you personally — a one-time effort, about a minute.",
+    guideStep1Title: "Request access",
+    guideStep1Desc:
+      "Send the admin a short message: name, desired company email address, cost center(s) and team(s). Fastest via the „Request access” tab on the app's login screen — it opens a pre-filled email directly. A short Teams message works just as well. Contact:",
+    guideStep2Title: "Get your credentials",
+    guideStep2Desc: "The admin creates your account and sends you the email address and a starting password directly.",
+    guideStep3Title: "Log in & get started",
+    guideStep3Desc: "Open the app, log in with your email and starting password. Set your own password right away under „Settings”.",
+    guidePendingTitle: "Says „Waiting for approval”?",
+    guidePendingDesc:
+      "Then your account exists, but approval and cost-center access aren't fully set up by the admin yet. Just ask — it's usually quick.",
+    guideForgotTitle: "Forgot your password?",
+    guideForgotDesc: "Contact the admin (see contact info below) or via Teams — they'll set you a new password.",
+
+    guideTourEyebrow: "Tour",
+    guideTourH2: "What happens in each tab",
+    guideTourDesc: "The app has four main tabs, named and ordered here exactly as in the app.",
+    guideStartF1Name: "AI-potential ring & metrics",
+    guideStartF1Desc:
+      "Average AI potential of your documented processes, plus open ideas, ideas in progress, and the number of documented processes — at a glance.",
+    guideStartF2Name: "Quick access",
+    guideStartF2Desc: "Direct tiles to Processes, Ideas and Analytics, plus „Manage & more” with Guide, Teams, Export and Settings.",
+    guideStartF3Name: "Recently edited",
+    guideStartF3Desc: "Your three most recently edited ideas, so you can pick up right where you left off.",
+    guideProcF1Name: "Document processes",
+    guideProcF1Desc:
+      "Capture recurring workflows in your area — e.g. creating quotes, invoice checking, customer onboarding. Optional, but helpful for spotting optimization potential.",
+    guideProcF2Name: "AI potential & sub-processes",
+    guideProcF2Desc: "Rate and justify each process's AI potential, and break larger workflows into sub-processes.",
+    guideProcF3Name: "Process steps as a flowchart",
+    guideProcF3Desc: "Build the flow as a chain of Start / Step / Decision / End, and mark per step where AI could help.",
+    guideProcF4Name: "Documents, links & use cases",
+    guideProcF4Desc:
+      "Store SharePoint/Teams/OneDrive links (URLs only, no upload) and link ideas to the process — building an AI/process map step by step.",
+    guideIdeaF1Name: "Capture in seconds",
+    guideIdeaF1Desc:
+      "Type a quick note the moment something occurs to you — on the way to a meeting or right at your desk. Filterable by cost center, team and use-case owner.",
+    guideIdeaF2Name: "Score instead of guess",
+    guideIdeaF2Desc:
+      "Rate impact, feasibility, effort and risk — the app automatically classifies it: Quick Win, big project, nice to have, better postponed, needs review, barely feasible, or high risk.",
+    guideIdeaF3Name: "Elaborate with AI",
+    guideIdeaF3Desc:
+      "Generate a starting prompt from Problem, Goal and Business Benefit, paste it into any AI tool (Copilot, ChatGPT, Claude, Gemini …), and optionally copy the answer back into the documentation — no API key needed.",
+    guideIdeaF4Name: "Stage chains",
+    guideIdeaF4Desc:
+      "Does one idea build on another (e.g. GC12 → GC13 → GC14)? Link them here so it's visible everywhere which stage is currently being worked on.",
+    guideIdeaF5Name: "Catalog fields & export",
+    guideIdeaF5Desc:
+      "Once an idea is ready: fill in the extra „For the Ambassador list” fields and use the Export tab to copy it, ready to paste, into the central AI Ambassadors use-case collection.",
+    guideDashF1Name: "Impact × effort matrix",
+    guideDashF1Desc: "All scored ideas positioned at a glance — Quick Wins top left.",
+    guideDashF2Name: "Units, processes & use cases",
+    guideDashF2Desc: "Tree view: which processes and ideas belong to which cost center/team.",
+    guideDashF3Name: "Status per team & AI-potential heatmap",
+    guideDashF3Desc: "How far along teams are with their ideas, and where processes have the most AI potential.",
+    guideDashF4Name: "Top quick wins & history",
+    guideDashF4Desc:
+      "Ranking of the most promising open ideas, plus the capture history over time — all filterable by cost center and team.",
+
+    guideFirstEyebrow: "Getting started",
+    guideFirstH2: "Step by step, field by field",
+    guideFirstDesc:
+      "Not sure where to start or what a field means? Here is truly every step and every field, in exactly the order they appear in the app.",
+
+    guideFirstProcTitle: "Document a process",
+    guideFirstProc1: "Open the „Processes” tab.",
+    guideFirstProc2: "At the top under „Document new process”, type the name — e.g. „Invoice checking” or „Create quotes”.",
+    guideFirstProc3: "Select cost center and team — both are required, you can't save without them.",
+    guideFirstProc4:
+      "Tap „Save process” — the process appears immediately in the list below. Tap it to open it — from here it continues in four tiles.",
+    guideFirstProc5:
+      "First tile: „Process name” can be corrected here any time. „Parent process” is only needed if this process is actually a sub-step of a bigger workflow — otherwise leave it on „None (top-level process)”. Below that, „Sub-processes”: use „+ Create new sub-process” (asks for a name) to create child processes that automatically link back here. At the bottom, „Related use cases”: use „+ New idea for this process” (asks for a short note) to create a new, directly linked idea — to link an existing idea instead, do that later on the idea itself via „Related process”.",
+    guideFirstProc6:
+      "Second tile „AI potential”: set the slider from 1 (low) to 5 (high) — the app immediately shows an automatic classification above it. Below that, „Notes/reasoning”: why there's more or less potential, initial approaches.",
+    guideFirstProc7:
+      "Third tile „Process steps”: build the flow as a chain. Type a title at the bottom (e.g. „Check invoice”), choose a type (Start / Step / Decision / End), „+ Add step”. Each step can then be edited individually: give it a number (e.g. „2.1”), link it to a sub-process (for a detailed flow behind this step), move it with ▲/▼, edit title and note with ✏️, delete with 🗑. Each step also has its own AI-potential slider plus a note field, and — once use cases are linked to the process — checkboxes under „AI support from:” to mark exactly which idea applies at this step.",
+    guideFirstProc8:
+      "Fourth tile „Documents & links”: type a title, choose a kind (Link or Document), enter the URL, „+ Add” — addresses only, no file upload. Meant for links to SharePoint, Teams or OneDrive.",
+
+    guideFirstIdeaTitle: "Capture an idea / use case",
+    guideFirstIdea1: "Open the „Ideas” tab.",
+    guideFirstIdea2: "At the top under „Capture new idea”, one sentence is enough — e.g. „Automatic summary of customer emails via AI”.",
+    guideFirstIdea3: "Select cost center and team — required here too.",
+    guideFirstIdea4:
+      "Tap „Save idea” — done, it's immediately in the list. Tap it to open it — everything else is completely optional and can be filled in later at any time.",
+    guideFirstIdea5:
+      "First tile: „Short note” is the title you typed at the top — correctable here. Leave „Catalog ID” empty until the case has officially been given a GC number in the central list (see Export below). „Use-case owner/contact” is the name of the responsible person, if that's not you. „Status” (Planned/PoC, In progress, Integrated, Discarded) and „Cost center/team” can be changed here any time. „Tags” are free text, comma-separated, e.g. „Sales, Automation”.",
+    guideFirstIdea6:
+      "Second tile (Description): „Problem” — what's currently difficult/time-consuming; „Goal” — what should the solution actually achieve; „Business Benefit” — what benefit results (time, quality, cost, risk); „Quantified benefit” as a number, e.g. „20 hrs/year saved”; „Qualitative benefit”, e.g. „better basis for decisions”.",
+    guideFirstIdea7:
+      "Third tile „Scoring”: four sliders from 1–5 — impact, feasibility, effort, risk. The banner above shows the resulting classification live: Quick Win, big project, nice to have, better postponed, needs review, barely feasible, or high risk.",
+    guideFirstIdea8:
+      "Fourth tile „Solution approach”: „AI role” (dropdown, e.g. what kind of AI use); „Tools & implementation options” — concrete tools/frameworks; „Systems” — platforms involved, deliberately separate from tools; „Input (data source)” — where does the data come from; „Output (data output)” — what does the use case deliver; „Key considerations upfront” — e.g. data privacy, cost, risks.",
+    guideFirstIdea9:
+      "Fifth tile „For the Ambassador list”: „Kind of KPI”, „List priority” (auto-set and locked for some statuses), „Comment”, „Skill level” (e.g. „Skill 2 - Ambassador”). These fields aren't needed for daily use, but for a complete entry in the central list.",
+    guideFirstIdea10:
+      "Expandable „AI support” section: „Generate starting prompt” needs Problem, Goal and Business Benefit filled in first. Paste the generated text into any AI tool (Copilot, ChatGPT, Claude, Gemini …) and optionally copy the answer back under „AI response (note)” — it isn't evaluated automatically.",
+    guideFirstIdea11:
+      "„Stage chain” tile: „Related process” links the idea to a process. Set „Previous stage” if this idea is the further development of another one (e.g. GC12 → GC13). „+ Create next stage” creates the next stage directly, with cost center, team and process carried over automatically.",
+    guideFirstIdea12:
+      "„Other processes” tile: link additional processes if the idea is relevant elsewhere beyond the „Related process” set above. Don't forget „Save” at the very bottom — free-text fields are only saved then.",
+
+    guideFirstExportNewTitle: "Export a new case to the Ambassador list",
+    guideFirstExportNew1:
+      "Go to the „Export” tile (under „Manage & more”). At the top are all ideas without a Catalog ID — i.e. all the ones not yet in the central list.",
+    guideFirstExportNew2:
+      "Before copying, briefly check the idea's „Solution approach” and „For the Ambassador list” fields (AI role, Systems, Input, Output, Kind of KPI, Benefit, Comment, Priority, Skill level) — optional for daily use, but relevant for a complete case in the list.",
+    guideFirstExportNew3:
+      "Tap „📋 Tab-separated (Excel row)” on the idea — or „📋 Copy” for a readable text version, e.g. to post it into a chat with Claude instead, if you want help classifying it.",
+    guideFirstExportNew4:
+      "Append a new row in the Ambassador Excel list and paste it there (Ctrl+V). Leave „ID Nr” empty — enter the next free GC number there yourself. Brand/Agency are already pre-filled with „Shared Service”/„Group Controlling”. Drag the translation formula columns („#CONNECT!”) down afterward from the row above.",
+    guideFirstExportNew5:
+      "Enter the Catalog ID assigned there (e.g. „GC30”) back in the app on this idea under „Catalog ID” and save. The idea then disappears from this list and appears below under updates from now on.",
+
+    guideFirstExportUpdateTitle: "Update an already-exported case",
+    guideFirstExportUpdate1:
+      "Once an idea has a Catalog ID, it automatically appears in the lower „Update already synced cases” area (sorted by Catalog ID) — no extra step needed.",
+    guideFirstExportUpdate2:
+      "Useful once you've further edited such an idea in the app (e.g. changed the scoring, added text) and want the central list's status to catch up — the app doesn't sync anything on its own.",
+    guideFirstExportUpdate3:
+      "Tap „📋 Update row (Excel)” on the idea (or „📋 All update rows” to copy several cases at once).",
+    guideFirstExportUpdate4:
+      "Unlike the new-export row, this row has the Catalog ID first, so it's clear which row is affected, plus four auto-filled columns on the far right: change status („changed”), changed by (your email), change date (today). „What was changed” stays empty, optionally fill it in yourself.",
+    guideFirstExportUpdate5:
+      "Important: don't paste this row as a new row — paste it directly onto the existing row with the matching ID Nr in the list (select the row, Ctrl+V) — this overwrites the old row entirely with the current state from the app.",
+
+    guideMoreEyebrow: "Manage & more",
+    guideMoreH2: "The rest of quick access",
+    guideMoreDesc: "Reachable via the „Manage & more” tile on the start page.",
+    guideMgmtExportD: "Bridge to the central AI Ambassadors use-case collection — pure copy & paste, nothing runs automatically or syncs.",
+    guideMgmtTeamsD: "With full write access to a cost center you can create, rename or delete its teams here.",
+    guideMgmtSettingsD: "Set your own password. Language (DE/EN) and light/dark mode can be switched top-right on every screen.",
+    guideMgmtAccessD: "Visible to admins only: create and approve new accounts, and manage cost-center/team access per person.",
+
+    guideGoodEyebrow: "Good to know",
+    guideGoodH2: "Three things upfront",
+    guideGood1Title: "Rights are tiered",
+    guideGood1Desc:
+      "Access is granted per cost center and team (read-only or read & write) — depending on your grant you'll see or edit more or less.",
+    guideGood2Title: "Voluntary, not a replacement",
+    guideGood2Desc:
+      "Using this is voluntary and doesn't replace the official reporting within the AI Ambassador organization — but the export gives you the input ready to paste for that.",
+    guideGood3Title: "Still evolving",
+    guideGood3Desc: "Features may still change. Bugs and ideas for the app itself are welcome directly to the admin.",
+
+    guideDeviceEyebrow: "Extra tip",
+    guideDeviceH2: "Set up on your own device",
+    guideDeviceDesc: "No app store, no IT request needed — afterward the app starts up like any other, with its own icon.",
+    guideDevice1Name: "Laptop · Chrome / Edge",
+    guideDevice1Li1: "Click the install icon on the right of the address bar",
+    guideDevice1Li2: "or menu ⋮ → „Install app”",
+    guideDevice2Name: "Laptop · Safari (Mac)",
+    guideDevice2Li1: "Menu „File” → „Add to Dock”",
+    guideDevice2Li2: "from macOS Sonoma — otherwise save as a bookmark",
+    guideDevice3Name: "iPhone · Safari",
+    guideDevice3Li1: "Tap the share icon (square with an arrow)",
+    guideDevice3Li2: "Choose „Add to Home Screen”",
+    guideDevice4Name: "Android · Chrome",
+    guideDevice4Li1: "Open menu ⋮",
+    guideDevice4Li2: "Choose „Install app”",
+
+    guideFooter1: "Questions or access? Send the admin a short message (currently",
+    guideFooter1Suffix: ") or via Teams.",
+    guideFooter2: "All data stays within the team — visible only to approved colleagues with a company email address.",
 
     newIdeaLabel: "Capture a new idea",
     ideaPlaceholder: "e.g. Automatic summary of customer emails via AI...",
@@ -1061,6 +1404,7 @@ function currentRoute() {
   if (hash === "#/processes") return { view: "process-list" };
   if (hash === "#/dashboard") return { view: "dashboard" };
   if (hash === "#/settings") return { view: "settings" };
+  if (hash === "#/guide") return { view: "guide" };
   if (hash === "#/admin") return { view: "admin" };
   if (hash === "#/export") return { view: "export" };
   if (hash === "#/teams") return { view: "teams" };
@@ -3587,6 +3931,216 @@ function renderSettings() {
   });
 }
 
+// ---------- View: Anleitung (Guide) ----------
+
+const GUIDE_TOUR_PANELS = {
+  start: [
+    ["📈", "guideStartF1Name", "guideStartF1Desc"],
+    ["🧭", "guideStartF2Name", "guideStartF2Desc"],
+    ["🕘", "guideStartF3Name", "guideStartF3Desc"],
+  ],
+  processes: [
+    ["🗂️", "guideProcF1Name", "guideProcF1Desc"],
+    ["🧬", "guideProcF2Name", "guideProcF2Desc"],
+    ["🔀", "guideProcF3Name", "guideProcF3Desc"],
+    ["🔗", "guideProcF4Name", "guideProcF4Desc"],
+  ],
+  ideas: [
+    ["⚡", "guideIdeaF1Name", "guideIdeaF1Desc"],
+    ["🎯", "guideIdeaF2Name", "guideIdeaF2Desc"],
+    ["🤖", "guideIdeaF3Name", "guideIdeaF3Desc"],
+    ["🔢", "guideIdeaF4Name", "guideIdeaF4Desc"],
+    ["🔄", "guideIdeaF5Name", "guideIdeaF5Desc"],
+  ],
+  dashboard: [
+    ["🧮", "guideDashF1Name", "guideDashF1Desc"],
+    ["🌳", "guideDashF2Name", "guideDashF2Desc"],
+    ["🚦", "guideDashF3Name", "guideDashF3Desc"],
+    ["🏆", "guideDashF4Name", "guideDashF4Desc"],
+  ],
+};
+
+function guideTourPanelHtml(panelKey) {
+  return GUIDE_TOUR_PANELS[panelKey]
+    .map(
+      ([icon, nameKey, descKey]) => `
+      <div class="guide-feature">
+        <div class="mark">${icon}</div>
+        <div><div class="name">${t(nameKey)}</div><p class="desc">${t(descKey)}</p></div>
+      </div>`
+    )
+    .join("");
+}
+
+function guideStepHtml(num, titleKey, descKey, suffixHtml) {
+  return `
+    <div class="guide-step">
+      <div class="num">${num}</div>
+      <div class="body"><strong style="color:var(--text); display:block; margin-bottom:2px;">${t(titleKey)}</strong>${t(descKey)}${suffixHtml || ""}</div>
+    </div>
+  `;
+}
+
+function guideSubstepHtml(num, descKey) {
+  return `
+    <div class="guide-step">
+      <div class="num">${num}</div>
+      <div class="body">${t(descKey)}</div>
+    </div>
+  `;
+}
+
+function guideSubstepsBlockHtml(letter, titleKey, descKeys) {
+  return `
+    <div class="guide-substep-label"><span class="n">${letter}</span>${t(titleKey)}</div>
+    ${descKeys.map((descKey, i) => guideSubstepHtml(i + 1, descKey)).join("")}
+  `;
+}
+
+function renderGuide() {
+  const adminEmail = "d.goos@house-of-communication.com";
+  const mailLink = `<a href="mailto:${adminEmail}">${adminEmail}</a>`;
+  const tourTabLabels = {
+    start: t("startTab"),
+    processes: t("processesTab"),
+    ideas: t("ideasTab"),
+    dashboard: t("dashboardTab"),
+  };
+
+  $app.innerHTML = `
+    <header class="topbar">
+      <div class="back-row">
+        <button class="icon-btn" id="back-btn">${t("backBtn")}</button>
+      </div>
+      ${langToggleButton()}${themeToggleButton()}
+    </header>
+    <main>
+      <div class="card">
+        <div class="section-title" style="margin:0 0 4px;">${t("guideIntroEyebrow")}</div>
+        <p style="font-size:13.5px; color:var(--text-dim); line-height:1.55; margin:0;">${t("guideIntroLede")}</p>
+      </div>
+
+      <div class="card">
+        <div class="section-title" style="margin:0 0 4px;">${t("guideAccessEyebrow")}</div>
+        <div class="guide-h2">${t("guideAccessH2")}</div>
+        <p style="font-size:13px; color:var(--text-dim); margin:0 0 14px;">${t("guideAccessDesc")}</p>
+        ${guideStepHtml(1, "guideStep1Title", "guideStep1Desc", ` ${mailLink}`)}
+        ${guideStepHtml(2, "guideStep2Title", "guideStep2Desc")}
+        ${guideStepHtml(3, "guideStep3Title", "guideStep3Desc")}
+        <div class="guide-callout"><div><strong>${t("guidePendingTitle")}</strong>${t("guidePendingDesc")}</div></div>
+        <div class="guide-callout"><div><strong>${t("guideForgotTitle")}</strong>${t("guideForgotDesc")}</div></div>
+      </div>
+
+      <div class="card">
+        <div class="section-title" style="margin:0 0 4px;">${t("guideTourEyebrow")}</div>
+        <div class="guide-h2">${t("guideTourH2")}</div>
+        <p style="font-size:13px; color:var(--text-dim); margin:0 0 14px;">${t("guideTourDesc")}</p>
+        <div class="guide-tabs" id="guide-tour-tabs">
+          ${Object.keys(tourTabLabels)
+            .map((k) => `<button data-guide-tab="${k}" class="${k === "start" ? "active" : ""}">${tourTabLabels[k]}</button>`)
+            .join("")}
+        </div>
+        <div id="guide-tour-panel">${guideTourPanelHtml("start")}</div>
+      </div>
+
+      <div class="card">
+        <div class="section-title" style="margin:0 0 4px;">${t("guideFirstEyebrow")}</div>
+        <div class="guide-h2">${t("guideFirstH2")}</div>
+        <p style="font-size:13px; color:var(--text-dim); margin:0 0 14px;">${t("guideFirstDesc")}</p>
+        ${guideSubstepsBlockHtml("A", "guideFirstProcTitle", [
+          "guideFirstProc1",
+          "guideFirstProc2",
+          "guideFirstProc3",
+          "guideFirstProc4",
+          "guideFirstProc5",
+          "guideFirstProc6",
+          "guideFirstProc7",
+          "guideFirstProc8",
+        ])}
+        ${guideSubstepsBlockHtml("B", "guideFirstIdeaTitle", [
+          "guideFirstIdea1",
+          "guideFirstIdea2",
+          "guideFirstIdea3",
+          "guideFirstIdea4",
+          "guideFirstIdea5",
+          "guideFirstIdea6",
+          "guideFirstIdea7",
+          "guideFirstIdea8",
+          "guideFirstIdea9",
+          "guideFirstIdea10",
+          "guideFirstIdea11",
+          "guideFirstIdea12",
+        ])}
+        ${guideSubstepsBlockHtml("C", "guideFirstExportNewTitle", [
+          "guideFirstExportNew1",
+          "guideFirstExportNew2",
+          "guideFirstExportNew3",
+          "guideFirstExportNew4",
+          "guideFirstExportNew5",
+        ])}
+        ${guideSubstepsBlockHtml("D", "guideFirstExportUpdateTitle", [
+          "guideFirstExportUpdate1",
+          "guideFirstExportUpdate2",
+          "guideFirstExportUpdate3",
+          "guideFirstExportUpdate4",
+          "guideFirstExportUpdate5",
+        ])}
+      </div>
+
+      <div class="card">
+        <div class="section-title" style="margin:0 0 4px;">${t("guideMoreEyebrow")}</div>
+        <div class="guide-h2">${t("guideMoreH2")}</div>
+        <p style="font-size:13px; color:var(--text-dim); margin:0 0 14px;">${t("guideMoreDesc")}</p>
+        <div class="guide-mgmt-grid">
+          <div class="guide-mgmt-tile"><div class="ic">🔄</div><div class="t">${t("utilExportLabel")}</div><p class="d">${t("guideMgmtExportD")}</p></div>
+          <div class="guide-mgmt-tile"><div class="ic">🧩</div><div class="t">${t("utilTeamsLabel")}</div><p class="d">${t("guideMgmtTeamsD")}</p></div>
+          <div class="guide-mgmt-tile"><div class="ic">⚙️</div><div class="t">${t("utilSettingsLabel")}</div><p class="d">${t("guideMgmtSettingsD")}</p></div>
+          <div class="guide-mgmt-tile"><span class="admin-tag" style="position:absolute; top:10px; right:10px;">${t("adminOnlyTag")}</span><div class="ic">🛡️</div><div class="t">${t("utilPermissionsLabel")}</div><p class="d">${t("guideMgmtAccessD")}</p></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="section-title" style="margin:0 0 8px;">${t("guideGoodEyebrow")}</div>
+        <div class="guide-h2" style="margin-bottom:10px;">${t("guideGoodH2")}</div>
+        <div class="guide-callout" style="margin-top:0;"><div><strong>${t("guideGood1Title")}</strong>${t("guideGood1Desc")}</div></div>
+        <div class="guide-callout"><div><strong>${t("guideGood2Title")}</strong>${t("guideGood2Desc")}</div></div>
+        <div class="guide-callout"><div><strong>${t("guideGood3Title")}</strong>${t("guideGood3Desc")}</div></div>
+      </div>
+
+      <div class="card">
+        <div class="section-title" style="margin:0 0 4px;">${t("guideDeviceEyebrow")}</div>
+        <div class="guide-h2">${t("guideDeviceH2")}</div>
+        <p style="font-size:13px; color:var(--text-dim); margin:0 0 14px;">${t("guideDeviceDesc")}</p>
+        <div class="guide-device-grid">
+          <div class="guide-device-card"><div class="head">💻 ${t("guideDevice1Name")}</div><ol><li>${t("guideDevice1Li1")}</li><li>${t("guideDevice1Li2")}</li></ol></div>
+          <div class="guide-device-card"><div class="head">💻 ${t("guideDevice2Name")}</div><ol><li>${t("guideDevice2Li1")}</li><li>${t("guideDevice2Li2")}</li></ol></div>
+          <div class="guide-device-card"><div class="head">📱 ${t("guideDevice3Name")}</div><ol><li>${t("guideDevice3Li1")}</li><li>${t("guideDevice3Li2")}</li></ol></div>
+          <div class="guide-device-card"><div class="head">📱 ${t("guideDevice4Name")}</div><ol><li>${t("guideDevice4Li1")}</li><li>${t("guideDevice4Li2")}</li></ol></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <p style="font-size:12.5px; color:var(--text-dim); margin:0 0 8px; line-height:1.5;">${t("guideFooter1")} ${mailLink}${t("guideFooter1Suffix")}</p>
+        <p style="font-size:12px; color:var(--text-dim); margin:0; line-height:1.5;">${t("guideFooter2")}</p>
+      </div>
+    </main>
+  `;
+
+  document.getElementById("back-btn").addEventListener("click", () => {
+    window.location.hash = "";
+  });
+  bindLangToggle();
+  bindThemeToggle();
+
+  document.querySelectorAll("[data-guide-tab]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll("[data-guide-tab]").forEach((b) => b.classList.remove("active"));
+      btn.classList.add("active");
+      document.getElementById("guide-tour-panel").innerHTML = guideTourPanelHtml(btn.dataset.guideTab);
+    });
+  });
+}
+
 function renderPendingApproval() {
   $app.innerHTML = `
     <div class="login-wrap">
@@ -3881,7 +4435,7 @@ function accessLevelOptions(selected) {
 
 function registrationMailto(email, password) {
   const appUrl = "https://davgoos.github.io/Claude/index.html";
-  const guideUrl = "https://claude.ai/code/artifact/a5713396-1a29-499d-9edb-4b642a6f1ace";
+  const guideUrl = "https://davgoos.github.io/Claude/index.html#/guide";
   const body = t("registrationMailBody")
     .replaceAll("{email}", email)
     .replaceAll("{password}", password)
@@ -5089,7 +5643,7 @@ async function renderStart() {
 
       <div class="section-title" style="margin-top:20px;">${t("manageMoreTitle")}</div>
       <div class="tile-grid util-row">
-        <div class="tile fade-up" data-href="https://claude.ai/code/artifact/a5713396-1a29-499d-9edb-4b642a6f1ace" style="animation-delay:.46s"><span class="ic">📋</span><span class="lbl">${t("utilGuideLabel")}</span></div>
+        <div class="tile fade-up" data-hash="#/guide" style="animation-delay:.46s"><span class="ic">📋</span><span class="lbl">${t("utilGuideLabel")}</span></div>
         <div class="tile fade-up" data-hash="#/teams" style="animation-delay:.5s"><span class="ic">🧩</span><span class="lbl">${t("utilTeamsLabel")}</span></div>
         <div class="tile fade-up" data-hash="#/export" style="animation-delay:.54s"><span class="ic">🔄</span><span class="lbl">${t("utilExportLabel")}</span></div>
         ${
@@ -5174,6 +5728,8 @@ async function render() {
     await renderDashboard();
   } else if (route.view === "settings") {
     renderSettings();
+  } else if (route.view === "guide") {
+    renderGuide();
   } else if (route.view === "admin" && currentProfile.is_admin) {
     await renderAdmin();
   } else if (route.view === "export") {

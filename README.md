@@ -495,13 +495,15 @@ Gedächtnisstütze, die mit der Idee gespeichert wird.
   Geändert von = eigene E-Mail, Änderungsdatum = heute). Auch hier reines
   Copy & Paste: die Zeile direkt **auf die bestehende Zeile mit dieser
   ID Nr** einfügen (Strg+V), nicht als neue Zeile darunter.
-- **Onboarding-Anleitung fest in der Kopfzeile**: Der Button "📋 Anleitung"
-  oben bei den Ideen und Prozessen (nach der Anmeldung) verlinkt auf eine
-  kurze, für Kolleg:innen gedachte Erklärseite (was die App kann, wie man
-  Zugriff bekommt, wie man sie aufs eigene Gerät holt). Damit der Link für
-  alle ohne eigenen Claude-Zugang funktioniert, muss die Seite einmalig
-  über deren eigenes Teilen-Menü auf "Für alle mit Link zugänglich"
-  gestellt werden.
+- **Onboarding-Anleitung als eigene In-App-Ansicht**: Die Kachel
+  "📋 Anleitung" unter "Verwaltung & mehr" auf der Startseite öffnet die
+  Route `#/guide` – eine für Kolleg:innen gedachte Erklärseite (was die App
+  kann, wie man Zugriff bekommt, wie man sie aufs eigene Gerät holt), im
+  gleichen Look wie der Rest der App und zweisprachig über das normale
+  DE/EN-System. Der Link in der Registrierungs-Mail
+  (`registrationMailto` in js/app.js) verweist ebenfalls auf diese Route
+  (`.../index.html#/guide`) statt auf eine externe Seite – funktioniert
+  also für alle, die die App-URL erhalten, ohne eigenen Claude-Zugang.
 - **Prozesse und Ideen als ein-/ausklappbarer Baum**: Teilprozesse hängen
   in der Prozess-Liste sichtbar unter ihrem übergeordneten Prozess und
   lassen sich per Pfeil ein-/ausklappen. Bei Ideen gilt das Gleiche für die
