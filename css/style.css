@@ -350,6 +350,28 @@ button {
   width: 26px;
 }
 
+/* Benutzerdefinierte Sortierung: Auf/Ab-Pfeile rechts neben jeder
+   Prozess-Kachel, gestapelt statt nebeneinander, damit die Zeile nicht zu
+   breit wird. */
+.tree-move-btns {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex-shrink: 0;
+  margin-top: 3px;
+}
+
+.tree-move-btns .icon-btn {
+  padding: 3px 7px;
+  font-size: 11px;
+  line-height: 1;
+}
+
+.tree-move-btns .icon-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
 .ks-toggle-header {
   display: flex;
   align-items: center;

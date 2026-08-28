@@ -373,6 +373,34 @@ alter table processes add column if not exists name_en text not null default '';
 alter table processes add column if not exists description_en text not null default '';
 alter table processes add column if not exists notes_en text not null default '';
 
+-- Benutzerdefinierte Sortierung (Auf/Ab in der App) - "position" bestimmt
+-- die Reihenfolge innerhalb der jeweiligen Geschwister-Ebene (gleiche
+-- parent_process_id, Top-Level-Prozesse zählen dabei auch als eine
+-- gemeinsame Ebene). Gleiches Prinzip wie bei process_steps oben.
+alter table processes add column if not exists position integer not null default 0;
+
+-- Einmalige Einsortierung nach bisherigem Anzeige-Datum (created_at), damit
+-- der erste Lauf dieser Migration die bisherige Reihenfolge nicht
+-- durcheinanderwirft. Läuft nur, solange noch nirgends manuell umsortiert
+-- wurde (sonst gäbe es schon Zeilen mit position <> 0).
+do $$
+begin
+  if not exists (select 1 from processes where position <> 0) then
+    update processes p
+    set position = ranked.rn
+    from (
+      select id, row_number() over (
+        partition by parent_process_id
+        order by created_at asc
+      ) - 1 as rn
+      from processes
+    ) ranked
+    where ranked.id = p.id;
+  end if;
+end $$;
+
+create index if not exists processes_parent_position_idx on processes (parent_process_id, position);
+
 drop trigger if exists processes_set_updated_at on processes;
 create trigger processes_set_updated_at
   before update on processes

@@ -1983,7 +1983,8 @@ async function loadProcesses() {
   const { data, error } = await sb
     .from("processes")
     .select("*, parent:parent_process_id(id, name, name_en)")
-    .order("created_at", { ascending: false });
+    .order("position", { ascending: true })
+    .order("created_at", { ascending: true });
   if (error) {
     toast(t("loadErrorPrefix") + error.message);
     return [];
@@ -1992,7 +1993,9 @@ async function loadProcesses() {
 }
 
 async function createProcess(name, department, teamId, parentProcessId) {
-  const payload = { name, department, team_id: teamId, created_by: currentUser.id };
+  const siblings = processesCache.filter((p) => p.parent_process_id === (parentProcessId || null));
+  const nextPosition = siblings.length ? Math.max(...siblings.map((p) => p.position || 0)) + 1 : 0;
+  const payload = { name, department, team_id: teamId, created_by: currentUser.id, position: nextPosition };
   if (parentProcessId) payload.parent_process_id = parentProcessId;
   const { data, error } = await sb
     .from("processes")
@@ -3318,10 +3321,41 @@ async function renderProcessList() {
 
 let expandedProcessIds = new Set();
 
-function processTreeNodeHtml(proc, filteredIds) {
+// Geschwister-Gruppe eines Prozesses innerhalb der aktuellen Filterung -
+// dieselbe Regel wie beim Aufbau von "roots"/"children" unten, damit Auf/Ab
+// immer exakt mit dem sichtbaren Baum übereinstimmt.
+function processSiblingGroup(proc, filteredIds) {
+  if (proc.parent_process_id && filteredIds.has(proc.parent_process_id)) {
+    return processesCache.filter((p) => p.parent_process_id === proc.parent_process_id && filteredIds.has(p.id));
+  }
+  return processesCache.filter((p) => filteredIds.has(p.id) && (!p.parent_process_id || !filteredIds.has(p.parent_process_id)));
+}
+
+async function moveProcess(id, direction, filteredIds) {
+  const proc = processesCache.find((p) => p.id === id);
+  if (!proc) return;
+  const siblings = processSiblingGroup(proc, filteredIds);
+  const idx = siblings.findIndex((p) => p.id === id);
+  const otherIdx = idx + direction;
+  if (idx < 0 || otherIdx < 0 || otherIdx >= siblings.length) return;
+  const a = siblings[idx];
+  const b = siblings[otherIdx];
+  if (!canWriteCombo(a.department, a.team_id) || !canWriteCombo(b.department, b.team_id)) return;
+  await Promise.all([
+    updateProcess(a.id, { position: b.position }),
+    updateProcess(b.id, { position: a.position }),
+  ]);
+  processesCache = await loadProcesses();
+  renderProcessListItems();
+}
+
+function processTreeNodeHtml(proc, filteredIds, siblings) {
   const children = processesCache.filter((p) => p.parent_process_id === proc.id && filteredIds.has(p.id));
   const hasChildren = children.length > 0;
   const isExpanded = expandedProcessIds.has(proc.id);
+  const idx = siblings.indexOf(proc);
+  const isFirst = idx <= 0;
+  const isLast = idx === siblings.length - 1;
   return `
     <div class="tree-node">
       <div class="tree-row">
@@ -3331,10 +3365,19 @@ function processTreeNodeHtml(proc, filteredIds) {
             : `<span class="tree-toggle-spacer"></span>`
         }
         <div class="tree-row-content">${processCard(proc)}</div>
+        ${
+          canWriteCombo(proc.department, proc.team_id)
+            ? `
+          <div class="tree-move-btns">
+            <button class="icon-btn" data-process-up="${proc.id}" ${isFirst ? "disabled" : ""}>▲</button>
+            <button class="icon-btn" data-process-down="${proc.id}" ${isLast ? "disabled" : ""}>▼</button>
+          </div>`
+            : ""
+        }
       </div>
       ${
         hasChildren && isExpanded
-          ? `<div class="tree-children">${children.map((c) => processTreeNodeHtml(c, filteredIds)).join("")}</div>`
+          ? `<div class="tree-children">${children.map((c) => processTreeNodeHtml(c, filteredIds, children)).join("")}</div>`
           : ""
       }
     </div>
@@ -3354,7 +3397,7 @@ function renderProcessListItems() {
   } else {
     const filteredIds = new Set(filtered.map((p) => p.id));
     const roots = filtered.filter((p) => !p.parent_process_id || !filteredIds.has(p.parent_process_id));
-    listEl.innerHTML = roots.map((p) => processTreeNodeHtml(p, filteredIds)).join("");
+    listEl.innerHTML = roots.map((p) => processTreeNodeHtml(p, filteredIds, roots)).join("");
     listEl.querySelectorAll(".idea-item").forEach((el) => {
       el.addEventListener("click", () => {
         window.location.hash = `#/process/${el.dataset.id}`;
@@ -3367,6 +3410,18 @@ function renderProcessListItems() {
         if (expandedProcessIds.has(id)) expandedProcessIds.delete(id);
         else expandedProcessIds.add(id);
         renderProcessListItems();
+      });
+    });
+    listEl.querySelectorAll("[data-process-up]").forEach((btn) => {
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        moveProcess(btn.dataset.processUp, -1, filteredIds);
+      });
+    });
+    listEl.querySelectorAll("[data-process-down]").forEach((btn) => {
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        moveProcess(btn.dataset.processDown, 1, filteredIds);
       });
     });
   }
@@ -3387,11 +3442,61 @@ async function renderProcessDetail(id) {
     ideaLinksProcess(i, proc.id)
   );
 
-  const subProcesses = processesCache.filter((p) => p.parent_process_id === proc.id);
+  let subProcesses = processesCache.filter((p) => p.parent_process_id === proc.id);
   const canWrite = canWriteCombo(proc.department, proc.team_id);
   let processSteps = await loadProcessSteps(proc.id);
   let processResources = await loadProcessResources(proc.id);
   let processStepIdeas = await loadProcessStepIdeas(processSteps.map((s) => s.id));
+
+  function renderSubProcessesHtml() {
+    if (!subProcesses.length) {
+      return `<div class="empty-state" style="padding:16px 4px;">${t("emptySubProcesses")}</div>`;
+    }
+    return subProcesses
+      .map((p, idx) => {
+        const moveButtons = canWrite
+          ? `
+            <button class="icon-btn" data-subprocess-up="${p.id}" ${idx === 0 ? "disabled" : ""}>▲</button>
+            <button class="icon-btn" data-subprocess-down="${p.id}" ${idx === subProcesses.length - 1 ? "disabled" : ""}>▼</button>`
+          : "";
+        return `
+          <div style="display:flex; align-items:center; gap:6px;">
+            <a class="link-item" style="flex:1; margin-bottom:0;" href="#/process/${p.id}">${escapeHtml(trValue(p, "name"))}</a>
+            ${moveButtons}
+          </div>`;
+      })
+      .join("");
+  }
+
+  function bindSubProcessesEvents() {
+    document.querySelectorAll("[data-subprocess-up]").forEach((btn) => {
+      btn.addEventListener("click", () => moveSubProcess(btn.dataset.subprocessUp, -1));
+    });
+    document.querySelectorAll("[data-subprocess-down]").forEach((btn) => {
+      btn.addEventListener("click", () => moveSubProcess(btn.dataset.subprocessDown, 1));
+    });
+  }
+
+  async function refreshSubProcesses() {
+    processesCache = await loadProcesses();
+    subProcesses = processesCache.filter((p) => p.parent_process_id === proc.id);
+    document.getElementById("sub-processes").innerHTML = renderSubProcessesHtml();
+    bindSubProcessesEvents();
+  }
+
+  async function moveSubProcess(id, direction) {
+    const idx = subProcesses.findIndex((p) => p.id === id);
+    const otherIdx = idx + direction;
+    if (idx < 0 || otherIdx < 0 || otherIdx >= subProcesses.length) return;
+    const a = subProcesses[idx];
+    const b = subProcesses[otherIdx];
+    await Promise.all([
+      updateProcess(a.id, { position: b.position }),
+      updateProcess(b.id, { position: a.position }),
+    ]);
+    if (unsavedChangesReset) unsavedChangesReset();
+    await refreshSubProcesses();
+  }
 
   function renderStepsListHtml() {
     if (!processSteps.length) {
@@ -3717,13 +3822,7 @@ async function renderProcessDetail(id) {
         </select>
 
         <div class="section-title" style="margin:20px 0 10px;">${t("subProcessesTitle")}</div>
-        <div id="sub-processes">
-          ${
-            subProcesses.length
-              ? subProcesses.map((p) => `<a class="link-item" href="#/process/${p.id}">${escapeHtml(p.name)}</a>`).join("")
-              : `<div class="empty-state" style="padding:16px 4px;">${t("emptySubProcesses")}</div>`
-          }
-        </div>
+        <div id="sub-processes">${renderSubProcessesHtml()}</div>
         <div class="row">
           <button class="btn-secondary" id="add-subprocess-btn" style="width:100%;">${t("addSubProcessBtn")}</button>
         </div>
@@ -3804,6 +3903,7 @@ async function renderProcessDetail(id) {
   bindDepartmentTeamFields("pdetail");
   bindStepsListEvents();
   bindResourcesListEvents();
+  bindSubProcessesEvents();
 
   if (!canWrite) {
     document.querySelectorAll("main input, main textarea, main select, main button").forEach((el) => {

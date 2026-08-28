@@ -305,6 +305,11 @@ Gedächtnisstütze, die mit der Idee gespeichert wird.
   Detailansicht ist bewusst schlank gehalten: Status und eine separate
   Freitext-Beschreibung gibt es hier nicht (mehr) – der Ablauf steckt
   stattdessen detailliert in den Prozessschritten (siehe unten).
+- **Prozesse per ▲/▼ sortieren**: Sowohl in der Prozessliste (Tab
+  "Prozesse", je Baum-Ebene) als auch bei den Teilprozessen einer
+  Detailansicht lässt sich die Reihenfolge frei per ▲/▼ anpassen – genau
+  wie bei den Prozessschritten (siehe unten). Neu angelegte Prozesse
+  landen zunächst am Ende ihrer Ebene.
 - **Realisiertes vs. offenes Potenzial**: Neben der AI-Potenzial-Einschätzung
   lässt sich für jeden Prozess und jeden einzelnen Prozessschritt zusätzlich
   einschätzen, wie viel Prozent dieses Potenzials bereits gehoben wurden. Ein
