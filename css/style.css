@@ -189,10 +189,12 @@ header.topbar .icon-btn {
   display: block;
 }
 
-.theme-switch-icon .helmet-visor { fill: var(--surface); }
 .theme-switch-icon .helmet-glow { fill: var(--accent); }
+.theme-switch-icon .helmet-shell-line { fill: none; stroke-width: 3; stroke-linecap: round; }
 .theme-switch-icon--light .helmet-shell { fill: #e7e9ed; }
+.theme-switch-icon--light .helmet-shell-line { stroke: #e7e9ed; }
 .theme-switch-icon--dark .helmet-shell { fill: #24272e; }
+.theme-switch-icon--dark .helmet-shell-line { stroke: #24272e; }
 
 @media (prefers-reduced-motion: reduce) {
   .theme-switch-thumb { transition: none; }

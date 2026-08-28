@@ -1332,9 +1332,14 @@ function bindLangToggle() {
 
 function helmetIcon(variant) {
   return `<svg class="theme-switch-icon theme-switch-icon--${variant}" viewBox="0 0 64 72" aria-hidden="true">
-    <path class="helmet-shell" d="M32,4 C43,4 52,15 52,31 C52,42 46,51 38,58 L32,62 L26,58 C18,51 12,42 12,31 C12,15 21,4 32,4 Z"/>
-    <rect class="helmet-visor" x="17" y="27" width="30" height="8" rx="4"/>
-    <rect class="helmet-glow" x="20" y="30" width="24" height="2" rx="1"/>
+    <rect class="helmet-shell" x="10" y="12" width="44" height="44" rx="13"/>
+    <line class="helmet-shell-line" x1="32" y1="4" x2="32" y2="12"/>
+    <circle class="helmet-glow" cx="32" cy="3" r="2.5"/>
+    <circle class="helmet-glow" cx="22" cy="30" r="4"/>
+    <circle class="helmet-glow" cx="42" cy="30" r="4"/>
+    <rect class="helmet-shell" x="25.2" y="47.2" width="2.4" height="6.4" rx="1.2"/>
+    <rect class="helmet-shell" x="30.8" y="47.2" width="2.4" height="6.4" rx="1.2"/>
+    <rect class="helmet-shell" x="36.4" y="47.2" width="2.4" height="6.4" rx="1.2"/>
   </svg>`;
 }
 
