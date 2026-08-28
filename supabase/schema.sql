@@ -327,6 +327,7 @@ create table if not exists processes (
   department text not null default '',
   description text not null default '',
   ai_potential smallint not null default 3 check (ai_potential between 1 and 5),
+  realized_potential smallint not null default 0 check (realized_potential between 0 and 100),
   notes text not null default '',
   status text not null default 'open'
     check (status in ('open', 'reviewed')),
@@ -336,6 +337,10 @@ create table if not exists processes (
 -- Für Projekte, die die processes-Tabelle schon vor der Teilprozess-
 -- Verknüpfung angelegt hatten: Spalte nachträglich ergänzen.
 alter table processes add column if not exists parent_process_id uuid references processes (id) on delete set null;
+
+-- Anteil des AI-Potenzials, der bereits gehoben wurde (0-100%) - separat vom
+-- Potenzial selbst, damit sichtbar wird, wo noch freies Potenzial liegt.
+alter table processes add column if not exists realized_potential smallint not null default 0 check (realized_potential between 0 and 100);
 
 -- Abteilung (= Kostenstelle, siehe oben) ist Pflichtfeld (Dropdown in der
 -- App). Team ist ebenfalls Pflichtfeld, aber als team_id (siehe
@@ -609,6 +614,7 @@ create table if not exists process_steps (
   description text not null default '',
   ai_potential smallint not null default 3 check (ai_potential between 1 and 5),
   ai_potential_note text not null default '',
+  realized_potential smallint not null default 0 check (realized_potential between 0 and 100),
   created_at timestamptz not null default now()
 );
 
@@ -617,6 +623,10 @@ create table if not exists process_steps (
 -- nachträglich ergänzen.
 alter table process_steps add column if not exists ai_potential smallint not null default 3 check (ai_potential between 1 and 5);
 alter table process_steps add column if not exists ai_potential_note text not null default '';
+
+-- Anteil des AI-Potenzials, der auf dieser Schrittebene bereits gehoben
+-- wurde (0-100%), analog zu processes.realized_potential.
+alter table process_steps add column if not exists realized_potential smallint not null default 0 check (realized_potential between 0 and 100);
 
 -- Drill-down: ein grober Schritt kann auf einen (bereits als Teilprozess
 -- angelegten) Detailprozess verweisen, der diesen Schritt genauer

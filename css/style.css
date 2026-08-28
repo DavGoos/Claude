@@ -486,6 +486,26 @@ textarea.field { min-height: 70px; resize: vertical; }
   margin-bottom: 4px;
 }
 
+/* Realisiertes vs. offenes AI-Potenzial: zweigeteilter Balken */
+.potential-bar {
+  display: flex;
+  width: 100%;
+  height: 6px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: rgba(128, 128, 128, 0.25);
+  margin: 6px 0;
+}
+
+.potential-bar-realized {
+  height: 100%;
+  background: #38bdf8;
+}
+
+.potential-bar-open {
+  height: 100%;
+}
+
 .toast {
   position: fixed;
   bottom: calc(env(safe-area-inset-bottom) + 18px);
@@ -872,10 +892,20 @@ textarea.field { min-height: 70px; resize: vertical; }
   overflow: hidden;
 }
 
+.dash-heat-bottom {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
 .dash-heat-value {
   font-size: 16px;
   font-weight: 700;
   align-self: flex-end;
+}
+
+.dash-heat-bottom .potential-bar {
+  margin: 0;
 }
 
 .heat-1 { background: color-mix(in srgb, var(--surface-2) 85%, var(--accent) 15%); }
@@ -1067,6 +1097,12 @@ header.topbar.hero::before {
   font-size: 12.5px;
   opacity: 0.85;
   margin-top: 3px;
+}
+
+.ring-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 28px;
 }
 
 .ring-wrap {

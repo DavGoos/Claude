@@ -98,6 +98,7 @@ const I18N = {
     greetingAfternoon: "Guten Tag",
     greetingEvening: "Guten Abend",
     aiPotentialAvgLabel: "Ø KI-Potenzial im Bereich",
+    realizedPotentialAvgLabel: "Ø bereits realisiert",
     statOpenIdeasLabel: "Offene Ideen",
     statInProgressLabel: "In Umsetzung",
     statProcessesLabel: "Prozesse dokumentiert",
@@ -271,6 +272,8 @@ const I18N = {
     noneTopLevelOption: "— Keiner (Top-Level-Prozess) —",
     aiPotentialTitle: "AI-Potenzial",
     aiPotentialLabel: "AI-Potenzial",
+    realizedPotentialLabel: "Bereits realisiert",
+    openPotentialLabel: "Offenes Potenzial",
     notesLabel: "Notizen / Begründung",
     notesPlaceholder: "Warum viel/wenig Potenzial? Erste Ansätze?",
     subProcessesTitle: "Teilprozesse",
@@ -471,6 +474,7 @@ const I18N = {
     greetingAfternoon: "Good afternoon",
     greetingEvening: "Good evening",
     aiPotentialAvgLabel: "Avg. AI potential in your area",
+    realizedPotentialAvgLabel: "Avg. already realized",
     statOpenIdeasLabel: "Open ideas",
     statInProgressLabel: "In progress",
     statProcessesLabel: "Processes documented",
@@ -644,6 +648,8 @@ const I18N = {
     noneTopLevelOption: "— None (top-level process) —",
     aiPotentialTitle: "AI potential",
     aiPotentialLabel: "AI potential",
+    realizedPotentialLabel: "Already realized",
+    openPotentialLabel: "Open potential",
     notesLabel: "Notes / rationale",
     notesPlaceholder: "Why much/little potential? Initial approaches?",
     subProcessesTitle: "Sub-processes",
@@ -952,6 +958,21 @@ function aiPotentialInfo(value) {
   if (v >= 4) return { label: t("ai_high"), color: "#22c55e" };
   if (v <= 2) return { label: t("ai_low"), color: "#9aa1af" };
   return { label: t("ai_medium"), color: "#fcd34d" };
+}
+
+// Zweigeteilter Balken: realisierter Anteil (fest eingefärbt) + offener
+// Anteil in der AI-Potenzial-Farbe, damit auf einen Blick sichtbar wird,
+// wo Effizienz schon gehoben wurde und wo noch Potenzial frei liegt.
+function potentialBarHtml(aiPotential, realizedPct) {
+  const realized = Math.min(100, Math.max(0, realizedPct || 0));
+  const open = 100 - realized;
+  const openColor = aiPotentialInfo(aiPotential).color;
+  return `
+    <div class="potential-bar" title="${escapeHtml(t("realizedPotentialLabel"))}: ${realized}%">
+      ${realized ? `<div class="potential-bar-realized" style="width:${realized}%;"></div>` : ""}
+      ${open ? `<div class="potential-bar-open" style="width:${open}%; background:${openColor};"></div>` : ""}
+    </div>
+  `;
 }
 
 function langToggleButton() {
@@ -2358,6 +2379,17 @@ function sliderRow(name, label, value) {
   `;
 }
 
+function percentSliderRow(name, label, value) {
+  const v = value || 0;
+  return `
+    <div class="slider-row">
+      <label>${label}</label>
+      <input type="range" min="0" max="100" step="5" value="${v}" data-field="${name}" />
+      <span class="val">${v}%</span>
+    </div>
+  `;
+}
+
 function processOptions(selectedId) {
   const options = [`<option value="">${t("noneOption")}</option>`];
   processesCache.forEach((p) => {
@@ -2801,9 +2833,11 @@ function processCard(proc) {
       <div class="idea-title">${escapeHtml(trValue(proc, "name"))}</div>
       <div class="idea-meta">
         <span class="badge"><span class="priority-dot" style="background:${ai.color}"></span> ${ai.label}</span>
+        <span class="badge">${proc.realized_potential || 0}% ${escapeHtml(t("realizedPotentialLabel"))}</span>
         ${proc.team_id ? `<span class="badge">${escapeHtml(teamName(proc.team_id))}</span>` : ""}
         ${proc.parent ? `<span class="badge">↳ ${escapeHtml(trValue(proc.parent, "name"))}</span>` : ""}
       </div>
+      ${potentialBarHtml(proc.ai_potential, proc.realized_potential)}
     </div>
   `;
 }
@@ -3032,6 +3066,12 @@ async function renderProcessDetail(id) {
               <input type="range" min="1" max="5" step="1" value="${step.ai_potential || 3}" data-step-ai-potential="${step.id}" />
               <span class="val" data-step-ai-potential-val="${step.id}">${step.ai_potential || 3}</span>
             </div>
+            <div class="slider-row" style="margin-bottom:6px;">
+              <label>${t("realizedPotentialLabel")}</label>
+              <input type="range" min="0" max="100" step="5" value="${step.realized_potential || 0}" data-step-realized-potential="${step.id}" />
+              <span class="val" data-step-realized-potential-val="${step.id}">${step.realized_potential || 0}%</span>
+            </div>
+            <div data-step-potential-bar="${step.id}">${potentialBarHtml(step.ai_potential, step.realized_potential)}</div>
             <input class="field" data-step-ai-note="${step.id}" value="${escapeHtml(step.ai_potential_note || "")}" placeholder="${t("stepAiPotentialNotePlaceholder")}" />
             ${ideaFlagsHtml}
             ${controls}
@@ -3079,6 +3119,14 @@ async function renderProcessDetail(id) {
     document.querySelectorAll("[data-step-delete]").forEach((btn) => {
       btn.addEventListener("click", () => removeStep(btn.dataset.stepDelete));
     });
+    function currentStepRealizedPotential(id) {
+      const slider = document.querySelector(`[data-step-realized-potential="${id}"]`);
+      return slider ? Number(slider.value) : 0;
+    }
+    function refreshStepPotentialBar(id, aiVal) {
+      const barEl = document.querySelector(`[data-step-potential-bar="${id}"]`);
+      if (barEl) barEl.innerHTML = potentialBarHtml(aiVal, currentStepRealizedPotential(id));
+    }
     document.querySelectorAll("[data-step-ai-potential]").forEach((slider) => {
       const id = slider.dataset.stepAiPotential;
       slider.addEventListener("input", () => {
@@ -3090,9 +3138,28 @@ async function renderProcessDetail(id) {
           const info = aiPotentialInfo(val);
           badgeEl.innerHTML = `<span class="priority-dot" style="background:${info.color}"></span> ${info.label}`;
         }
+        refreshStepPotentialBar(id, val);
       });
       slider.addEventListener("change", async () => {
         const updated = await updateProcessStep(id, { ai_potential: Number(slider.value) });
+        if (updated) {
+          toast(t("stepSavedMsg"));
+          if (unsavedChangesReset) unsavedChangesReset();
+          await refreshSteps();
+        }
+      });
+    });
+    document.querySelectorAll("[data-step-realized-potential]").forEach((slider) => {
+      const id = slider.dataset.stepRealizedPotential;
+      slider.addEventListener("input", () => {
+        const val = Number(slider.value);
+        const valEl = document.querySelector(`[data-step-realized-potential-val="${id}"]`);
+        if (valEl) valEl.textContent = `${val}%`;
+        const aiSlider = document.querySelector(`[data-step-ai-potential="${id}"]`);
+        refreshStepPotentialBar(id, aiSlider ? Number(aiSlider.value) : 3);
+      });
+      slider.addEventListener("change", async () => {
+        const updated = await updateProcessStep(id, { realized_potential: Number(slider.value) });
         if (updated) {
           toast(t("stepSavedMsg"));
           if (unsavedChangesReset) unsavedChangesReset();
@@ -3279,6 +3346,8 @@ async function renderProcessDetail(id) {
         <div class="section-title" style="margin:0 0 10px;">${t("aiPotentialTitle")}</div>
         <div id="ai-potential-banner" class="priority-banner"></div>
         ${sliderRow("ai_potential", t("aiPotentialLabel"), proc.ai_potential)}
+        ${percentSliderRow("realized_potential", t("realizedPotentialLabel"), proc.realized_potential)}
+        <div id="ai-potential-bar">${potentialBarHtml(proc.ai_potential, proc.realized_potential)}</div>
         <label class="field-label">${t("notesLabel")}</label>
         <textarea class="field" id="f-notes" placeholder="${t("notesPlaceholder")}"${trReadonlyAttr(proc, "notes")}>${escapeHtml(trValue(proc, "notes"))}</textarea>
       </div>
@@ -3382,14 +3451,16 @@ async function renderProcessDetail(id) {
 
   function updateAiBanner() {
     const val = Number(document.querySelector('[data-field="ai_potential"]').value);
+    const realized = Number(document.querySelector('[data-field="realized_potential"]').value);
     const ai = aiPotentialInfo(val);
     document.getElementById("ai-potential-banner").innerHTML =
       `<span class="priority-dot" style="background:${ai.color}"></span> ${t("assessmentPrefix")}<strong>${ai.label}</strong>`;
+    document.getElementById("ai-potential-bar").innerHTML = potentialBarHtml(val, realized);
   }
 
-  document.querySelectorAll('input[type="range"]').forEach((slider) => {
+  document.querySelectorAll("input[data-field]").forEach((slider) => {
     slider.addEventListener("input", () => {
-      slider.nextElementSibling.textContent = slider.value;
+      slider.nextElementSibling.textContent = slider.dataset.field === "realized_potential" ? `${slider.value}%` : slider.value;
       updateAiBanner();
     });
   });
@@ -3445,6 +3516,7 @@ async function renderProcessDetail(id) {
       team_id: teamId,
       parent_process_id: document.getElementById("f-parent-process").value || null,
       ai_potential: Number(document.querySelector('[data-field="ai_potential"]').value),
+      realized_potential: Number(document.querySelector('[data-field="realized_potential"]').value),
     };
     // Felder, die aktuell die (vom Admin gepflegte) Übersetzung anzeigen,
     // werden nicht mitgespeichert - sonst würde die englische Anzeige das
@@ -4682,12 +4754,19 @@ function dashboardHeatmapSection(processes) {
       return `
         <a class="dash-heat-tile heat-${level}" href="#/process/${p.id}">
           <span class="dash-heat-name">${escapeHtml(trValue(p, "name"))}</span>
-          <span class="dash-heat-value">${level}</span>
+          <div class="dash-heat-bottom">
+            <span class="dash-heat-value">${level}</span>
+            ${potentialBarHtml(p.ai_potential, p.realized_potential)}
+          </div>
         </a>
       `;
     })
     .join("");
-  return dashCard(t("dashHeatmapTitle"), `<div class="dash-heat-grid">${tiles}</div>`);
+  const legend = dashLegendHtml([
+    { color: "#38bdf8", label: t("realizedPotentialLabel") },
+    { color: aiPotentialInfo(3).color, label: t("openPotentialLabel") },
+  ]);
+  return dashCard(t("dashHeatmapTitle"), `${legend}<div class="dash-heat-grid">${tiles}</div>`);
 }
 
 function dashMeter(label, value) {
@@ -4883,6 +4962,11 @@ function aiPotentialAverage() {
   return processesCache.reduce((sum, p) => sum + (p.ai_potential || 3), 0) / processesCache.length;
 }
 
+function realizedPotentialAverage() {
+  if (!processesCache.length) return 0;
+  return processesCache.reduce((sum, p) => sum + (p.realized_potential || 0), 0) / processesCache.length;
+}
+
 // Chevron-Logo + Funken aus icons/icon.svg als Inline-SVG, damit die drei
 // Segmente einzeln animiert werden können (siehe .logo-mark in style.css).
 function appLogoMark(animated) {
@@ -4946,6 +5030,7 @@ async function renderStart() {
   const inProgress = ideasCache.filter((i) => i.status === "in_progress").length;
   const recent = [...ideasCache].sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at)).slice(0, 3);
   const avgAi = aiPotentialAverage();
+  const avgRealized = realizedPotentialAverage();
   const isAdmin = currentProfile && currentProfile.is_admin;
 
   $app.innerHTML = `
@@ -4968,11 +5053,20 @@ async function renderStart() {
         <div class="sub">${longDateText()}</div>
       </div>
 
-      <div class="ring-wrap">
-        ${startRingSvg(avgAi / 5)}
-        <div>
-          <div class="ring-value">${avgAi.toFixed(1).replace(".", currentLang === "en" ? "." : ",")} / 5</div>
-          <div class="ring-label">${t("aiPotentialAvgLabel")}</div>
+      <div class="ring-row">
+        <div class="ring-wrap">
+          ${startRingSvg(avgAi / 5)}
+          <div>
+            <div class="ring-value">${avgAi.toFixed(1).replace(".", currentLang === "en" ? "." : ",")} / 5</div>
+            <div class="ring-label">${t("aiPotentialAvgLabel")}</div>
+          </div>
+        </div>
+        <div class="ring-wrap">
+          ${startRingSvg(avgRealized / 100)}
+          <div>
+            <div class="ring-value">${Math.round(avgRealized)}%</div>
+            <div class="ring-label">${t("realizedPotentialAvgLabel")}</div>
+          </div>
         </div>
       </div>
     </header>

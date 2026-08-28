@@ -305,6 +305,13 @@ Gedächtnisstütze, die mit der Idee gespeichert wird.
   Detailansicht ist bewusst schlank gehalten: Status und eine separate
   Freitext-Beschreibung gibt es hier nicht (mehr) – der Ablauf steckt
   stattdessen detailliert in den Prozessschritten (siehe unten).
+- **Realisiertes vs. offenes Potenzial**: Neben der AI-Potenzial-Einschätzung
+  lässt sich für jeden Prozess und jeden einzelnen Prozessschritt zusätzlich
+  einschätzen, wie viel Prozent dieses Potenzials bereits gehoben wurden. Ein
+  zweigeteilter Balken (realisiert / offen, in der Potenzial-Farbe) macht auf
+  Prozesslisten, in der Detailansicht und in der Heatmap der Auswertungen auf
+  einen Blick sichtbar, wo schon Effizienzen gehoben wurden und wo noch
+  freies Potenzial liegt.
 - **Teilprozesse & Use Cases im ersten Block**: Ganz oben bei Name,
   Kostenstelle/Team und übergeordnetem Prozess stehen auch gleich die
   Teilprozesse und die zugehörigen Use Cases dieses Prozesses – mit
@@ -318,9 +325,10 @@ Gedächtnisstütze, die mit der Idee gespeichert wird.
   zuverlässig bedienbar bleibt (siehe unten "Verzweigungen &
   Parallelprozesse" für den Umgang mit Entscheidungspunkten). Jeder
   einzelne Schritt hat außerdem seine eigene AI-Potenzial-Einschätzung
-  (1-5) plus kurze Notiz – so lässt sich auf einen Blick erkennen, an
-  welcher Stelle im Ablauf der größte Hebel steckt, statt nur den
-  Prozess als Ganzes zu bewerten.
+  (1-5) plus kurze Notiz sowie einen eigenen Wert für den bereits
+  realisierten Anteil (0-100%) – so lässt sich auf einen Blick erkennen, an
+  welcher Stelle im Ablauf der größte Hebel steckt und wo davon schon
+  etwas gehoben wurde, statt nur den Prozess als Ganzes zu bewerten.
 - **Von groben Schritten in den Detailprozess drillen**: Jeder
   Prozessschritt kann optional mit einem der eigenen Teilprozesse
   verknüpft werden (Dropdown zeigt nur die Teilprozesse dieses
