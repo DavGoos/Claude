@@ -1330,10 +1330,23 @@ function bindLangToggle() {
   }
 }
 
+function helmetIcon(variant) {
+  return `<svg class="theme-switch-icon theme-switch-icon--${variant}" viewBox="0 0 64 72" aria-hidden="true">
+    <path class="helmet-shell" d="M32,4 C43,4 52,15 52,31 C52,42 46,51 38,58 L32,62 L26,58 C18,51 12,42 12,31 C12,15 21,4 32,4 Z"/>
+    <rect class="helmet-visor" x="17" y="27" width="30" height="8" rx="4"/>
+    <rect class="helmet-glow" x="20" y="30" width="24" height="2" rx="1"/>
+  </svg>`;
+}
+
 function themeToggleButton() {
   const nextTheme = currentTheme === "dark" ? "light" : "dark";
-  const icon = currentTheme === "dark" ? "☀️" : "🌙";
-  return `<button class="icon-btn" id="theme-btn" data-next-theme="${nextTheme}" title="${t("themeToggleTitle")}">${icon}</button>`;
+  return `<button class="icon-btn theme-switch theme-switch--${currentTheme}" id="theme-btn" data-next-theme="${nextTheme}" title="${t("themeToggleTitle")}" role="switch" aria-checked="${currentTheme === "dark"}">
+    <span class="theme-switch-track">
+      <span class="theme-switch-thumb"></span>
+      ${helmetIcon("light")}
+      ${helmetIcon("dark")}
+    </span>
+  </button>`;
 }
 
 function bindThemeToggle() {
