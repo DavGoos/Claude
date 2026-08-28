@@ -350,6 +350,21 @@ button {
   width: 26px;
 }
 
+.ks-toggle-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  background: none;
+  border: none;
+  padding: 0;
+  text-align: left;
+}
+
+.ks-toggle-header .tree-toggle {
+  pointer-events: none;
+}
+
 /* Ein-/ausgeklappte Vorstufen (Ideen) bzw. Teilprozesse hängen hier ein -
    dünne, sanft ausblendende Trunk-Linie plus ein kleiner "Ellenbogen" pro
    Kind, wie in einer klassischen Baumansicht, statt einer einfachen

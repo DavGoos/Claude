@@ -1198,6 +1198,13 @@ let ideasCache = [];
 let processesCache = [];
 let profilesCache = [];
 let kostenstellenCache = [];
+// Welche Kostenstellen-Karten im Admin-Zugriffsbereich eingeklappt sind.
+// Startet leer und wird beim ersten renderAdmin()-Lauf mit allen Codes
+// gefüllt (siehe kostenstellenCollapseInitialized) - so ist beim ersten
+// Öffnen alles eingeklappt, spätere Auf-/Zuklapp-Klicks des Admins bleiben
+// aber über Re-Renders hinweg erhalten.
+let collapsedKostenstellen = new Set();
+let kostenstellenCollapseInitialized = false;
 let teamsCache = [];
 let myGrants = [];
 let accessCache = [];
@@ -4570,6 +4577,10 @@ async function renderAdmin() {
   teamsCache = await loadTeams();
   accessCache = await loadAllAccess();
   await cleanupRedundantTeamGrants();
+  if (!kostenstellenCollapseInitialized) {
+    kostenstellenCache.forEach((k) => collapsedKostenstellen.add(k.code));
+    kostenstellenCollapseInitialized = true;
+  }
 
   // Nutzerstatistik: pro Person Login-Anzahl + letzter Login aus den
   // rohen login_events zusammenfassen, statt das serverseitig zu
@@ -4702,16 +4713,22 @@ async function renderAdmin() {
                 const blanketUserIds = new Set(
                   accessCache.filter((a) => a.kostenstelle_code === k.code && a.team_id === null).map((a) => a.user_id)
                 );
+                const isCollapsed = collapsedKostenstellen.has(k.code);
                 return `
-            <div class="card">
-              <div class="section-title" style="margin:0 0 10px;">${escapeHtml(k.code)}${k.name ? ` – ${escapeHtml(k.name)}` : ""}</div>
-              ${
-                nonAdminApproved.length
-                  ? [{ id: "", label: t("allTeamsScope") }, ...teamsCache.filter((tm) => tm.kostenstelle_code === k.code).map((tm) => ({ id: tm.id, label: tm.name }))]
-                      .map((scope) => renderAccessScope(k, scope, nonAdminApproved, blanketUserIds))
-                      .join("")
-                  : `<div class="empty-state" style="padding:12px 4px;">${t("noApprovedForAccessMsg")}</div>`
-              }
+            <div class="card" data-ks-card="${escapeHtml(k.code)}">
+              <button type="button" class="ks-toggle-header" data-toggle-ks="${escapeHtml(k.code)}" aria-expanded="${!isCollapsed}">
+                <span class="tree-toggle" aria-hidden="true">${isCollapsed ? "▸" : "▾"}</span>
+                <span class="section-title" style="margin:0;">${escapeHtml(k.code)}${k.name ? ` – ${escapeHtml(k.name)}` : ""}</span>
+              </button>
+              <div data-ks-body style="display:${isCollapsed ? "none" : "block"}; margin-top:10px;">
+                ${
+                  nonAdminApproved.length
+                    ? [{ id: "", label: t("allTeamsScope") }, ...teamsCache.filter((tm) => tm.kostenstelle_code === k.code).map((tm) => ({ id: tm.id, label: tm.name }))]
+                        .map((scope) => renderAccessScope(k, scope, nonAdminApproved, blanketUserIds))
+                        .join("")
+                    : `<div class="empty-state" style="padding:12px 4px;">${t("noApprovedForAccessMsg")}</div>`
+                }
+              </div>
             </div>
           `;
               })
@@ -4890,12 +4907,53 @@ async function renderAdmin() {
     });
   });
 
+  document.querySelectorAll("[data-toggle-ks]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const code = btn.dataset.toggleKs;
+      const card = btn.closest("[data-ks-card]");
+      const body = card?.querySelector("[data-ks-body]");
+      const nowCollapsed = !collapsedKostenstellen.has(code);
+      if (nowCollapsed) collapsedKostenstellen.add(code);
+      else collapsedKostenstellen.delete(code);
+      if (body) body.style.display = nowCollapsed ? "none" : "block";
+      btn.setAttribute("aria-expanded", String(!nowCollapsed));
+      const icon = btn.querySelector(".tree-toggle");
+      if (icon) icon.textContent = nowCollapsed ? "▸" : "▾";
+    });
+  });
+
+  // Beim Filtern nach E-Mail sollen eingeklappte Kostenstellen mit
+  // Treffern automatisch aufklappen, sonst sieht man die gefilterten
+  // Zeilen ja gar nicht - und Kostenstellen ganz ohne Treffer werden
+  // komplett ausgeblendet statt nur die einzelnen Zeilen.
   const accessFilterInput = document.getElementById("access-user-filter");
   if (accessFilterInput) {
     accessFilterInput.addEventListener("input", () => {
       const q = accessFilterInput.value.trim().toLowerCase();
-      document.querySelectorAll("[data-access-row-email]").forEach((row) => {
-        row.style.display = row.dataset.accessRowEmail.includes(q) ? "flex" : "none";
+      document.querySelectorAll("[data-ks-card]").forEach((card) => {
+        const code = card.dataset.ksCard;
+        const rows = card.querySelectorAll("[data-access-row-email]");
+        let anyMatch = false;
+        rows.forEach((row) => {
+          const match = row.dataset.accessRowEmail.includes(q);
+          row.style.display = match ? "flex" : "none";
+          if (match) anyMatch = true;
+        });
+        const body = card.querySelector("[data-ks-body]");
+        const toggleBtn = card.querySelector("[data-toggle-ks]");
+        const icon = toggleBtn?.querySelector(".tree-toggle");
+        if (q) {
+          card.style.display = anyMatch ? "" : "none";
+          if (body) body.style.display = "block";
+          toggleBtn?.setAttribute("aria-expanded", "true");
+          if (icon) icon.textContent = "▾";
+        } else {
+          card.style.display = "";
+          const isCollapsed = collapsedKostenstellen.has(code);
+          if (body) body.style.display = isCollapsed ? "none" : "block";
+          toggleBtn?.setAttribute("aria-expanded", String(!isCollapsed));
+          if (icon) icon.textContent = isCollapsed ? "▸" : "▾";
+        }
       });
     });
   }
