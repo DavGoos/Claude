@@ -534,9 +534,9 @@ const I18N = {
     approvedMsg: "Freigegeben",
 
     userStatsTitle: "Nutzerstatistiken",
-    userStatsLastLoginPrefix: "Letzter Login: ",
-    userStatsLoginCountPrefix: "Logins: ",
-    userStatsNeverLoggedIn: "Noch nie eingeloggt",
+    userStatsLastLoginPrefix: "Zuletzt aktiv: ",
+    userStatsLoginCountPrefix: "App-Aufrufe: ",
+    userStatsNeverLoggedIn: "Noch nie genutzt",
 
     kostenstellenTitle: "Kostenstellen & Zugriffsrechte",
     newKostenstelleLabel: "Neue Kostenstelle anlegen",
@@ -1084,9 +1084,9 @@ const I18N = {
     approvedMsg: "Approved",
 
     userStatsTitle: "User statistics",
-    userStatsLastLoginPrefix: "Last login: ",
-    userStatsLoginCountPrefix: "Logins: ",
-    userStatsNeverLoggedIn: "Never logged in",
+    userStatsLastLoginPrefix: "Last active: ",
+    userStatsLoginCountPrefix: "App opens: ",
+    userStatsNeverLoggedIn: "Never used",
 
     kostenstellenTitle: "Cost centers & access",
     newKostenstelleLabel: "Add a new cost center",
@@ -1788,10 +1788,13 @@ async function init() {
     if (event === "PASSWORD_RECOVERY") passwordRecoveryMode = true;
     currentUser = session ? session.user : null;
     currentProfile = null;
-    // Nur bei einem echten Login-Event zählen, nicht bei "INITIAL_SESSION"
-    // (Seiten-Reload mit bestehender Session) oder Token-Refreshs - sonst
-    // würde jedes Öffnen der App als neuer Login gezählt.
-    if (event === "SIGNED_IN") recordLoginEvent();
+    // Für die Nutzungsstatistik zählt jedes tatsächliche Öffnen der App mit
+    // gültiger Session, nicht nur ein frischer Login: "INITIAL_SESSION"
+    // deckt den Normalfall ab (App/PWA erneut geöffnet, Seite neu geladen),
+    // "SIGNED_IN" den frischen Login. "TOKEN_REFRESHED" bleibt bewusst
+    // aussen vor - das ist nur eine automatische Erneuerung im Hintergrund
+    // derselben, bereits laufenden Sitzung, kein neuer App-Aufruf.
+    if ((event === "INITIAL_SESSION" || event === "SIGNED_IN") && session) recordLoginEvent();
     render();
   });
   render();

@@ -822,12 +822,13 @@ create policy "Idea processes: delete with kostenstelle access"
   ));
 
 -- ============================================================
--- Login-Tracking: pro tatsächlichem Login (Supabase-Event "SIGNED_IN",
--- nicht bei jedem Seiten-Reload mit bestehender Session) ein Datensatz -
--- Grundlage für die Nutzerstatistik im Admin-Bereich (letzter Login,
--- Anzahl Logins pro Person über die Zeit). Jede freigegebene Person darf
--- nur ihre eigene Zeile anlegen; lesen dürfen nur Admins, da die
--- Auswertung eine reine Admin-Funktion ist.
+-- Nutzungs-Tracking: pro tatsächlichem Öffnen der App mit gültiger Session
+-- ein Datensatz (Supabase-Events "INITIAL_SESSION" und "SIGNED_IN" - siehe
+-- init() in js/app.js; ein bloßer Token-Refresh im Hintergrund zählt
+-- bewusst nicht) - Grundlage für die Nutzerstatistik im Admin-Bereich
+-- (zuletzt aktiv, Anzahl App-Aufrufe pro Person über die Zeit). Jede
+-- freigegebene Person darf nur ihre eigene Zeile anlegen; lesen dürfen nur
+-- Admins, da die Auswertung eine reine Admin-Funktion ist.
 -- ============================================================
 create table if not exists login_events (
   id uuid primary key default gen_random_uuid(),
