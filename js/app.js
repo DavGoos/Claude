@@ -6042,6 +6042,7 @@ async function renderStart() {
       <div class="brand-footer">
         <div class="caption">${t("brandFooterCaption")}</div>
         <div class="plate"><img src="icons/hoc-logo.png" alt="Serviceplan Group – House of Communication" /></div>
+        <div class="copyright">© ${new Date().getFullYear()} Serviceplan Group SE &amp; Co. KG</div>
       </div>
     </main>
   `;
