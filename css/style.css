@@ -1416,9 +1416,12 @@ header.topbar.hero::before {
   width: auto;
 }
 
-.brand-footer .copyright {
+.copyright {
   font-size: 10px;
   color: var(--text-dim);
+}
+
+.brand-footer .copyright {
   margin-top: 10px;
 }
 

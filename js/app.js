@@ -2502,6 +2502,7 @@ function renderLogin() {
       `
       }
       <p id="login-msg" style="margin-top:14px; font-size:13px;"></p>
+      <div class="copyright" style="margin-top:28px;">© ${new Date().getFullYear()} Serviceplan Group SE &amp; Co. KG</div>
     </div>
   `;
 
