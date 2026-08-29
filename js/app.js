@@ -1673,6 +1673,14 @@ function writableTeamsForCode(code) {
   });
 }
 
+// Team ist nur dann ein Pflichtfeld, wenn die gewaehlte Kostenstelle
+// ueberhaupt Teams hat (Dropdown hat dann eine echte Auswahl) - Bereiche
+// ohne Team-Gliederung (leere Teamliste) duerfen ohne Team gespeichert
+// werden.
+function teamSelectionRequired(department) {
+  return writableTeamsForCode(department).length > 0;
+}
+
 // Kostenstellen, die die aktuelle Person überhaupt sehen darf (lesend oder
 // schreibend) - für Filter-Dropdowns, nicht nur zum Anlegen/Bearbeiten.
 function readableCodes() {
@@ -2690,7 +2698,7 @@ async function renderList() {
     const text = ta.value.trim();
     const { department, teamId } = readDepartmentTeam("capture");
     if (!text) return;
-    if (!department || !teamId) {
+    if (!department || (!teamId && teamSelectionRequired(department))) {
       toast(t("departmentTeamRequiredMsg"));
       return;
     }
@@ -3208,7 +3216,7 @@ async function renderDetail(id) {
 
   document.getElementById("save-detail-btn").addEventListener("click", async () => {
     const { department, teamId } = readDepartmentTeam("detail");
-    if (!department || !teamId) {
+    if (!department || (!teamId && teamSelectionRequired(department))) {
       toast(t("departmentTeamRequiredMsg"));
       return;
     }
@@ -3318,7 +3326,7 @@ async function renderProcessList() {
     const text = ta.value.trim();
     const { department, teamId } = readDepartmentTeam("pcapture");
     if (!text) return;
-    if (!department || !teamId) {
+    if (!department || (!teamId && teamSelectionRequired(department))) {
       toast(t("departmentTeamRequiredMsg"));
       return;
     }
@@ -4034,7 +4042,7 @@ async function renderProcessDetail(id) {
 
   document.getElementById("save-process-detail-btn").addEventListener("click", async () => {
     const { department, teamId } = readDepartmentTeam("pdetail");
-    if (!department || !teamId) {
+    if (!department || (!teamId && teamSelectionRequired(department))) {
       toast(t("departmentTeamRequiredMsg"));
       return;
     }

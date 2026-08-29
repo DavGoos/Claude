@@ -4,6 +4,12 @@
 -- nichts doppelt an (Guards ueber catalog_id bei den Ideen, on conflict bei
 -- Kostenstelle/Teams).
 --
+-- KORREKTUR (siehe fix_cic_bucket_tags.sql): Punkt 2 unten legt "Bucket NEW"
+-- faelschlich als Teams an, obwohl 140014 CIC keine echten Teams hat - die
+-- Angabe gehoert als Tag in "tags". Wurde nachtraeglich per
+-- fix_cic_bucket_tags.sql korrigiert; dieses Skript hier bleibt unveraendert
+-- als historisches Protokoll des urspruenglichen Imports.
+--
 -- Annahmen beim Mapping von Excel-Spalten auf App-Felder (siehe js/app.js
 -- baseExportCols/buildExportRow fuer die Referenz-Spaltenreihenfolge):
 --  - "Bucket NEW" (Customer Support, Report Generation, Automated Processes,
