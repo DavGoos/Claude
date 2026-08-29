@@ -305,6 +305,18 @@ Gedächtnisstütze, die mit der Idee gespeichert wird.
   Detailansicht ist bewusst schlank gehalten: Status und eine separate
   Freitext-Beschreibung gibt es hier nicht (mehr) – der Ablauf steckt
   stattdessen detailliert in den Prozessschritten (siehe unten).
+- **Prozess duplizieren ("🗐 Duplizieren")**: In der Detailansicht eines
+  Prozesses erzeugt dieser Button eine unabhängige Kopie – inklusive aller
+  Prozessschritte und aller hinterlegten Dokumente/Links – und springt
+  direkt zu dieser Kopie, damit man sie nur noch umbenennen und
+  anpassen muss, statt einen stark ähnlichen Prozess komplett neu
+  aufzusetzen. Der Bearbeitungsstatus der Kopie startet bewusst wieder
+  bei "Offen" und der realisierte Anteil des AI-Potenzials (Prozess UND
+  Schritte) wird auf 0% zurückgesetzt, da beides Fortschritt am
+  Original ist, nicht an der neuen Kopie. Ebenfalls nicht mitkopiert:
+  eine Verknüpfung von Schritten auf einen Detailprozess (die verwies
+  auf einen Teilprozess des Originals) sowie die pro Schritt geflaggten
+  Use Cases – beides lässt sich in der Kopie bei Bedarf neu setzen.
 - **Prozesse per ▲/▼ sortieren**: Sowohl in der Prozessliste (Tab
   "Prozesse", je Baum-Ebene) als auch bei den Teilprozessen einer
   Detailansicht lässt sich die Reihenfolge frei per ▲/▼ anpassen – genau

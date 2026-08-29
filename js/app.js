@@ -464,6 +464,9 @@ const I18N = {
       "Diesen Prozess wirklich löschen? Verknüpfte Ideen bleiben erhalten, verlieren aber die Zuordnung.",
     processDeletedMsg: "Prozess gelöscht",
     subProcessSavedMsg: "Teilprozess gespeichert",
+    duplicateProcessBtn: "🗐 Duplizieren",
+    duplicateNameSuffix: " (Kopie)",
+    processDuplicatedMsg: "Prozess dupliziert – Schritte und Dokumente wurden mit übernommen",
 
     processStepsTitle: "Prozessschritte",
     processStepsDesc: "Baue den Ablauf als Kette von Schritten auf – für einen visuellen Überblick wie bei einem Flowchart.",
@@ -1018,6 +1021,9 @@ const I18N = {
     deleteProcessConfirm: "Really delete this process? Linked ideas stay, but lose their assignment.",
     processDeletedMsg: "Process deleted",
     subProcessSavedMsg: "Sub-process saved",
+    duplicateProcessBtn: "🗐 Duplicate",
+    duplicateNameSuffix: " (Copy)",
+    processDuplicatedMsg: "Process duplicated – steps and documents were carried over",
 
     processStepsTitle: "Process steps",
     processStepsDesc: "Build the workflow as a chain of steps - for a visual overview like a flowchart.",
@@ -2055,6 +2061,76 @@ async function deleteProcess(id) {
     return false;
   }
   return true;
+}
+
+// Prozess duplizieren: für stark ähnliche Prozesse, die man nicht jedes Mal
+// von Grund auf neu aufsetzen will. Kopiert den Prozess selbst sowie seine
+// Schritte und Dokumente/Links 1:1 (als neue, unabhängige Kopien - keine
+// Referenz auf die Originale). Bewusst NICHT mitkopiert: der Freigabe-Status
+// (die Kopie startet als "offen") und der realisierte Anteil des
+// AI-Potenzials auf Prozess- und Schrittebene (das ist Fortschritt am
+// Original, nicht an der neuen Kopie). Ebenfalls nicht mitkopiert: die
+// Verlinkung eines Schritts auf einen Detailprozess (linked_process_id) -
+// die verwies auf einen Teilprozess des Originals und würde bei der Kopie
+// nur verwirren - sowie die pro Schritt geflaggten Use Cases, da die
+// Kopie erstmal kein eigenes, geprüftes AI-Support-Mapping hat.
+async function duplicateProcess(id) {
+  const original = processesCache.find((p) => p.id === id);
+  if (!original) return null;
+  const [steps, resources] = await Promise.all([loadProcessSteps(id), loadProcessResources(id)]);
+
+  const siblings = processesCache.filter((p) => p.parent_process_id === (original.parent_process_id || null));
+  const nextPosition = siblings.length ? Math.max(...siblings.map((p) => p.position || 0)) + 1 : 0;
+
+  const { data: newProc, error } = await sb
+    .from("processes")
+    .insert({
+      name: original.name + t("duplicateNameSuffix"),
+      name_en: original.name_en ? original.name_en + t("duplicateNameSuffix") : "",
+      department: original.department,
+      team_id: original.team_id,
+      description: original.description,
+      description_en: original.description_en,
+      ai_potential: original.ai_potential,
+      notes: original.notes,
+      notes_en: original.notes_en,
+      status: "open",
+      realized_potential: 0,
+      parent_process_id: original.parent_process_id,
+      created_by: currentUser.id,
+      position: nextPosition,
+    })
+    .select("*, parent:parent_process_id(id, name, name_en)")
+    .single();
+  if (error) {
+    toast(t("saveErrorPrefix") + error.message);
+    return null;
+  }
+
+  if (steps.length) {
+    const { error: stepsError } = await sb.from("process_steps").insert(
+      steps.map((s) => ({
+        process_id: newProc.id,
+        position: s.position,
+        step_type: s.step_type,
+        title: s.title,
+        description: s.description,
+        ai_potential: s.ai_potential,
+        ai_potential_note: s.ai_potential_note,
+        step_number: s.step_number,
+      }))
+    );
+    if (stepsError) toast(t("saveErrorPrefix") + stepsError.message);
+  }
+
+  if (resources.length) {
+    const { error: resError } = await sb.from("process_resources").insert(
+      resources.map((r) => ({ process_id: newProc.id, kind: r.kind, label: r.label, url: r.url }))
+    );
+    if (resError) toast(t("saveErrorPrefix") + resError.message);
+  }
+
+  return newProc;
 }
 
 // Prozessschritte: geordnete Kette statt freiem Diagramm (siehe Diskussion
@@ -3830,6 +3906,7 @@ async function renderProcessDetail(id) {
       <div class="back-row">
         <button class="icon-btn" id="back-btn">${t("backBtn")}</button>
       </div>
+      ${canWrite ? `<button class="icon-btn" id="duplicate-process-btn">${t("duplicateProcessBtn")}</button>` : ""}
       <button class="icon-btn" id="delete-btn">${t("deleteBtn")}</button>
     </header>
     <main>
@@ -4017,6 +4094,21 @@ async function renderProcessDetail(id) {
       window.location.hash = "#/processes";
     }
   });
+
+  if (document.getElementById("duplicate-process-btn")) {
+    document.getElementById("duplicate-process-btn").addEventListener("click", async () => {
+      const btn = document.getElementById("duplicate-process-btn");
+      btn.disabled = true;
+      const created = await duplicateProcess(proc.id);
+      btn.disabled = false;
+      if (created) {
+        toast(t("processDuplicatedMsg"));
+        processesCache = await loadProcesses();
+        clearUnsavedChanges();
+        window.location.hash = `#/process/${created.id}`;
+      }
+    });
+  }
 
   document.getElementById("add-idea-btn").addEventListener("click", async () => {
     const text = prompt(t("newIdeaPrompt"));
