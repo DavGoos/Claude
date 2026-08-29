@@ -250,6 +250,29 @@ würde.
   jederzeit direkt in der App anpassen (kein Code-Deploy nötig) – siehe
   "🧩 Teams" im Punkt "Kostenstellen- & Team-Zugriff" unten.
 
+## Schritt 8: Supabase-Projekt wach halten (Free-Tier)
+
+Supabase pausiert Projekte im kostenlosen Free-Tier automatisch nach **7
+Tagen ohne API-Aktivität** – danach ist die App offline, bis jemand manuell
+im Supabase-Dashboard auf "Restore" klickt. Bei einem internen Tool mit
+sporadischer Nutzung (Urlaubszeit, ruhige Wochen) ist das der
+wahrscheinlichste reale Ausfallgrund.
+
+Dagegen gibt es die GitHub-Actions-Workflow-Datei
+[`.github/workflows/keep-supabase-awake.yml`](.github/workflows/keep-supabase-awake.yml):
+Sie schickt montags und donnerstags automatisch eine harmlose Anfrage an
+die Supabase-REST-API (liest URL/Key direkt aus `js/config.js`, keine
+zusätzliche Konfiguration nötig) und verhindert damit die Pause.
+
+**Wichtig:** GitHub führt geplante ("schedule") Workflow-Läufe nur für
+Dateien auf dem **Standard-Branch** des Repos aus (i.d.R. `main`). Liegt
+diese Datei nur auf einem Feature-Branch, läuft sie nicht automatisch –
+erst nach dem Mergen in den Standard-Branch. Manuelles Testen geht davon
+unabhängig jederzeit über **Actions -> "Keep Supabase awake" -> "Run
+workflow"**. Ob die geplanten Läufe tatsächlich feuern, siehst du im
+gleichen Actions-Tab an den grünen Haken bzw. per E-Mail-Benachrichtigung,
+falls ein Lauf fehlschlägt (z.B. weil das Projekt doch pausiert ist).
+
 ## KI-Unterstützung: Start-Prompt für die Umsetzungsplanung
 
 Der Abschnitt "KI-Unterstützung" bei einer Idee (eingeklappt unter "Weitere
