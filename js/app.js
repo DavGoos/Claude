@@ -5470,6 +5470,7 @@ function dashProcessNodeHtml(proc, teamProcesses, ideas) {
   const key = `p-${proc.id}`;
   const isExpanded = dashExpandedTreeIds.has(key);
   const ai = aiPotentialInfo(proc.ai_potential);
+  const statusInfo = processStatusInfo(proc.status);
   return `
     <div class="tree-node">
       <div class="tree-row">
@@ -5481,6 +5482,7 @@ function dashProcessNodeHtml(proc, teamProcesses, ideas) {
         <div class="tree-row-content">
           <a class="link-item dash-tree-process" href="#/process/${proc.id}">
             <span class="priority-dot" style="background:${ai.color}"></span>
+            <span class="process-status-icon" title="${escapeHtml(statusInfo.label)}" aria-label="${escapeHtml(statusInfo.label)}">${statusInfo.icon}</span>
             ${escapeHtml(trValue(proc, "name"))}
             <span class="badge">${linkedIdeas.length} 💡</span>
           </a>
