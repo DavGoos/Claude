@@ -441,6 +441,9 @@ const I18N = {
     loadingProcesses: "Lade Prozesse...",
 
     processNameLabel: "Prozessname",
+    processStatusLabel: "Bearbeitungsstatus",
+    processStatus_open: "In Arbeit",
+    processStatus_reviewed: "Fertig beschrieben",
     parentProcessLabel: "Übergeordneter Prozess",
     noneTopLevelOption: "— Keiner (Top-Level-Prozess) —",
     aiPotentialTitle: "AI-Potenzial",
@@ -993,6 +996,9 @@ const I18N = {
     loadingProcesses: "Loading processes...",
 
     processNameLabel: "Process name",
+    processStatusLabel: "Progress status",
+    processStatus_open: "In progress",
+    processStatus_reviewed: "Fully described",
     parentProcessLabel: "Parent process",
     noneTopLevelOption: "— None (top-level process) —",
     aiPotentialTitle: "AI potential",
@@ -1320,6 +1326,17 @@ function aiPotentialInfo(value) {
   if (v >= 4) return { label: t("ai_high"), color: "#22c55e" };
   if (v <= 2) return { label: t("ai_low"), color: "#9aa1af" };
   return { label: t("ai_medium"), color: "#fcd34d" };
+}
+
+// Bearbeitungsstatus eines Prozesses (Spalte "status" in processes, siehe
+// schema.sql): "reviewed" = fertig beschrieben, alles andere (Default
+// "open") = noch in Arbeit. Icon statt reinem Farbpunkt, damit es sich in
+// der Kachel eindeutig von der AI-Potenzial-Bewertung unterscheidet.
+function processStatusInfo(status) {
+  if (status === "reviewed") {
+    return { icon: "✅", label: t("processStatus_reviewed"), className: "reviewed" };
+  }
+  return { icon: "🚧", label: t("processStatus_open"), className: "open" };
 }
 
 // Zweigeteilter Balken: realisierter Anteil (fest eingefärbt) + offener
@@ -3230,9 +3247,13 @@ async function renderDetail(id) {
 
 function processCard(proc) {
   const ai = aiPotentialInfo(proc.ai_potential);
+  const statusInfo = processStatusInfo(proc.status);
   return `
     <div class="idea-item" data-id="${proc.id}">
-      <div class="idea-title">${escapeHtml(trValue(proc, "name"))}</div>
+      <div class="idea-title">
+        <span class="process-status-icon" title="${escapeHtml(statusInfo.label)}" aria-label="${escapeHtml(statusInfo.label)}">${statusInfo.icon}</span>
+        ${escapeHtml(trValue(proc, "name"))}
+      </div>
       <div class="idea-meta">
         <span class="badge"><span class="priority-dot" style="background:${ai.color}"></span> ${ai.label}</span>
         <span class="badge">${proc.realized_potential || 0}% ${escapeHtml(t("realizedPotentialLabel"))}</span>
@@ -3813,6 +3834,12 @@ async function renderProcessDetail(id) {
         <label class="field-label">${t("processNameLabel")}</label>
         <textarea class="field" id="f-name"${trReadonlyAttr(proc, "name")}>${escapeHtml(trValue(proc, "name"))}</textarea>
 
+        <label class="field-label">${t("processStatusLabel")}</label>
+        <select class="field" id="f-process-status">
+          <option value="open" ${proc.status === "reviewed" ? "" : "selected"}>${t("processStatus_open")}</option>
+          <option value="reviewed" ${proc.status === "reviewed" ? "selected" : ""}>${t("processStatus_reviewed")}</option>
+        </select>
+
         <label class="field-label">${t("departmentLabel")} / ${t("teamLabel")}</label>
         ${departmentTeamFields(proc.department, proc.team_id, "pdetail")}
 
@@ -4018,6 +4045,7 @@ async function renderProcessDetail(id) {
       department,
       team_id: teamId,
       parent_process_id: document.getElementById("f-parent-process").value || null,
+      status: document.getElementById("f-process-status").value,
       ai_potential: Number(document.querySelector('[data-field="ai_potential"]').value),
       realized_potential: Number(document.querySelector('[data-field="realized_potential"]').value),
     };

@@ -436,6 +436,13 @@ button {
   line-height: 1.35;
 }
 
+.process-status-icon {
+  display: inline-block;
+  margin-right: 4px;
+  font-size: 14px;
+  cursor: help;
+}
+
 .idea-meta {
   display: flex;
   align-items: center;
