@@ -37,9 +37,16 @@ jobs:
             console.log('SUPABASE_URL=' + window.APP_CONFIG.SUPABASE_URL);
             console.log('SUPABASE_ANON_KEY=' + window.APP_CONFIG.SUPABASE_ANON_KEY);
           ")"
-          status=$(curl -sS -o /dev/null -w "%{http_code}" -H "apikey: $SUPABASE_ANON_KEY" "$SUPABASE_URL/rest/v1/")
+          # Supabase erwartet neben "apikey" auch einen "Authorization: Bearer"
+          # Header (genau das setzt supabase-js im Browser automatisch mit,
+          # wenn keine eingeloggte Session vorliegt) - ohne ihn antwortet die
+          # REST-API mit 401, auch wenn der Key selbst gültig ist.
+          status=$(curl -sS -o /dev/null -w "%{http_code}" \
+            -H "apikey: $SUPABASE_ANON_KEY" \
+            -H "Authorization: Bearer $SUPABASE_ANON_KEY" \
+            "$SUPABASE_URL/rest/v1/")
           echo "Supabase antwortete mit HTTP $status"
-          if [ "$status" -lt 200 ] || [ "$status" -ge 500 ]; then
+          if [ "$status" -lt 200 ] || [ "$status" -ge 300 ]; then
             echo "::error::Unerwarteter Status $status - Projekt evtl. pausiert oder falsch konfiguriert. Bitte im Supabase-Dashboard pruefen."
             exit 1
           fi
