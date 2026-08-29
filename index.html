@@ -3,14 +3,24 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>AI Use-Case Sammlung</title>
-  <meta name="description" content="Ideen für AI Use-Cases schnell erfassen, bewerten und ausarbeiten." />
-  <meta name="theme-color" content="#6366f1" />
+  <title>Process- & AI-Usecase Management</title>
+  <meta name="description" content="Prozesse dokumentieren, auf AI-Potenzial prüfen und AI-Use-Cases erfassen, bewerten und ausarbeiten." />
+  <meta name="theme-color" content="#047857" />
   <link rel="manifest" href="manifest.json" />
   <link rel="apple-touch-icon" href="icons/icon-192.png" />
   <link rel="icon" href="icons/icon-192.png" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Process & AI" />
+  <script>
+    // Vor dem ersten Rendern setzen, damit die Seite nicht kurz im falschen
+    // Modus aufblitzt, bevor js/app.js geladen ist.
+    try {
+      if (localStorage.getItem("ai_ideen_theme") === "light") {
+        document.documentElement.setAttribute("data-theme", "light");
+      }
+    } catch (e) {}
+  </script>
   <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
@@ -24,6 +34,12 @@
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", () => {
         navigator.serviceWorker.register("sw.js").catch(() => {});
+      });
+      let reloadedForUpdate = false;
+      navigator.serviceWorker.addEventListener("controllerchange", () => {
+        if (reloadedForUpdate) return;
+        reloadedForUpdate = true;
+        window.location.reload();
       });
     }
   </script>

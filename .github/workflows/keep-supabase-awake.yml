@@ -1,0 +1,45 @@
+name: Keep Supabase awake
+
+# Supabase pausiert Projekte im Free-Tier automatisch nach 7 Tagen ohne
+# API-Aktivität - danach ist die App komplett offline, bis jemand manuell
+# im Supabase-Dashboard auf "Restore" klickt. Dieser Workflow schickt
+# regelmäßig eine harmlose Anfrage an die Supabase-REST-API, damit dieser
+# Fall gar nicht erst eintritt. Montag UND Donnerstag, nicht nur einmal pro
+# Woche - GitHub-Cron ist "best effort" und kann bei hoher Last verzögert
+# oder vereinzelt übersprungen werden, zwei Läufe pro Woche lassen genug
+# Puffer unter dem 7-Tage-Limit.
+#
+# WICHTIG: geplante ("schedule") Workflow-Läufe feuert GitHub nur für
+# Workflow-Dateien auf dem Standard-Branch des Repos (hier: main). Liegt
+# diese Datei nur auf einem Feature-Branch, läuft sie NICHT automatisch -
+# manuelles Starten über "Actions" -> "Keep Supabase awake" -> "Run
+# workflow" funktioniert davon unabhängig auf jedem Branch.
+on:
+  schedule:
+    - cron: "0 6 * * 1,4"
+  workflow_dispatch: {}
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Supabase-Projekt anpingen
+        run: |
+          eval "$(node -e "
+            global.window = {};
+            require('./js/config.js');
+            console.log('SUPABASE_URL=' + window.APP_CONFIG.SUPABASE_URL);
+            console.log('SUPABASE_ANON_KEY=' + window.APP_CONFIG.SUPABASE_ANON_KEY);
+          ")"
+          status=$(curl -sS -o /dev/null -w "%{http_code}" -H "apikey: $SUPABASE_ANON_KEY" "$SUPABASE_URL/rest/v1/")
+          echo "Supabase antwortete mit HTTP $status"
+          if [ "$status" -lt 200 ] || [ "$status" -ge 500 ]; then
+            echo "::error::Unerwarteter Status $status - Projekt evtl. pausiert oder falsch konfiguriert. Bitte im Supabase-Dashboard pruefen."
+            exit 1
+          fi
