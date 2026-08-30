@@ -5888,21 +5888,154 @@ async function renderDashboard() {
 
 // ---------- Start (Startseite/Cockpit) ----------
 
-function greetingText() {
+// Eine von vier Tageszeiten - bestimmt sowohl Begrüßungstext/-icon als auch
+// Verlauf + Himmelsgrafik des Hero-Headers (siehe heroSkyIllustration).
+// Bewusst unabhängig vom Hell-/Dunkelmodus-Schalter: der regelt nur den Rest
+// der App (Karten, Text, Flächen), die Himmelsfarbe folgt allein der Uhrzeit.
+function dayPart() {
   const h = new Date().getHours();
-  if (h >= 22 || h < 5) return t("greetingNight");
-  if (h < 10) return t("greetingMorning");
-  if (h < 17) return t("greetingAfternoon");
-  return t("greetingEvening");
+  if (h >= 22 || h < 5) return "night";
+  if (h < 10) return "morning";
+  if (h < 17) return "day";
+  return "evening";
+}
+
+function greetingText() {
+  return { morning: t("greetingMorning"), day: t("greetingAfternoon"), evening: t("greetingEvening"), night: t("greetingNight") }[
+    dayPart()
+  ];
 }
 
 // Icon + Glow-Farbe je Tageszeit, passend zur Begrüßung (siehe greetingText).
 function greetingIcon() {
-  const h = new Date().getHours();
-  if (h >= 22 || h < 5) return { emoji: "🌙", cls: "icon-night" };
-  if (h < 10) return { emoji: "🌅", cls: "icon-morning" };
-  if (h < 17) return { emoji: "☀️", cls: "icon-day" };
-  return { emoji: "🌇", cls: "icon-evening" };
+  return {
+    morning: { emoji: "🌅", cls: "icon-morning" },
+    day: { emoji: "☀️", cls: "icon-day" },
+    evening: { emoji: "🌇", cls: "icon-evening" },
+    night: { emoji: "🌙", cls: "icon-night" },
+  }[dayPart()];
+}
+
+// Breite Hintergrundgrafik für den Start-Header: Sonne/Mond/Wolken/Sterne
+// über derselben stilisierten Bürozeile am Horizont, je Tageszeit anders
+// (siehe dayPart). viewBox bewusst sehr breit (400x200) und zentriert auf
+// die Sonne/den Mond, damit "preserveAspectRatio=slice" auf sehr schmalen
+// (Handy) wie sehr breiten (Desktop) Headern nur die Ränder abschneidet,
+// statt das Hauptmotiv zu verlieren.
+function heroSkylineRects() {
+  const heights = [26, 44, 18, 34, 16, 30, 20, 40, 16, 28, 22, 38, 16, 32, 20, 42, 16, 26, 22, 34];
+  const w = 400 / heights.length;
+  return heights
+    .map((h, i) => {
+      const bw = w * 0.7;
+      const x = i * w + w * 0.15;
+      return `<rect x="${x.toFixed(1)}" y="${200 - h}" width="${bw.toFixed(1)}" height="${h}"/>`;
+    })
+    .join("");
+}
+
+function heroWindowRects(positions) {
+  return positions.map(([x, y]) => `<rect x="${x}" y="${y}" width="3" height="4" fill="#ffd77a" fill-opacity="0.85"/>`).join("");
+}
+
+function heroSkyIllustration(part) {
+  const skyline = (color, opacity) => `<g fill="${color}" fill-opacity="${opacity}">${heroSkylineRects()}</g>`;
+  const sun = (cx, cy, r, glow) => `
+    <circle cx="${cx}" cy="${cy}" r="${r + 14}" fill="${glow}" fill-opacity="0.3" class="hero-sky-bob"/>
+    <circle cx="${cx}" cy="${cy}" r="${r}" fill="#ffe19b" class="hero-sky-bob"/>
+  `;
+  const rays = (cx, cy, r, count, len) =>
+    `<g stroke="#fff4de" stroke-opacity="0.6" stroke-width="2" stroke-linecap="round" class="hero-sky-bob">${Array.from(
+      { length: count },
+      (_, i) => {
+        const a = (Math.PI * 2 * i) / count;
+        const x1 = cx + Math.cos(a) * (r + 6);
+        const y1 = cy + Math.sin(a) * (r + 6);
+        const x2 = cx + Math.cos(a) * (r + 6 + len);
+        const y2 = cy + Math.sin(a) * (r + 6 + len);
+        return `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}"/>`;
+      }
+    ).join("")}</g>`;
+  const cloud = (cx, cy, rx, ry, opacity) =>
+    `<ellipse cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}" fill="#fff" fill-opacity="${opacity}" class="hero-sky-drift"/>`;
+  const stars = (positions) =>
+    `<g fill="#e7ebff">${positions
+      .map(([x, y, r], i) => `<circle class="hero-sky-twinkle" cx="${x}" cy="${y}" r="${r}" style="animation-delay:${(i % 5) * 0.5}s"/>`)
+      .join("")}</g>`;
+
+  if (part === "morning") {
+    return `
+      <line x1="0" y1="176" x2="400" y2="176" stroke="#fff" stroke-opacity="0.16"/>
+      ${rays(250, 148, 30, 6, 16)}
+      ${sun(250, 148, 30, "#ffb46b")}
+      ${cloud(70, 120, 46, 13, 0.22)}
+      ${cloud(130, 140, 34, 10, 0.16)}
+      ${skyline("#4a2c22", 0.5)}
+    `;
+  }
+  if (part === "day") {
+    return `
+      <line x1="0" y1="176" x2="400" y2="176" stroke="#fff" stroke-opacity="0.2"/>
+      ${rays(250, 112, 24, 8, 16)}
+      <circle cx="250" cy="112" r="24" fill="#fff6d8" class="hero-sky-bob"/>
+      ${cloud(70, 108, 42, 14, 0.85)}
+      ${cloud(130, 128, 30, 11, 0.7)}
+      ${cloud(330, 140, 44, 14, 0.6)}
+      ${skyline("#0d3b63", 0.28)}
+    `;
+  }
+  if (part === "evening") {
+    return `
+      <line x1="0" y1="176" x2="400" y2="176" stroke="#fff" stroke-opacity="0.14"/>
+      ${sun(250, 176, 40, "#ff7a59")}
+      <path d="M60 90 q10 -8 20 0 q10 -8 20 0" fill="none" stroke="#2a1240" stroke-opacity="0.45" stroke-width="2" class="hero-sky-drift"/>
+      <path d="M300 70 q10 -8 20 0 q10 -8 20 0" fill="none" stroke="#2a1240" stroke-opacity="0.35" stroke-width="2" class="hero-sky-drift"/>
+      ${skyline("#241033", 0.65)}
+      ${heroWindowRects([
+        [36, 140],
+        [96, 152],
+        [151, 146],
+        [230, 154],
+        [286, 142],
+        [345, 150],
+      ])}
+    `;
+  }
+  return `
+    <line x1="0" y1="176" x2="400" y2="176" stroke="#fff" stroke-opacity="0.08"/>
+    ${stars([
+      [24, 34, 1.6],
+      [66, 58, 1.2],
+      [104, 30, 1.6],
+      [150, 50, 1.2],
+      [190, 28, 1.6],
+      [40, 78, 1.2],
+      [130, 74, 1.6],
+      [16, 96, 1.2],
+      [80, 96, 1.6],
+      [172, 90, 1.2],
+      [286, 40, 1.6],
+      [326, 62, 1.2],
+      [356, 32, 1.6],
+      [366, 84, 1.2],
+      [244, 88, 1.6],
+    ])}
+    <g class="hero-sky-bob">
+      <circle cx="250" cy="112" r="26" fill="#eef1ff"/>
+      <circle cx="261" cy="104" r="24" fill="#0b0f2e"/>
+    </g>
+    ${skyline("#05071a", 1)}
+    ${heroWindowRects([
+      [20, 142],
+      [56, 130],
+      [96, 152],
+      [151, 146],
+      [210, 138],
+      [286, 142],
+      [326, 154],
+      [366, 150],
+    ])}
+  `;
 }
 
 function longDateText() {
@@ -5990,7 +6123,10 @@ async function renderStart() {
   const isAdmin = currentProfile && currentProfile.is_admin;
 
   $app.innerHTML = `
-    <header class="topbar hero">
+    <header class="topbar hero" data-daypart="${dayPart()}">
+      <svg class="hero-sky" viewBox="0 0 400 200" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
+        ${heroSkyIllustration(dayPart())}
+      </svg>
       <div class="hero-top">
         <div class="brand-lockup">
           <div class="hoc-chip"><img src="icons/hoc-mark.png" alt="House of Communication" /></div>
