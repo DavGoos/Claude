@@ -5984,7 +5984,7 @@ async function renderStart() {
       </div>
 
       <div class="greet-row">
-        <div class="greet">${greetingText()}<span class="wave">👋</span></div>
+        <div class="greet">${greetingText()}<span class="bulb">💡</span></div>
         <div class="sub">${longDateText()}</div>
       </div>
 
