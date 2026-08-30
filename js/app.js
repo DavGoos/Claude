@@ -23,7 +23,16 @@ function t(key) {
 // ============================================================
 
 const THEME_STORAGE = "ai_ideen_theme";
-let currentTheme = localStorage.getItem(THEME_STORAGE) === "light" ? "light" : "dark";
+
+// Ohne gespeicherte Präferenz richtet sich der Default nach der Tageszeit
+// (hell tagsüber, dunkel nachts) - siehe auch greetingText()/greetingIcon().
+function timeDefaultTheme() {
+  const h = new Date().getHours();
+  return h >= 5 && h < 22 ? "light" : "dark";
+}
+
+const storedTheme = localStorage.getItem(THEME_STORAGE);
+let currentTheme = storedTheme === "light" || storedTheme === "dark" ? storedTheme : timeDefaultTheme();
 document.documentElement.setAttribute("data-theme", currentTheme);
 
 // Spiegelt die Akzentfarbe des aktuellen Modus in der Browser-/OS-Oberfläche
@@ -5882,8 +5891,8 @@ async function renderDashboard() {
 function greetingText() {
   const h = new Date().getHours();
   if (h >= 22 || h < 5) return t("greetingNight");
-  if (h < 12) return t("greetingMorning");
-  if (h < 18) return t("greetingAfternoon");
+  if (h < 10) return t("greetingMorning");
+  if (h < 17) return t("greetingAfternoon");
   return t("greetingEvening");
 }
 
@@ -5891,8 +5900,8 @@ function greetingText() {
 function greetingIcon() {
   const h = new Date().getHours();
   if (h >= 22 || h < 5) return { emoji: "🌙", cls: "icon-night" };
-  if (h < 12) return { emoji: "🌅", cls: "icon-morning" };
-  if (h < 18) return { emoji: "☀️", cls: "icon-day" };
+  if (h < 10) return { emoji: "🌅", cls: "icon-morning" };
+  if (h < 17) return { emoji: "☀️", cls: "icon-day" };
   return { emoji: "🌇", cls: "icon-evening" };
 }
 
