@@ -121,6 +121,7 @@ const I18N = {
     utilExportLabel: "Export",
     utilPermissionsLabel: "Freigaben",
     utilSettingsLabel: "Einstellungen",
+    utilFeedbackLabel: "Feedback",
     adminOnlyTag: "Admin",
     brandFooterCaption: "Ein Tool von",
 
@@ -614,6 +615,17 @@ const I18N = {
     dashTimelineTitle: "Erfassungsverlauf",
     dashTimelineEmpty: "Noch keine Daten für einen Verlauf.",
 
+    feedbackTitle: "App-Feedback",
+    feedbackDesc: "Wie gefällt dir die App? Bewerte die folgenden Punkte und hinterlass uns gerne zusätzliches Feedback.",
+    feedbackRatingUsability: "Benutzerfreundlichkeit",
+    feedbackRatingDesign: "Design",
+    feedbackRatingFeatures: "Funktionsumfang",
+    feedbackRatingPerformance: "Geschwindigkeit",
+    feedbackCommentLabel: "Freitext (optional)",
+    feedbackCommentPlaceholder: "Was läuft gut, was können wir verbessern?",
+    sendFeedbackBtn: "Feedback senden",
+    feedbackSentMsg: "Danke für dein Feedback!",
+
     loadErrorPrefix: "Fehler beim Laden: ",
     saveErrorPrefix: "Fehler beim Speichern: ",
     deleteErrorPrefix: "Fehler beim Löschen: ",
@@ -683,6 +695,7 @@ const I18N = {
     utilExportLabel: "Export",
     utilPermissionsLabel: "Access",
     utilSettingsLabel: "Settings",
+    utilFeedbackLabel: "Feedback",
     adminOnlyTag: "Admin",
     brandFooterCaption: "A tool by",
 
@@ -1172,6 +1185,17 @@ const I18N = {
     dashTimelineTitle: "Collection progress over time",
     dashTimelineEmpty: "No data for a timeline yet.",
 
+    feedbackTitle: "App feedback",
+    feedbackDesc: "How do you like the app? Rate the points below and feel free to leave us additional feedback.",
+    feedbackRatingUsability: "Usability",
+    feedbackRatingDesign: "Design",
+    feedbackRatingFeatures: "Feature set",
+    feedbackRatingPerformance: "Speed",
+    feedbackCommentLabel: "Free text (optional)",
+    feedbackCommentPlaceholder: "What works well, what could we improve?",
+    sendFeedbackBtn: "Send feedback",
+    feedbackSentMsg: "Thanks for your feedback!",
+
     loadErrorPrefix: "Error loading: ",
     saveErrorPrefix: "Error saving: ",
     deleteErrorPrefix: "Error deleting: ",
@@ -1479,6 +1503,7 @@ function currentRoute() {
   if (hash === "#/admin") return { view: "admin" };
   if (hash === "#/export") return { view: "export" };
   if (hash === "#/teams") return { view: "teams" };
+  if (hash === "#/feedback") return { view: "feedback" };
   return { view: "start" };
 }
 
@@ -4231,6 +4256,69 @@ function renderSettings() {
   });
 }
 
+// ---------- View: Feedback ----------
+
+function renderFeedback() {
+  $app.innerHTML = `
+    <header class="topbar">
+      <div class="back-row">
+        <button class="icon-btn" id="back-btn">${t("backBtn")}</button>
+      </div>
+      ${langToggleButton()}${themeToggleButton()}
+    </header>
+    <main>
+      <div class="card">
+        <div class="section-title" style="margin:0 0 10px;">${t("feedbackTitle")}</div>
+        <p style="font-size:13.5px; color:var(--text-dim); margin:0 0 14px; line-height:1.5;">
+          ${t("feedbackDesc")}
+        </p>
+        ${sliderRow("usability", t("feedbackRatingUsability"), 3)}
+        ${sliderRow("design", t("feedbackRatingDesign"), 3)}
+        ${sliderRow("features", t("feedbackRatingFeatures"), 3)}
+        ${sliderRow("performance", t("feedbackRatingPerformance"), 3)}
+        <label class="field-label">${t("feedbackCommentLabel")}</label>
+        <textarea class="field" id="f-feedback-comment" placeholder="${t("feedbackCommentPlaceholder")}"></textarea>
+        <div class="row">
+          <button class="btn-primary" id="send-feedback-btn">${t("sendFeedbackBtn")}</button>
+        </div>
+      </div>
+    </main>
+  `;
+
+  document.getElementById("back-btn").addEventListener("click", () => {
+    window.location.hash = "";
+  });
+
+  bindLangToggle();
+  bindThemeToggle();
+
+  document.querySelectorAll('input[type="range"]').forEach((slider) => {
+    slider.addEventListener("input", () => {
+      slider.nextElementSibling.textContent = slider.value;
+    });
+  });
+
+  document.getElementById("send-feedback-btn").addEventListener("click", async () => {
+    const btn = document.getElementById("send-feedback-btn");
+    btn.disabled = true;
+    const { error } = await sb.from("app_feedback").insert({
+      user_id: currentUser.id,
+      rating_usability: Number(document.querySelector('[data-field="usability"]').value),
+      rating_design: Number(document.querySelector('[data-field="design"]').value),
+      rating_features: Number(document.querySelector('[data-field="features"]').value),
+      rating_performance: Number(document.querySelector('[data-field="performance"]').value),
+      comment: document.getElementById("f-feedback-comment").value.trim(),
+    });
+    btn.disabled = false;
+    if (error) {
+      toast(t("saveErrorPrefix") + error.message);
+      return;
+    }
+    toast(t("feedbackSentMsg"));
+    window.location.hash = "";
+  });
+}
+
 // ---------- View: Anleitung (Guide) ----------
 
 const GUIDE_TOUR_PANELS = {
@@ -6196,6 +6284,7 @@ async function renderStart() {
             : ""
         }
         <div class="tile fade-up" data-hash="#/settings" style="animation-delay:.62s"><span class="ic">⚙️</span><span class="lbl">${t("utilSettingsLabel")}</span></div>
+        <div class="tile fade-up" data-hash="#/feedback" style="animation-delay:.66s"><span class="ic">⭐</span><span class="lbl">${t("utilFeedbackLabel")}</span></div>
       </div>
 
       <div class="section-title" style="margin-top:20px;">${t("recentlyEditedTitle")}</div>
@@ -6285,6 +6374,8 @@ async function render() {
     await renderExportSync();
   } else if (route.view === "teams") {
     await renderTeamsManagement();
+  } else if (route.view === "feedback") {
+    renderFeedback();
   } else if (route.view === "idea-list") {
     await renderList();
   } else {
