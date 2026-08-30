@@ -625,6 +625,10 @@ const I18N = {
     feedbackCommentPlaceholder: "Was läuft gut, was können wir verbessern?",
     sendFeedbackBtn: "Feedback senden",
     feedbackSentMsg: "Danke für dein Feedback!",
+    feedbackAdminTitle: "App-Feedback",
+    feedbackResponseCountMsg: "{n} Rückmeldung(en) insgesamt.",
+    feedbackCommentsTitle: "Freitext-Kommentare",
+    emptyFeedback: "Noch kein Feedback vorhanden.",
 
     loadErrorPrefix: "Fehler beim Laden: ",
     saveErrorPrefix: "Fehler beim Speichern: ",
@@ -1195,6 +1199,10 @@ const I18N = {
     feedbackCommentPlaceholder: "What works well, what could we improve?",
     sendFeedbackBtn: "Send feedback",
     feedbackSentMsg: "Thanks for your feedback!",
+    feedbackAdminTitle: "App feedback",
+    feedbackResponseCountMsg: "{n} response(s) in total.",
+    feedbackCommentsTitle: "Free-text comments",
+    emptyFeedback: "No feedback yet.",
 
     loadErrorPrefix: "Error loading: ",
     saveErrorPrefix: "Error saving: ",
@@ -1391,6 +1399,17 @@ function potentialBarHtml(aiPotential, realizedPct) {
     <div class="potential-bar" title="${escapeHtml(t("realizedPotentialLabel"))}: ${realized}%">
       ${realized ? `<div class="potential-bar-realized" style="width:${realized}%;"></div>` : ""}
       ${open ? `<div class="potential-bar-open" style="width:${open}%; background:${openColor};"></div>` : ""}
+    </div>
+  `;
+}
+
+function feedbackAvgRow(label, avg) {
+  const pct = Math.max(0, Math.min(100, (avg / 5) * 100));
+  return `
+    <div class="feedback-avg-row">
+      <div class="feedback-avg-label">${escapeHtml(label)}</div>
+      <div class="potential-bar"><div class="potential-bar-realized" style="width:${pct}%;"></div></div>
+      <div class="feedback-avg-value">${avg.toFixed(1)}/5</div>
     </div>
   `;
 }
@@ -1883,6 +1902,15 @@ async function recordLoginEvent() {
 
 async function loadLoginEvents() {
   const { data, error } = await sb.from("login_events").select("user_id, created_at");
+  if (error) return [];
+  return data || [];
+}
+
+async function loadAppFeedback() {
+  const { data, error } = await sb
+    .from("app_feedback")
+    .select("id, user_id, created_at, rating_usability, rating_design, rating_features, rating_performance, comment")
+    .order("created_at", { ascending: false });
   if (error) return [];
   return data || [];
 }
@@ -4931,6 +4959,16 @@ async function renderAdmin() {
     .slice()
     .sort((a, b) => new Date((loginStatsByUser[b.id] || {}).last || 0) - new Date((loginStatsByUser[a.id] || {}).last || 0));
 
+  // App-Feedback: Durchschnitt je Kategorie (nur Kategorien mit Angabe
+  // fließen ein, aktuell aber ohnehin Pflichtfelder) plus Liste der
+  // nicht-leeren Freitext-Kommentare, neueste zuerst.
+  const feedbackRows = await loadAppFeedback();
+  const profileEmailById = {};
+  profilesCache.forEach((p) => (profileEmailById[p.id] = p.email));
+  const feedbackAvgOf = (key) =>
+    feedbackRows.length ? feedbackRows.reduce((sum, r) => sum + r[key], 0) / feedbackRows.length : 0;
+  const feedbackComments = feedbackRows.filter((r) => r.comment && r.comment.trim());
+
   $app.innerHTML = `
     <header class="topbar">
       <div class="back-row">
@@ -5022,6 +5060,44 @@ async function renderAdmin() {
             : `<div class="empty-state">${t("noApprovedForAccessMsg")}</div>`
         }
       </div>
+
+      <div class="section-title" style="margin:24px 4px 8px;">${t("feedbackAdminTitle")}</div>
+      <div class="card" style="margin-bottom:20px;">
+        ${
+          feedbackRows.length
+            ? `
+              ${feedbackAvgRow(t("feedbackRatingUsability"), feedbackAvgOf("rating_usability"))}
+              ${feedbackAvgRow(t("feedbackRatingDesign"), feedbackAvgOf("rating_design"))}
+              ${feedbackAvgRow(t("feedbackRatingFeatures"), feedbackAvgOf("rating_features"))}
+              ${feedbackAvgRow(t("feedbackRatingPerformance"), feedbackAvgOf("rating_performance"))}
+              <p style="font-size:12.5px; color:var(--text-dim); margin:10px 0 0;">${t("feedbackResponseCountMsg").replace("{n}", feedbackRows.length)}</p>
+            `
+            : `<div class="empty-state">${t("emptyFeedback")}</div>`
+        }
+      </div>
+
+      ${
+        feedbackComments.length
+          ? `
+            <div class="section-title" style="margin:0 4px 8px;">${t("feedbackCommentsTitle")}</div>
+            <div class="idea-list" style="margin-bottom:20px;">
+              ${feedbackComments
+                .map(
+                  (r) => `
+                <div class="idea-item">
+                  <div class="idea-title">${escapeHtml(r.comment)}</div>
+                  <div class="idea-meta">
+                    <span class="badge">👤 ${escapeHtml(profileEmailById[r.user_id] || "?")}</span>
+                    <span class="badge">🕒 ${formatDateTime(r.created_at)}</span>
+                  </div>
+                </div>
+              `
+                )
+                .join("")}
+            </div>
+          `
+          : ""
+      }
 
       <div class="section-title" style="margin:24px 4px 8px;">${t("kostenstellenTitle")}</div>
       <div class="card">
@@ -6228,14 +6304,16 @@ async function renderStart() {
           ${appLogoMark(true)}
           <span class="app-name">${escapeHtml(t("appName"))}</span>
         </div>
-        <div class="hero-actions">
-          <div class="hero-actions-group">${langToggleButton()}${themeToggleButton()}</div>
-          <button class="icon-btn" id="logout-btn">${t("logoutBtn")}</button>
-        </div>
       </div>
 
       <div class="greet-row">
-        <div class="greet">${greetingText()}<span class="greet-icon ${greetingIcon().cls}">${greetingIcon().emoji}</span></div>
+        <div class="greet-line">
+          <div class="greet">${greetingText()}<span class="greet-icon ${greetingIcon().cls}">${greetingIcon().emoji}</span></div>
+          <div class="hero-actions">
+            <div class="hero-actions-group">${langToggleButton()}${themeToggleButton()}</div>
+            <button class="icon-btn" id="logout-btn">${t("logoutBtn")}</button>
+          </div>
+        </div>
         <div class="sub">${longDateText()}</div>
       </div>
 

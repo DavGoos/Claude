@@ -603,6 +603,35 @@ textarea.field { min-height: 70px; resize: vertical; }
   height: 100%;
 }
 
+/* Admin-Übersicht "App-Feedback": Durchschnitt je Kategorie als Balken */
+.feedback-avg-row {
+  display: grid;
+  grid-template-columns: minmax(90px, auto) 1fr 40px;
+  align-items: center;
+  gap: 10px;
+  margin: 10px 0;
+}
+
+.feedback-avg-row:first-child {
+  margin-top: 0;
+}
+
+.feedback-avg-row .potential-bar {
+  margin: 0;
+}
+
+.feedback-avg-label {
+  font-size: 13px;
+  color: var(--text);
+}
+
+.feedback-avg-value {
+  font-size: 12.5px;
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
 .toast {
   position: fixed;
   bottom: calc(env(safe-area-inset-bottom) + 18px);
@@ -1196,11 +1225,20 @@ header.topbar.hero::before {
   min-width: 0;
 }
 
+.greet-line {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px 10px;
+  width: 100%;
+}
+
 .hero-actions {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  width: 100%;
+  gap: 6px;
+  flex-shrink: 0;
 }
 
 .hero-actions-group {
@@ -1211,7 +1249,7 @@ header.topbar.hero::before {
 .greet-row {
   position: relative;
   z-index: 2;
-  margin-top: 14px;
+  margin-top: 10px;
   opacity: 0;
   animation: hero-fade-slide 0.6s ease 0.05s forwards;
 }
@@ -1246,7 +1284,7 @@ header.topbar.hero::before {
   display: flex;
   align-items: center;
   gap: 18px;
-  margin: 16px 0 26px;
+  margin: 14px 0 20px;
 }
 
 .ring-wrap {
