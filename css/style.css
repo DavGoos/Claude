@@ -1147,10 +1147,8 @@ header.topbar.hero::before {
   position: relative;
   z-index: 2;
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  flex-wrap: wrap;
+  flex-direction: column;
+  gap: 10px;
 }
 
 .brand-lockup {
@@ -1158,7 +1156,7 @@ header.topbar.hero::before {
   align-items: center;
   gap: 8px;
   min-width: 0;
-  flex: 1 1 auto;
+  width: 100%;
 }
 
 .hoc-chip {
@@ -1200,8 +1198,14 @@ header.topbar.hero::before {
 
 .hero-actions {
   display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.hero-actions-group {
+  display: flex;
   gap: 6px;
-  flex-shrink: 0;
 }
 
 .greet-row {

@@ -154,7 +154,7 @@ const I18N = {
     guideStartF2Desc:
       "Direkt-Kacheln zu Prozessen, Ideen und Auswertungen, plus „Verwaltung & mehr“ mit Anleitung, Teams, Export und Einstellungen.",
     guideStartF3Name: "Zuletzt bearbeitet",
-    guideStartF3Desc: "Deine drei zuletzt bearbeiteten Ideen, damit du direkt dort weitermachen kannst, wo du aufgehört hast.",
+    guideStartF3Desc: "Deine drei zuletzt bearbeiteten Ideen und Prozesse, damit du direkt dort weitermachen kannst, wo du aufgehört hast.",
     guideProcF1Name: "Prozesse dokumentieren",
     guideProcF1Desc:
       "Wiederkehrende Abläufe eures Bereichs erfassen – z.B. Angebote erstellen, Rechnungsprüfung, Kundenonboarding. Optional, aber hilfreich, um Optimierungspotenzial zu erkennen.",
@@ -714,7 +714,7 @@ const I18N = {
     guideStartF2Name: "Quick access",
     guideStartF2Desc: "Direct tiles to Processes, Ideas and Analytics, plus „Manage & more” with Guide, Teams, Export and Settings.",
     guideStartF3Name: "Recently edited",
-    guideStartF3Desc: "Your three most recently edited ideas, so you can pick up right where you left off.",
+    guideStartF3Desc: "Your three most recently edited ideas and processes, so you can pick up right where you left off.",
     guideProcF1Name: "Document processes",
     guideProcF1Desc:
       "Capture recurring workflows in your area — e.g. creating quotes, invoice checking, customer onboarding. Optional, but helpful for spotting optimization potential.",
@@ -2715,7 +2715,7 @@ function ideaCard(idea) {
     .filter(Boolean);
   const isChained = idea.parent_idea_id || ideaFollowUpStages(idea).length > 0;
   return `
-    <div class="idea-item" data-id="${idea.id}">
+    <div class="idea-item" data-id="${idea.id}" data-type="idea">
       <div class="idea-title">${idea.catalog_id ? `<span class="badge">🏷 ${escapeHtml(idea.catalog_id)}</span> ` : ""}${escapeHtml(trValue(idea, "quick_note"))}</div>
       <div class="idea-meta">
         <span class="badge status-${idea.status}">${t(`status_${idea.status}`)}</span>
@@ -3345,7 +3345,7 @@ function processCard(proc) {
   const ai = aiPotentialInfo(proc.ai_potential);
   const statusInfo = processStatusInfo(proc.status);
   return `
-    <div class="idea-item" data-id="${proc.id}">
+    <div class="idea-item" data-id="${proc.id}" data-type="process">
       <div class="idea-title">
         <span class="process-status-icon" title="${escapeHtml(statusInfo.label)}" aria-label="${escapeHtml(statusInfo.label)}">${statusInfo.icon}</span>
         ${escapeHtml(trValue(proc, "name"))}
@@ -3355,6 +3355,7 @@ function processCard(proc) {
         <span class="badge">${proc.realized_potential || 0}% ${escapeHtml(t("realizedPotentialLabel"))}</span>
         ${proc.team_id ? `<span class="badge">${escapeHtml(teamName(proc.team_id))}</span>` : ""}
         ${proc.parent ? `<span class="badge">↳ ${escapeHtml(trValue(proc.parent, "name"))}</span>` : ""}
+        ${proc.updated_at ? `<span class="badge" title="${t("lastSavedTitle")}">🕒 ${formatDateTime(proc.updated_at)}</span>` : ""}
       </div>
       ${potentialBarHtml(proc.ai_potential, proc.realized_potential)}
     </div>
@@ -6117,7 +6118,12 @@ async function renderStart() {
 
   const openIdeas = ideasCache.filter((i) => i.status !== "done" && i.status !== "discarded").length;
   const inProgress = ideasCache.filter((i) => i.status === "in_progress").length;
-  const recent = [...ideasCache].sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at)).slice(0, 3);
+  const recent = [
+    ...ideasCache.map((idea) => ({ kind: "idea", item: idea })),
+    ...processesCache.map((proc) => ({ kind: "process", item: proc })),
+  ]
+    .sort((a, b) => new Date(b.item.updated_at) - new Date(a.item.updated_at))
+    .slice(0, 3);
   const avgAi = aiPotentialAverage();
   const avgRealized = realizedPotentialAverage();
   const isAdmin = currentProfile && currentProfile.is_admin;
@@ -6135,7 +6141,7 @@ async function renderStart() {
           <span class="app-name">${escapeHtml(t("appName"))}</span>
         </div>
         <div class="hero-actions">
-          ${langToggleButton()}${themeToggleButton()}
+          <div class="hero-actions-group">${langToggleButton()}${themeToggleButton()}</div>
           <button class="icon-btn" id="logout-btn">${t("logoutBtn")}</button>
         </div>
       </div>
@@ -6194,7 +6200,11 @@ async function renderStart() {
 
       <div class="section-title" style="margin-top:20px;">${t("recentlyEditedTitle")}</div>
       <div id="start-recent">
-        ${recent.length ? recent.map((idea) => ideaCard(idea)).join("") : `<div class="empty-state">${t("emptyRecentlyEdited")}</div>`}
+        ${
+          recent.length
+            ? recent.map((r) => (r.kind === "process" ? processCard(r.item) : ideaCard(r.item))).join("")
+            : `<div class="empty-state">${t("emptyRecentlyEdited")}</div>`
+        }
       </div>
 
       <div class="brand-footer">
@@ -6222,7 +6232,7 @@ async function renderStart() {
   });
   document.querySelectorAll("#start-recent .idea-item").forEach((el) => {
     el.addEventListener("click", () => {
-      window.location.hash = `#/idea/${el.dataset.id}`;
+      window.location.hash = el.dataset.type === "process" ? `#/process/${el.dataset.id}` : `#/idea/${el.dataset.id}`;
     });
   });
 
