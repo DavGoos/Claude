@@ -97,6 +97,7 @@ const I18N = {
     greetingMorning: "Guten Morgen",
     greetingAfternoon: "Guten Tag",
     greetingEvening: "Guten Abend",
+    greetingNight: "Gute Nacht",
     aiPotentialAvgLabel: "Ø KI-Potenzial im Bereich",
     realizedPotentialAvgLabel: "Ø bereits realisiert",
     statOpenIdeasLabel: "Offene Ideen",
@@ -658,6 +659,7 @@ const I18N = {
     greetingMorning: "Good morning",
     greetingAfternoon: "Good afternoon",
     greetingEvening: "Good evening",
+    greetingNight: "Good night",
     aiPotentialAvgLabel: "Avg. AI potential in your area",
     realizedPotentialAvgLabel: "Avg. already realized",
     statOpenIdeasLabel: "Open ideas",
@@ -5879,9 +5881,19 @@ async function renderDashboard() {
 
 function greetingText() {
   const h = new Date().getHours();
+  if (h >= 22 || h < 5) return t("greetingNight");
   if (h < 12) return t("greetingMorning");
   if (h < 18) return t("greetingAfternoon");
   return t("greetingEvening");
+}
+
+// Icon + Glow-Farbe je Tageszeit, passend zur Begrüßung (siehe greetingText).
+function greetingIcon() {
+  const h = new Date().getHours();
+  if (h >= 22 || h < 5) return { emoji: "🌙", cls: "icon-night" };
+  if (h < 12) return { emoji: "🌅", cls: "icon-morning" };
+  if (h < 18) return { emoji: "☀️", cls: "icon-day" };
+  return { emoji: "🌇", cls: "icon-evening" };
 }
 
 function longDateText() {
@@ -5984,7 +5996,7 @@ async function renderStart() {
       </div>
 
       <div class="greet-row">
-        <div class="greet">${greetingText()}<span class="bulb">💡</span></div>
+        <div class="greet">${greetingText()}<span class="greet-icon ${greetingIcon().cls}">${greetingIcon().emoji}</span></div>
         <div class="sub">${longDateText()}</div>
       </div>
 
