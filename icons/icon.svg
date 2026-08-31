@@ -1,15 +1,12 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
-  <defs>
-    <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#047857"/>
-      <stop offset="100%" stop-color="#10b981"/>
-    </linearGradient>
-  </defs>
-  <rect width="512" height="512" fill="url(#g)"/>
-  <g fill="none" stroke="#ffffff" stroke-width="26" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M120,166 L176,166 L212,256 L176,346 L120,346"/>
-    <path d="M212,166 L268,166 L304,256 L268,346 L212,346" opacity="0.75"/>
-    <path d="M304,166 L360,166 L392,256 L360,346 L304,346" opacity="0.5"/>
-  </g>
-  <path fill="#ffd166" d="M388,96 L400,132 L436,144 L400,156 L388,192 L376,156 L340,144 L376,132 Z"/>
+  <!-- Serviceplan-Zeichen (icons/hoc-mark.png) unveraendert eingebettet - keine
+       Pixel-, Farb- oder Formaenderung an der Marke selbst. Ein gestrichelter
+       Orbit-Ring mit wanderndem Funken umkreist sie als AI-Motiv, ohne die
+       Marke zu beruehren ("KI-Orbit", Konzept 02). -->
+  <rect width="512" height="512" fill="#000000"/>
+  <circle cx="256" cy="256" r="205" fill="none" stroke="#ffffff" stroke-opacity="0.55" stroke-width="7" stroke-dasharray="16 20"/>
+  <image x="126" y="126" width="260" height="260" href="data:image/png;base64,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"/>
+  <path fill="#ffffff" d="M444.1,134.6 L454.1,164.6 L484.1,174.6 L454.1,184.6 L444.1,214.6 L434.1,184.6 L404.1,174.6 L434.1,164.6 Z"/>
+  <circle cx="347.8" cy="72.7" r="9" fill="#ffffff" fill-opacity="0.75"/>
+  <circle cx="279.2" cy="52.3" r="6" fill="#ffffff" fill-opacity="0.55"/>
 </svg>

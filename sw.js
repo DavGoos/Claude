@@ -1,4 +1,4 @@
-const CACHE_NAME = "ai-ideen-v34";
+const CACHE_NAME = "ai-ideen-v35";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -9,7 +9,6 @@ const APP_SHELL = [
   "./manifest.json",
   "./icons/icon-192.png",
   "./icons/icon-512.png",
-  "./icons/icon-light-192.png",
   "./icons/hoc-mark.png",
   "./icons/hoc-logo.png",
 ];

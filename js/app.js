@@ -43,11 +43,11 @@ function updateThemeColorMeta() {
 }
 updateThemeColorMeta();
 
-// Das echte App-/Homescreen-Icon bleibt fix (dort nicht per JS umschaltbar,
-// siehe manifest.json/apple-touch-icon) - nur das Logo auf den
-// Login-/Status-Bildschirmen zeigt hier gezielt die passende Akzentfarbe.
+// Ein einziges Icon für Homescreen wie Login-/Status-Bildschirme: das feste
+// Schwarz des Serviceplan-Zeichens (siehe icons/icon.svg) passt unabhängig
+// vom Hell-/Dunkelmodus, ein Hell-/Dunkel-Pendant ist dafür nicht mehr nötig.
 function loginLogoSrc() {
-  return currentTheme === "light" ? "icons/icon-light-192.png" : "icons/icon-192.png";
+  return "icons/icon-192.png";
 }
 
 function setTheme(theme) {
