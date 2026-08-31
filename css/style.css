@@ -491,11 +491,11 @@ button {
 }
 
 .login-lang-toggle {
-  position: absolute;
-  top: calc(env(safe-area-inset-top) + 16px);
-  right: 16px;
+  align-self: stretch;
   display: flex;
+  justify-content: flex-end;
   gap: 8px;
+  margin-bottom: 22px;
 }
 
 .login-wrap img { width: 88px; height: 88px; border-radius: 20px; margin-bottom: 16px; }
