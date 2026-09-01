@@ -6297,39 +6297,41 @@ async function renderStart() {
       <svg class="hero-sky" viewBox="0 0 400 200" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
         ${heroSkyIllustration(dayPart())}
       </svg>
-      <div class="hero-top">
-        <div class="brand-lockup">
-          <div class="hoc-chip"><img src="icons/hoc-mark.png" alt="House of Communication" /></div>
-          <div class="brand-div"></div>
-          ${appLogoMark(true)}
-          <span class="app-name">${escapeHtml(t("appName"))}</span>
-        </div>
-      </div>
-
-      <div class="greet-row">
-        <div class="greet-line">
-          <div class="greet">${greetingText()}<span class="greet-icon ${greetingIcon().cls}">${greetingIcon().emoji}</span></div>
-          <div class="hero-actions">
-            <div class="hero-actions-group">${langToggleButton()}${themeToggleButton()}</div>
-            <button class="icon-btn" id="logout-btn">${t("logoutBtn")}</button>
+      <div class="hero-inner">
+        <div class="hero-top">
+          <div class="brand-lockup">
+            <div class="hoc-chip"><img src="icons/hoc-mark.png" alt="House of Communication" /></div>
+            <div class="brand-div"></div>
+            ${appLogoMark(true)}
+            <span class="app-name">${escapeHtml(t("appName"))}</span>
           </div>
         </div>
-        <div class="sub">${longDateText()}</div>
-      </div>
 
-      <div class="ring-row">
-        <div class="ring-wrap">
-          ${startRingSvg(avgAi / 5)}
-          <div>
-            <div class="ring-value">${avgAi.toFixed(1).replace(".", currentLang === "en" ? "." : ",")} / 5</div>
-            <div class="ring-label">${t("aiPotentialAvgLabel")}</div>
+        <div class="greet-row">
+          <div class="greet-line">
+            <div class="greet">${greetingText()}<span class="greet-icon ${greetingIcon().cls}">${greetingIcon().emoji}</span></div>
+            <div class="hero-actions">
+              <div class="hero-actions-group">${langToggleButton()}${themeToggleButton()}</div>
+              <button class="icon-btn" id="logout-btn">${t("logoutBtn")}</button>
+            </div>
           </div>
+          <div class="sub">${longDateText()}</div>
         </div>
-        <div class="ring-wrap">
-          ${startRingSvg(avgRealized / 100)}
-          <div>
-            <div class="ring-value">${Math.round(avgRealized)}%</div>
-            <div class="ring-label">${t("realizedPotentialAvgLabel")}</div>
+
+        <div class="ring-row">
+          <div class="ring-wrap">
+            ${startRingSvg(avgAi / 5)}
+            <div>
+              <div class="ring-value">${avgAi.toFixed(1).replace(".", currentLang === "en" ? "." : ",")} / 5</div>
+              <div class="ring-label">${t("aiPotentialAvgLabel")}</div>
+            </div>
+          </div>
+          <div class="ring-wrap">
+            ${startRingSvg(avgRealized / 100)}
+            <div>
+              <div class="ring-value">${Math.round(avgRealized)}%</div>
+              <div class="ring-label">${t("realizedPotentialAvgLabel")}</div>
+            </div>
           </div>
         </div>
       </div>

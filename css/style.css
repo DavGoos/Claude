@@ -65,13 +65,14 @@ body {
 }
 
 /* Ab Tablet/Desktop-Breite: mehr Platz nutzen statt schmaler Handy-Spalte.
-   Der Rahmen (#app, Header) darf bis zu 1440px breit werden, damit auf
-   einem Laptop-/Desktop-Fenster nicht die Hälfte der Breite ungenutzt
-   bleibt - Formulare/Detailseiten bleiben bei 680px Lesebreite, das
-   Start-Cockpit (.start-main, siehe unten) nutzt bewusst mehr davon. */
+   Der Rahmen (#app) wird bewusst fluid gehalten (min(1600px, 96vw)) statt
+   auf einen festen Wert gekappt, damit auch sehr breite Laptop-/Desktop-
+   Fenster gut ausgenutzt werden - Formulare/Detailseiten bleiben bei
+   680px Lesebreite, das Start-Cockpit (.start-main, siehe unten) nutzt
+   bewusst die volle #app-Breite. */
 @media (min-width: 860px) {
   #app {
-    max-width: min(1440px, 94vw);
+    max-width: min(1600px, 96vw);
   }
 
   main {
@@ -86,8 +87,27 @@ body {
     max-width: 680px;
   }
 
+  /* Start-Cockpit: keine eigene (schmalere) Breitenbegrenzung mehr - der
+     Inhalt darf die volle, fluide #app-Breite ausfuellen (siehe oben). */
   .start-main > * {
-    max-width: 1200px;
+    max-width: none;
+  }
+
+  header.topbar.hero {
+    padding-left: 28px;
+    padding-right: 28px;
+  }
+
+  .hero-inner {
+    max-width: min(1600px, 96vw);
+    margin: 0 auto;
+  }
+
+  /* Die beiden Ringe (KI-Potenzial, Realisierungsquote) sollen bei viel
+     Platz nicht ueber die ganze Breite auseinandergezogen werden (wirkt
+     "verloren"), sondern eng nebeneinander links stehen bleiben. */
+  .ring-row .ring-wrap {
+    flex: 0 0 auto;
   }
 
   .idea-list {
@@ -1131,6 +1151,22 @@ header.topbar.hero {
   padding: calc(env(safe-area-inset-top) + 16px) 16px 0;
   overflow: hidden;
   position: relative;
+  /* Voller Breakout aus #app heraus: die Hero-Farbfläche soll immer die
+     gesamte Fensterbreite ausfuellen, unabhaengig davon, wie breit #app
+     selbst gerade begrenzt ist (siehe #app weiter oben). Funktioniert bei
+     jeder Breite, da #app auf der Seite zentriert ist (margin: 0 auto). */
+  width: 100vw;
+  margin-left: calc(50% - 50vw);
+  margin-right: calc(50% - 50vw);
+}
+
+/* Der eigentliche Inhalt (Begruessung, Ringe) bleibt trotz Vollbreite der
+   Farbflaeche auf dieselbe Breite begrenzt wie der Rest des Inhalts
+   (#app-Breite, siehe oben) und wird zentriert - sonst wuerden Text und
+   Ringe auf einem breiten Monitor bis an den Bildschirmrand auseinandergezogen. */
+.hero-inner {
+  position: relative;
+  z-index: 2;
 }
 
 /* Himmelfarbe je Tageszeit (siehe dayPart() in js/app.js) - bewusst fest
@@ -1378,16 +1414,17 @@ header.topbar.hero::before {
   z-index: 11;
 }
 
-/* Ab Tablet/Desktop-Breite wird der Inhalt in <main> zentriert und
-   begrenzt (siehe Breite-Regel oben) - Kennzahlen-Reihe liegt aber
-   außerhalb von <main> (wegen des Überlapp-Effekts in den Header hinein)
-   und braucht deshalb dieselbe Begrenzung extra - dieselbe Breite wie
-   .start-main, damit die Kacheln nicht schmaler wirken als der Header. */
+/* Ab Tablet/Desktop-Breite liegt die Kennzahlen-Reihe außerhalb von <main>
+   (wegen des Überlapp-Effekts in den Header hinein, siehe oben) und braucht
+   deshalb ihre eigenen Seitenabstände - dieselben 28px wie main/hero-inner,
+   damit die drei Kacheln exakt so breit wie der restliche Inhalt sind und
+   sich gleichmäßig links/mittig/rechts über die volle Breite verteilen
+   (keine eigene, schmalere Breitenbegrenzung mehr). */
 @media (min-width: 860px) {
   .stat-row {
-    max-width: 1200px;
-    margin-left: auto;
-    margin-right: auto;
+    max-width: none;
+    margin-left: 28px;
+    margin-right: 28px;
   }
 }
 
