@@ -6341,7 +6341,7 @@ async function renderStart() {
       ${startStatTile(processesCache.length, t("statProcessesLabel"), 0.19)}
     </div>
 
-    <main>
+    <main class="start-main">
       ${tabBar("start")}
 
       <div class="section-title">${t("quickAccessTitle")}</div>

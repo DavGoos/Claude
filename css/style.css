@@ -64,10 +64,14 @@ body {
   flex-direction: column;
 }
 
-/* Ab Tablet/Desktop-Breite: mehr Platz nutzen statt schmaler Handy-Spalte. */
+/* Ab Tablet/Desktop-Breite: mehr Platz nutzen statt schmaler Handy-Spalte.
+   Der Rahmen (#app, Header) darf bis zu 1440px breit werden, damit auf
+   einem Laptop-/Desktop-Fenster nicht die Hälfte der Breite ungenutzt
+   bleibt - Formulare/Detailseiten bleiben bei 680px Lesebreite, das
+   Start-Cockpit (.start-main, siehe unten) nutzt bewusst mehr davon. */
 @media (min-width: 860px) {
   #app {
-    max-width: 960px;
+    max-width: min(1440px, 94vw);
   }
 
   main {
@@ -80,6 +84,10 @@ body {
   main > * {
     width: 100%;
     max-width: 680px;
+  }
+
+  .start-main > * {
+    max-width: 1200px;
   }
 
   .idea-list {
@@ -1370,13 +1378,14 @@ header.topbar.hero::before {
   z-index: 11;
 }
 
-/* Ab Tablet/Desktop-Breite wird der Inhalt in <main> zentriert und auf
-   680px begrenzt (siehe Breite-Regel oben) - Kennzahlen-Reihe liegt aber
+/* Ab Tablet/Desktop-Breite wird der Inhalt in <main> zentriert und
+   begrenzt (siehe Breite-Regel oben) - Kennzahlen-Reihe liegt aber
    außerhalb von <main> (wegen des Überlapp-Effekts in den Header hinein)
-   und braucht deshalb dieselbe Begrenzung extra. */
+   und braucht deshalb dieselbe Begrenzung extra - dieselbe Breite wie
+   .start-main, damit die Kacheln nicht schmaler wirken als der Header. */
 @media (min-width: 860px) {
   .stat-row {
-    max-width: 680px;
+    max-width: 1200px;
     margin-left: auto;
     margin-right: auto;
   }
