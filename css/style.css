@@ -67,9 +67,10 @@ body {
 /* Ab Tablet/Desktop-Breite: mehr Platz nutzen statt schmaler Handy-Spalte.
    Der Rahmen (#app) wird bewusst fluid gehalten (min(1600px, 96vw)) statt
    auf einen festen Wert gekappt, damit auch sehr breite Laptop-/Desktop-
-   Fenster gut ausgenutzt werden - Formulare/Detailseiten bleiben bei
-   680px Lesebreite, Seiten mit .wide-main (Start, Prozesse, Ideen,
-   Auswertungen) nutzen bewusst die volle #app-Breite. */
+   Fenster gut ausgenutzt werden - einzelne Formulare (Login etc.) bleiben
+   bei 680px Lesebreite, Seiten mit .wide-main (Start, Prozesse, Ideen,
+   Auswertungen, Usecase-/Prozess-Detail) nutzen bewusst die volle
+   #app-Breite. */
 @media (min-width: 860px) {
   #app {
     max-width: min(1600px, 96vw);

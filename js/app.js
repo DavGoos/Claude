@@ -3049,7 +3049,7 @@ async function renderDetail(id) {
       </div>
       <button class="icon-btn" id="delete-btn">${t("deleteBtn")}</button>
     </header>
-    <main>
+    <main class="wide-main">
       ${
         canWrite
           ? ""
@@ -3975,7 +3975,7 @@ async function renderProcessDetail(id) {
       ${canWrite ? `<button class="icon-btn" id="duplicate-process-btn">${t("duplicateProcessBtn")}</button>` : ""}
       <button class="icon-btn" id="delete-btn">${t("deleteBtn")}</button>
     </header>
-    <main>
+    <main class="wide-main">
       ${
         canWrite
           ? ""
