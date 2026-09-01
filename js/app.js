@@ -2793,7 +2793,7 @@ async function renderList() {
         <button class="icon-btn" id="logout-btn">${t("logoutBtn")}</button>
       </div>
     </header>
-    <main>
+    <main class="wide-main">
       ${tabBar("ideas")}
       <div class="card capture-box">
         <label class="field-label" style="margin-top:0;">${t("newIdeaLabel")}</label>
@@ -3427,7 +3427,7 @@ async function renderProcessList() {
         <button class="icon-btn" id="logout-btn">${t("logoutBtn")}</button>
       </div>
     </header>
-    <main>
+    <main class="wide-main">
       ${tabBar("processes")}
       <div class="card capture-box">
         <label class="field-label" style="margin-top:0;">${t("newProcessLabel")}</label>
@@ -6033,7 +6033,7 @@ async function renderDashboard() {
         <button class="icon-btn" id="logout-btn">${t("logoutBtn")}</button>
       </div>
     </header>
-    <main>
+    <main class="wide-main">
       ${tabBar("dashboard")}
       <div id="dash-body">
         <div class="empty-state">${t("loadingIdeas")}</div>
@@ -6343,7 +6343,7 @@ async function renderStart() {
       ${startStatTile(processesCache.length, t("statProcessesLabel"), 0.19)}
     </div>
 
-    <main class="start-main">
+    <main class="wide-main">
       ${tabBar("start")}
 
       <div class="section-title">${t("quickAccessTitle")}</div>

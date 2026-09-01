@@ -68,8 +68,8 @@ body {
    Der Rahmen (#app) wird bewusst fluid gehalten (min(1600px, 96vw)) statt
    auf einen festen Wert gekappt, damit auch sehr breite Laptop-/Desktop-
    Fenster gut ausgenutzt werden - Formulare/Detailseiten bleiben bei
-   680px Lesebreite, das Start-Cockpit (.start-main, siehe unten) nutzt
-   bewusst die volle #app-Breite. */
+   680px Lesebreite, Seiten mit .wide-main (Start, Prozesse, Ideen,
+   Auswertungen) nutzen bewusst die volle #app-Breite. */
 @media (min-width: 860px) {
   #app {
     max-width: min(1600px, 96vw);
@@ -87,9 +87,10 @@ body {
     max-width: 680px;
   }
 
-  /* Start-Cockpit: keine eigene (schmalere) Breitenbegrenzung mehr - der
-     Inhalt darf die volle, fluide #app-Breite ausfuellen (siehe oben). */
-  .start-main > * {
+  /* Start/Prozesse/Ideen/Auswertungen: keine eigene (schmalere)
+     Breitenbegrenzung mehr - der Inhalt darf die volle, fluide
+     #app-Breite ausfuellen (siehe oben). */
+  .wide-main > * {
     max-width: none;
   }
 
@@ -108,17 +109,6 @@ body {
      "verloren"), sondern eng nebeneinander links stehen bleiben. */
   .ring-row .ring-wrap {
     flex: 0 0 auto;
-  }
-
-  .idea-list {
-    max-width: 900px;
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 12px;
-  }
-
-  .idea-list .empty-state {
-    grid-column: 1 / -1;
   }
 }
 
@@ -318,6 +308,26 @@ button {
   display: flex;
   flex-direction: column;
   gap: 10px;
+}
+
+/* Prozesse-/Ideenliste: ab Tablet/Desktop-Breite keine feste
+   2-Spalten-/900px-Begrenzung mehr, sondern so viele Spalten wie bei
+   ~320px Kartenbreite hineinpassen - dadurch nutzt die Liste auf einem
+   breiten .wide-main dieselbe Breite statt in einer schmalen Spalte
+   darin zu haengen. Muss nach der obigen Basis-Regel stehen, sonst
+   verliert sie bei gleicher Spezifitaet gegen die spaeter im Dokument
+   stehende Basis-Regel. */
+@media (min-width: 860px) {
+  .idea-list {
+    max-width: none;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 12px;
+  }
+
+  .idea-list .empty-state {
+    grid-column: 1 / -1;
+  }
 }
 
 .idea-item {
