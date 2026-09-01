@@ -321,7 +321,7 @@ button {
   .idea-list {
     max-width: none;
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
     gap: 12px;
   }
 
@@ -929,6 +929,16 @@ textarea.field { min-height: 70px; resize: vertical; }
   max-width: 320px;
   height: auto;
   margin: 4px auto 0;
+}
+
+/* Ab Tablet/Desktop-Breite darf die Matrix mit der (jetzt breiteren)
+   Auswertungen-Karte mitwachsen statt bei der mobilen 320px-Groesse zu
+   bleiben - es ist reines Vektor-SVG (viewBox-skaliert), bleibt also
+   auch groesser gestochen scharf. */
+@media (min-width: 860px) {
+  .dash-matrix-svg {
+    max-width: 520px;
+  }
 }
 
 .dash-matrix-bubble {
